@@ -9,6 +9,7 @@ export declare class CoursesService {
     private readonly courseRepository;
     private readonly prisma;
     constructor(courseRepository: CourseRepository, prisma: PrismaService);
+    validateCourseContent(courseId: string): Promise<void>;
     createCourse(input: CreateCourseInput, instructorId: string): Promise<PrismaCourse>;
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
     deleteCourse(id: string): Promise<PrismaCourse>;
@@ -37,11 +38,11 @@ export declare class CoursesService {
     updateCurriculum(courseId: string, input: any): Promise<({
         sections: ({
             lessons: {
-                order: number;
                 id: string;
-                title: string;
                 createdAt: Date;
                 updatedAt: Date;
+                title: string;
+                order: number;
                 type: string;
                 videoUrl: string | null;
                 body: string | null;
@@ -51,22 +52,22 @@ export declare class CoursesService {
                 sectionId: string;
             }[];
         } & {
-            order: number;
             id: string;
-            title: string;
             createdAt: Date;
             updatedAt: Date;
+            title: string;
+            order: number;
             courseId: string;
         })[];
     } & {
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
         title: string;
         description: string;
         price: number;
         published: boolean;
         isActive: boolean;
         instructorId: string;
-        createdAt: Date;
-        updatedAt: Date;
     }) | null>;
 }

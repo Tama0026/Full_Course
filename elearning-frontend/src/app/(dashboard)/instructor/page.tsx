@@ -13,6 +13,7 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { GET_MY_COURSES, GET_INSTRUCTOR_STATS, TOGGLE_COURSE_STATUS } from "@/lib/graphql/course";
 import Link from "next/link";
+import { toast } from "sonner";
 
 /* ─── Custom Recharts Tooltip ─── */
 function ChartTooltip({ active, payload, label }: any) {
@@ -68,8 +69,12 @@ export default function InstructorDashboard() {
 
     const handleToggle = async (id: string) => {
         if (toggling) return;
-        try { await toggleCourseStatus({ variables: { id } }); } catch (e: any) {
-            alert(e?.message || "Lỗi cập nhật trạng thái");
+        try {
+            await toggleCourseStatus({ variables: { id } });
+            toast.success("Đã cập nhật trạng thái khóa học.");
+        } catch (e: any) {
+            const msg = e?.graphQLErrors?.[0]?.message || e?.message || "Lỗi cập nhật trạng thái";
+            toast.error(msg, { duration: 8000 });
         }
     };
 

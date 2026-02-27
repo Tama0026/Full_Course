@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useMutation } from "@apollo/client/react";
 import {
@@ -29,10 +29,11 @@ import {
 } from "@/components/ui/dialog";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
 import QuizEditor from "@/components/instructor/QuizEditor";
-import { UPDATE_CURRICULUM, GET_COURSE_DETAIL, GENERATE_LESSON_CONTENT } from "@/lib/graphql/course";
+import { UPDATE_CURRICULUM, GET_COURSE_DETAIL, GENERATE_LESSON_CONTENT_WITH_QUIZ } from "@/lib/graphql/course";
 import { GENERATE_QUIZ_WITH_AI } from "@/lib/graphql/quiz";
 import { useApolloClient } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type LessonItem = {
     id?: string;
@@ -63,6 +64,9 @@ export default function CurriculumEditor({
 }) {
     const apolloClient = useApolloClient();
     const [generatingAi, setGeneratingAi] = useState(false);
+    const [aiQuizCount, setAiQuizCount] = useState<number>(5);
+    // Ref to trigger QuizEditor refetch after AI gen
+    const quizEditorRefetchRef = useRef<(() => void) | null>(null);
 
     const [updateCurriculum, { loading: saving }] = useMutation(UPDATE_CURRICULUM, {
         refetchQueries: [{ query: GET_COURSE_DETAIL, variables: { id: courseId } }],
@@ -110,32 +114,42 @@ export default function CurriculumEditor({
 
         const currentTitle = getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.title`);
         if (!currentTitle) {
-            alert("Vui lòng nhập tên bài học trước khi tạo nội dung bằng AI.");
+            toast.warning("Vui lòng nhập tên bài học trước khi tạo nội dung bằng AI.");
             return;
         }
 
-        const nonce = Date.now();
+        const lessonId = getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.id`);
+        if (!lessonId) {
+            toast.warning("Vui lòng lưu chương trình học trước khi sử dụng AI Gen.");
+            return;
+        }
+
         setGeneratingAi(true);
 
         try {
             const result = await apolloClient.mutate({
-                mutation: GENERATE_LESSON_CONTENT,
-                variables: { title: currentTitle, nonce },
+                mutation: GENERATE_LESSON_CONTENT_WITH_QUIZ,
+                variables: { title: currentTitle, lessonId, quizCount: aiQuizCount },
                 fetchPolicy: "no-cache",
             });
 
-            const content = (result.data as any)?.generateLessonContent;
+            const content = (result.data as any)?.generateLessonContentWithQuiz;
             if (content) {
                 setValue(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.type`, "DOCUMENT", { shouldDirty: true });
                 setValue(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.body`, content, { shouldDirty: true });
+                // Trigger QuizEditor refetch
+                quizEditorRefetchRef.current?.();
+                toast.success(`Đã tạo nội dung + ${aiQuizCount} câu Quiz thành công!`);
             }
         } catch (err: any) {
             console.error("[AI] Generation failed:", err?.message || err);
             const errMsg: string = err?.message || err?.graphQLErrors?.[0]?.message || "";
             if (errMsg.includes("RATE_LIMIT") || errMsg.includes("429")) {
-                alert("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
+                toast.error("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài phút rồi thử lại.");
+            } else if (errMsg.includes("503") || errMsg.includes("High Demand") || errMsg.includes("UNAVAILABLE")) {
+                toast.error("Hệ thống AI đang bị quá tải do nhiều người sử dụng. Vui lòng thử lại sau một lát.");
             } else {
-                alert(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
+                toast.error(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
             }
         } finally {
             setGeneratingAi(false);
@@ -171,10 +185,10 @@ export default function CurriculumEditor({
                     },
                 },
             });
-            alert("Đã lưu chương trình học thành công!");
+            toast.success("Đã lưu chương trình học thành công!");
         } catch (err: any) {
             console.error(err);
-            alert("Lỗi khi lưu chương trình học: " + err.message);
+            toast.error("Lỗi khi lưu chương trình học: " + err.message);
         }
     };
 
@@ -331,15 +345,38 @@ export default function CurriculumEditor({
                                         className="flex-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                                         placeholder="Ví dụ: Thiết lập môi trường"
                                     />
+                                </div>
+                            </div>
+
+                            {/* AI All-in-One: Generate Content + Quiz */}
+                            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
+                                <label className="mb-2 block text-sm font-semibold text-indigo-800">AI Gen (Văn bản + Quiz)</label>
+                                <div className="flex items-center gap-3">
+                                    <select
+                                        value={aiQuizCount}
+                                        onChange={(e) => setAiQuizCount(Number(e.target.value))}
+                                        disabled={generatingAi}
+                                        className="h-[38px] rounded-lg border border-indigo-300 bg-white px-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                                    >
+                                        <option value={3}>3 câu Quiz</option>
+                                        <option value={5}>5 câu Quiz</option>
+                                        <option value={10}>10 câu Quiz</option>
+                                        <option value={15}>15 câu Quiz</option>
+                                    </select>
                                     <button
                                         type="button"
                                         onClick={generateAiContent}
                                         disabled={generatingAi}
-                                        className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                                        className="flex flex-1 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                                     >
-                                        {generatingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gợi ý AI (văn bản)"}
+                                        {generatingAi ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin" /> Đang tạo...</>
+                                        ) : (
+                                            <><Sparkles className="h-4 w-4" /> AI Gen (Văn bản + Quiz)</>
+                                        )}
                                     </button>
                                 </div>
+                                <p className="mt-2 text-xs text-indigo-600/70">AI sẽ tự động tạo nội dung bài học và câu hỏi trắc nghiệm cùng lúc.</p>
                             </div>
 
                             <div>
@@ -407,6 +444,7 @@ export default function CurriculumEditor({
                                         <QuizEditor
                                             lessonId={getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.id`) as string}
                                             lessonBody={watch(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.body`) || ""}
+                                            onRefetchReady={(refetch) => { quizEditorRefetchRef.current = refetch; }}
                                         />
                                     ) : (
                                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
@@ -429,6 +467,6 @@ export default function CurriculumEditor({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 }

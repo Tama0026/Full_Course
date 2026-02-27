@@ -19,15 +19,70 @@ export class CoursesService {
         private readonly prisma: PrismaService,
     ) { }
 
+    // ==================== VALIDATION ====================
+
+    /**
+     * Validate that all lessons in a course have body content and a quiz.
+     * Throws BadRequestException with detailed error listing invalid lessons.
+     */
+    async validateCourseContent(courseId: string): Promise<void> {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            include: {
+                sections: {
+                    include: {
+                        lessons: {
+                            include: { quiz: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!course) {
+            throw new NotFoundException(`Course with ID "${courseId}" not found`);
+        }
+
+        const allLessons = course.sections.flatMap(s => s.lessons);
+
+        if (allLessons.length === 0) {
+            throw new BadRequestException(
+                'Không thể công khai khóa học. Khóa học chưa có bài học nào.'
+            );
+        }
+
+        const invalidLessons = allLessons.filter(lesson =>
+            !lesson.body || lesson.body.trim() === '' || !lesson.quiz
+        );
+
+        if (invalidLessons.length > 0) {
+            const errorDetails = invalidLessons.map(l =>
+                `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`
+            ).join(' ');
+            throw new BadRequestException(
+                `Không thể công khai khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`
+            );
+        }
+    }
+
     // ==================== COURSES ====================
 
     /**
      * Create a new course (Instructor only).
+     * If published/isActive is requested, validate content first.
      */
     async createCourse(
         input: CreateCourseInput,
         instructorId: string,
     ): Promise<PrismaCourse> {
+        // Block publishing on creation if requested (new course has no lessons)
+        if (input.published || (input as any).isActive) {
+            // A new course can never be published because it has no lessons yet
+            throw new BadRequestException(
+                'Không thể công khai khóa học khi tạo mới. Vui lòng tạo bài học và quiz trước, sau đó bật công khai.'
+            );
+        }
+
         return this.courseRepository.create({
             ...input,
             instructorId,
@@ -44,6 +99,11 @@ export class CoursesService {
         const course = await this.courseRepository.findById(id);
         if (!course) {
             throw new NotFoundException(`Course with ID "${id}" not found`);
+        }
+
+        // If trying to publish/activate, validate all lessons have content + quiz
+        if (input.published === true || input.isActive === true) {
+            await this.validateCourseContent(id);
         }
 
         return this.courseRepository.update(id, {
@@ -165,15 +225,6 @@ export class CoursesService {
     async toggleCourseStatus(id: string): Promise<PrismaCourse> {
         const course = await this.prisma.course.findUnique({
             where: { id },
-            include: {
-                sections: {
-                    include: {
-                        lessons: {
-                            include: { quiz: true }
-                        }
-                    }
-                }
-            }
         });
 
         if (!course) {
@@ -182,17 +233,7 @@ export class CoursesService {
 
         // If we are about to publish the course (isActive: false -> true)
         if (!course.isActive) {
-            const allLessons = course.sections.flatMap(s => s.lessons);
-            const invalidLessons = allLessons.filter(lesson =>
-                !lesson.body || lesson.body.trim() === '' || !lesson.quiz
-            );
-
-            if (invalidLessons.length > 0) {
-                const errorDetails = invalidLessons.map(l =>
-                    `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`
-                ).join(' ');
-                throw new BadRequestException(`Không thể xuất bản khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
-            }
+            await this.validateCourseContent(id);
         }
 
         return this.prisma.course.update({

@@ -187,6 +187,7 @@ type Mutation {
   deleteNote(id: String!): Note!
   deleteSection(id: String!): Section!
   generateLessonContent(nonce: Float, title: String!): String!
+  generateLessonContentWithQuiz(lessonId: String!, quizCount: Int! = 5, title: String!): String!
   generateQuizWithAI(count: Int! = 5, lessonId: String!): Quiz!
   login(input: LoginInput!): AuthResponse!
   markLessonComplete(lessonId: String!): Progress!

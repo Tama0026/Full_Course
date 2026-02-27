@@ -35,7 +35,7 @@ let AiService = class AiService {
         for (const model of this.MODELS) {
             try {
                 console.log(`[AiService] Trying model: ${model}`);
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 25_000));
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 60_000));
                 const response = await Promise.race([
                     this.ai.models.generateContent({ model, contents: prompt }),
                     timeoutPromise,
@@ -44,10 +44,10 @@ let AiService = class AiService {
                 return response.text || '';
             }
             catch (err) {
-                const status = err?.status || (err?.message?.includes('429') ? 429 : 0);
+                const status = err?.status || (err?.message?.includes('429') ? 429 : err?.message?.includes('503') ? 503 : err?.message?.includes('500') ? 500 : 0);
                 lastError = err;
-                if (status === 429) {
-                    console.warn(`[AiService] ⚠️ Model ${model} rate limited (429), trying next...`);
+                if (status === 429 || status === 503 || status === 500) {
+                    console.warn(`[AiService] ⚠️ Model ${model} failed with status ${status}, trying next...`);
                     continue;
                 }
                 throw err;
@@ -121,6 +121,64 @@ Requirements:
                 throw new common_1.InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.');
             }
             throw new common_1.InternalServerErrorException(`Content generation failed: ${msg.slice(0, 100) || 'unknown'}`);
+        }
+    }
+    async generateLessonContentWithQuiz(title, quizCount = 5) {
+        if (!process.env.GEMINI_API_KEY) {
+            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
+        }
+        const prompt = `
+You are an expert instructor. Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
+
+PART 1 — LESSON CONTENT:
+- Write in Vietnamese.
+- Use Markdown formatting.
+- Include a brief introduction.
+- Provide clear, structured main points with H2/H3 headers.
+- If applicable, add a small code snippet or practical example.
+- Conclude with a short summary.
+
+PART 2 — QUIZ:
+- Generate exactly ${quizCount} multiple-choice questions based on the lesson content you just wrote.
+- Each question must have 4 options (A, B, C, D).
+- correctAnswer is the 0-based index of the correct option.
+
+Return ONLY a valid JSON object (no markdown fences, no extra text) with this exact structure:
+{
+  "body": "<full markdown lesson content here>",
+  "quiz": [
+    {
+      "content": "Nội dung câu hỏi?",
+      "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+      "correctAnswer": 0
+    }
+  ]
+}
+
+IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON characters (newlines as \\n, quotes as \\"). Return ONLY the JSON object.
+        `;
+        try {
+            console.log(`[AiService] Generating lesson content + quiz — title: "${title}", quizCount: ${quizCount}`);
+            const text = await this.generateWithFallback(prompt);
+            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+            const result = JSON.parse(cleaned);
+            if (!result.body || !Array.isArray(result.quiz)) {
+                throw new Error('AI response missing required fields (body or quiz)');
+            }
+            console.log(`[AiService] Content+Quiz done — body: ${result.body.length} chars, quiz: ${result.quiz.length} questions`);
+            return result;
+        }
+        catch (error) {
+            const status = error?.status || error?.code;
+            const msg = error?.message || '';
+            console.error(`[AiService] generateLessonContentWithQuiz error — status: ${status}`, msg.slice(0, 200));
+            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                throw new common_1.InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn hoặc quá tải. Vui lòng chờ vài phút rồi thử lại.');
+            }
+            if (status === 503 || msg.includes('503') || msg.includes('high demand')) {
+                throw new common_1.InternalServerErrorException('SERVICE_UNAVAILABLE_503: Hệ thống AI đang bị quá tải (High Demand). Vui lòng thử lại sau một lát.');
+            }
+            throw new common_1.InternalServerErrorException(`Content+Quiz generation failed: ${msg.slice(0, 100) || 'unknown'}`);
         }
     }
     async assessSkill(userId) {

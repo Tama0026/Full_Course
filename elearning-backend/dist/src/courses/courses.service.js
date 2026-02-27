@@ -20,7 +20,36 @@ let CoursesService = class CoursesService {
         this.courseRepository = courseRepository;
         this.prisma = prisma;
     }
+    async validateCourseContent(courseId) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            include: {
+                sections: {
+                    include: {
+                        lessons: {
+                            include: { quiz: true }
+                        }
+                    }
+                }
+            }
+        });
+        if (!course) {
+            throw new common_1.NotFoundException(`Course with ID "${courseId}" not found`);
+        }
+        const allLessons = course.sections.flatMap(s => s.lessons);
+        if (allLessons.length === 0) {
+            throw new common_1.BadRequestException('Không thể công khai khóa học. Khóa học chưa có bài học nào.');
+        }
+        const invalidLessons = allLessons.filter(lesson => !lesson.body || lesson.body.trim() === '' || !lesson.quiz);
+        if (invalidLessons.length > 0) {
+            const errorDetails = invalidLessons.map(l => `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`).join(' ');
+            throw new common_1.BadRequestException(`Không thể công khai khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
+        }
+    }
     async createCourse(input, instructorId) {
+        if (input.published || input.isActive) {
+            throw new common_1.BadRequestException('Không thể công khai khóa học khi tạo mới. Vui lòng tạo bài học và quiz trước, sau đó bật công khai.');
+        }
         return this.courseRepository.create({
             ...input,
             instructorId,
@@ -30,6 +59,9 @@ let CoursesService = class CoursesService {
         const course = await this.courseRepository.findById(id);
         if (!course) {
             throw new common_1.NotFoundException(`Course with ID "${id}" not found`);
+        }
+        if (input.published === true || input.isActive === true) {
+            await this.validateCourseContent(id);
         }
         return this.courseRepository.update(id, {
             ...input,
@@ -104,26 +136,12 @@ let CoursesService = class CoursesService {
     async toggleCourseStatus(id) {
         const course = await this.prisma.course.findUnique({
             where: { id },
-            include: {
-                sections: {
-                    include: {
-                        lessons: {
-                            include: { quiz: true }
-                        }
-                    }
-                }
-            }
         });
         if (!course) {
             throw new common_1.NotFoundException(`Course with ID "${id}" not found`);
         }
         if (!course.isActive) {
-            const allLessons = course.sections.flatMap(s => s.lessons);
-            const invalidLessons = allLessons.filter(lesson => !lesson.body || lesson.body.trim() === '' || !lesson.quiz);
-            if (invalidLessons.length > 0) {
-                const errorDetails = invalidLessons.map(l => `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`).join(' ');
-                throw new common_1.BadRequestException(`Không thể xuất bản khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
-            }
+            await this.validateCourseContent(id);
         }
         return this.prisma.course.update({
             where: { id },

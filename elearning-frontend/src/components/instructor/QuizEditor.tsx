@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { Loader2, Plus, Save, Trash2, Sparkles } from "lucide-react";
 import { GET_INSTRUCTOR_QUIZ, GENERATE_QUIZ_WITH_AI, UPDATE_QUIZ } from "@/lib/graphql/quiz";
+import { toast } from "sonner";
 
 interface QuestionInput {
     id?: string;
@@ -12,7 +13,7 @@ interface QuestionInput {
     correctAnswer: number;
 }
 
-export default function QuizEditor({ lessonId, lessonBody }: { lessonId: string, lessonBody: string }) {
+export default function QuizEditor({ lessonId, lessonBody, onRefetchReady }: { lessonId: string, lessonBody: string, onRefetchReady?: (refetch: () => void) => void }) {
     const { data: quizData, loading: fetchingQuiz, refetch } = useQuery<any>(GET_INSTRUCTOR_QUIZ, {
         variables: { lessonId },
         fetchPolicy: "network-only",
@@ -40,9 +41,16 @@ export default function QuizEditor({ lessonId, lessonBody }: { lessonId: string,
         }
     }, [quizData]);
 
+    // Expose refetch to parent (for AI all-in-one refresh)
+    useEffect(() => {
+        if (onRefetchReady) {
+            onRefetchReady(() => refetch());
+        }
+    }, [onRefetchReady, refetch]);
+
     const handleGenerateAI = async () => {
         if (!lessonBody || lessonBody.trim().length === 0) {
-            alert("Bài học chưa có Nội dung Markdown. Vui lòng cập nhật Nội dung (và Lưu) trước khi tạo Quiz AI.");
+            toast.warning("Bài học chưa có Nội dung Markdown. Vui lòng cập nhật Nội dung (và Lưu) trước khi tạo Quiz AI.");
             return;
         }
         if (!confirm(`Hệ thống sẽ dựa vào Nội dung Markdown để tạo ${questionCount} câu hỏi trắc nghiệm. Bất kỳ Quiz cũ nào cũng sẽ bị ghi đè.\nLƯU Ý: Tiến trình sinh có thể mất 15-30 giây.`)) return;
@@ -56,9 +64,9 @@ export default function QuizEditor({ lessonId, lessonBody }: { lessonId: string,
                 options: typeof q.options === "string" ? JSON.parse(q.options) : q.options,
                 correctAnswer: q.correctAnswer,
             })));
-            alert("Đã tạo Quiz AI thành công!");
+            toast.success("Đã tạo Quiz AI thành công!");
         } catch (e: any) {
-            alert("Lỗi khi tạo Quiz AI: " + e.message);
+            toast.error("Lỗi khi tạo Quiz AI: " + e.message);
         }
     };
 
@@ -71,10 +79,10 @@ export default function QuizEditor({ lessonId, lessonBody }: { lessonId: string,
         // Validate
         for (let i = 0; i < questions.length; i++) {
             const q = questions[i];
-            if (!q.content.trim()) return alert(`Câu ${i + 1} thiếu nội dung.`);
-            if (q.options.length < 2) return alert(`Câu ${i + 1} cần ít nhất 2 đáp án.`);
-            if (q.options.some((o) => !o.trim())) return alert(`Câu ${i + 1} có đáp án trống.`);
-            if (q.correctAnswer < 0 || q.correctAnswer >= q.options.length) return alert(`Câu ${i + 1} có đáp án đúng không hợp lệ.`);
+            if (!q.content.trim()) return toast.warning(`Câu ${i + 1} thiếu nội dung.`);
+            if (q.options.length < 2) return toast.warning(`Câu ${i + 1} cần ít nhất 2 đáp án.`);
+            if (q.options.some((o) => !o.trim())) return toast.warning(`Câu ${i + 1} có đáp án trống.`);
+            if (q.correctAnswer < 0 || q.correctAnswer >= q.options.length) return toast.warning(`Câu ${i + 1} có đáp án đúng không hợp lệ.`);
         }
 
         try {
@@ -90,10 +98,10 @@ export default function QuizEditor({ lessonId, lessonBody }: { lessonId: string,
                     },
                 },
             });
-            alert("Lưu Quiz thành công!");
+            toast.success("Lưu Quiz thành công!");
             refetch();
         } catch (e: any) {
-            alert("Lỗi lưu Quiz: " + e.message);
+            toast.error("Lỗi lưu Quiz: " + e.message);
         }
     };
 

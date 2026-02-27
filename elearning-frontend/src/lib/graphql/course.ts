@@ -142,6 +142,12 @@ export const GENERATE_LESSON_CONTENT = gql`
   }
 `;
 
+export const GENERATE_LESSON_CONTENT_WITH_QUIZ = gql`
+  mutation GenerateLessonContentWithQuiz($title: String!, $lessonId: String!, $quizCount: Int = 5) {
+    generateLessonContentWithQuiz(title: $title, lessonId: $lessonId, quizCount: $quizCount)
+  }
+`;
+
 export const GET_UPLOAD_SIGNATURE = gql`
   query GetUploadSignature {
     uploadSignature {
