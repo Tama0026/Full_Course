@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+    ForbiddenException,
+} from '@nestjs/common';
 import { CourseRepository } from './course.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCourseInput } from './dto/create-course.input';
@@ -158,10 +163,38 @@ export class CoursesService {
      * Toggle isActive status of a course.
      */
     async toggleCourseStatus(id: string): Promise<PrismaCourse> {
-        const course = await this.prisma.course.findUnique({ where: { id } });
+        const course = await this.prisma.course.findUnique({
+            where: { id },
+            include: {
+                sections: {
+                    include: {
+                        lessons: {
+                            include: { quiz: true }
+                        }
+                    }
+                }
+            }
+        });
+
         if (!course) {
             throw new NotFoundException(`Course with ID "${id}" not found`);
         }
+
+        // If we are about to publish the course (isActive: false -> true)
+        if (!course.isActive) {
+            const allLessons = course.sections.flatMap(s => s.lessons);
+            const invalidLessons = allLessons.filter(lesson =>
+                !lesson.body || lesson.body.trim() === '' || !lesson.quiz
+            );
+
+            if (invalidLessons.length > 0) {
+                const errorDetails = invalidLessons.map(l =>
+                    `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`
+                ).join(' ');
+                throw new BadRequestException(`Không thể xuất bản khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
+            }
+        }
+
         return this.prisma.course.update({
             where: { id },
             data: { isActive: !course.isActive },
@@ -169,36 +202,35 @@ export class CoursesService {
     }
 
     /**
-     * Aggregate statistics for an instructor.
+     * Aggregate statistics for an instructor, including per-course breakdown.
      */
     async getInstructorStats(instructorId: string): Promise<{
         totalCourses: number;
         totalStudents: number;
         totalRevenue: number;
         avgCompletionRate: number;
+        courseBreakdown: { courseId: string; title: string; studentCount: number; completionRate: number; avgQuizScore: number }[];
     }> {
-        // Count courses
-        const totalCourses = await this.prisma.course.count({
-            where: { instructorId },
-        });
-
-        // Get all instructor course IDs + prices
+        // All instructor courses with title
         const courses = await this.prisma.course.findMany({
             where: { instructorId },
-            select: { id: true, price: true },
+            select: { id: true, title: true, price: true },
         });
+        const totalCourses = courses.length;
         const courseIds = courses.map((c) => c.id);
 
         if (courseIds.length === 0) {
-            return { totalCourses, totalStudents: 0, totalRevenue: 0, avgCompletionRate: 0 };
+            return { totalCourses, totalStudents: 0, totalRevenue: 0, avgCompletionRate: 0, courseBreakdown: [] };
         }
 
-        // Count unique enrolled students
-        const totalStudents = await this.prisma.enrollment.count({
+        // Enrollments per course
+        const enrollments = await this.prisma.enrollment.findMany({
             where: { courseId: { in: courseIds } },
+            select: { id: true, courseId: true },
         });
+        const totalStudents = enrollments.length;
 
-        // Sum revenue from COMPLETED orders using course price
+        // Revenue
         const completedOrders = await this.prisma.order.findMany({
             where: { courseId: { in: courseIds }, status: 'COMPLETED' },
             select: { courseId: true },
@@ -209,7 +241,7 @@ export class CoursesService {
             0,
         );
 
-        // Avg completion: completed progress records / (total lessons * enrolled students)
+        // Completion rate (global)
         const totalLessons = await this.prisma.lesson.count({
             where: { section: { courseId: { in: courseIds } } },
         });
@@ -217,10 +249,46 @@ export class CoursesService {
             where: { enrollment: { courseId: { in: courseIds } } },
         });
         const maxPossible = totalLessons * Math.max(totalStudents, 1);
-        const avgCompletionRate =
-            maxPossible > 0 ? Math.round((completedLessons / maxPossible) * 100) : 0;
+        const avgCompletionRate = maxPossible > 0 ? Math.round((completedLessons / maxPossible) * 100) : 0;
 
-        return { totalCourses, totalStudents, totalRevenue, avgCompletionRate };
+        // --- Per-course breakdown ---
+        const courseBreakdown = await Promise.all(
+            courses.map(async (course) => {
+                const courseEnrollmentIds = enrollments
+                    .filter((e) => e.courseId === course.id)
+                    .map((e) => e.id);
+                const studentCount = courseEnrollmentIds.length;
+
+                // Completion rate for this course
+                const courseLessons = await this.prisma.lesson.count({
+                    where: { section: { courseId: course.id } },
+                });
+                const courseCompletedLessons = await this.prisma.progress.count({
+                    where: { enrollmentId: { in: courseEnrollmentIds } },
+                });
+                const maxPoss = courseLessons * Math.max(studentCount, 1);
+                const completionRate = maxPoss > 0 ? Math.round((courseCompletedLessons / maxPoss) * 100) : 0;
+
+                // Average quiz score for this course (from QuizSubmission if exists)
+                let avgQuizScore = 0;
+                try {
+                    const submissions = await (this.prisma as any).quizSubmission.findMany({
+                        where: { quiz: { lesson: { section: { courseId: course.id } } } },
+                        select: { score: true, totalQuestions: true },
+                    });
+                    if (submissions.length > 0) {
+                        const totalScore = submissions.reduce((sum: number, s: any) =>
+                            sum + (s.totalQuestions > 0 ? (s.score / s.totalQuestions) * 100 : 0), 0
+                        );
+                        avgQuizScore = Math.round(totalScore / submissions.length);
+                    }
+                } catch { /* quizSubmission table may not exist */ }
+
+                return { courseId: course.id, title: course.title, studentCount, completionRate, avgQuizScore };
+            }),
+        );
+
+        return { totalCourses, totalStudents, totalRevenue, avgCompletionRate, courseBreakdown };
     }
 
     async updateCurriculum(courseId: string, input: any) {

@@ -26,15 +26,22 @@ export declare class CoursesService {
         totalStudents: number;
         totalRevenue: number;
         avgCompletionRate: number;
+        courseBreakdown: {
+            courseId: string;
+            title: string;
+            studentCount: number;
+            completionRate: number;
+            avgQuizScore: number;
+        }[];
     }>;
     updateCurriculum(courseId: string, input: any): Promise<({
         sections: ({
             lessons: {
+                order: number;
                 id: string;
+                title: string;
                 createdAt: Date;
                 updatedAt: Date;
-                title: string;
-                order: number;
                 type: string;
                 videoUrl: string | null;
                 body: string | null;
@@ -44,22 +51,22 @@ export declare class CoursesService {
                 sectionId: string;
             }[];
         } & {
+            order: number;
             id: string;
+            title: string;
             createdAt: Date;
             updatedAt: Date;
-            title: string;
-            order: number;
             courseId: string;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         title: string;
         description: string;
         price: number;
         published: boolean;
         isActive: boolean;
         instructorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }) | null>;
 }

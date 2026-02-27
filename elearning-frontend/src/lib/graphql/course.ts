@@ -119,6 +119,13 @@ export const GET_INSTRUCTOR_STATS = gql`
       totalStudents
       totalRevenue
       avgCompletionRate
+      courseBreakdown {
+        courseId
+        title
+        studentCount
+        completionRate
+        avgQuizScore
+      }
     }
   }
 `;

@@ -19,8 +19,8 @@ async function bootstrap() {
         origin: true,
         credentials: true,
     });
-    await app.listen(3000);
-    console.log(`🚀 Application is running on: http://localhost:3000/graphql`);
+    await app.listen(4000);
+    console.log(`🚀 Application is running on: http://localhost:4000/graphql`);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

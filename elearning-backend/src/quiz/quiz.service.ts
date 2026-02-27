@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { SubmitQuizResponse } from './dto/submit-quiz.response';
 import { QuizAnswerInput } from './dto/submit-quiz.input';
+import { UpdateQuizInput } from './dto/update-quiz.input';
 import { Quiz } from './entities/quiz.entity';
 
 @Injectable()
@@ -15,7 +16,7 @@ export class QuizService {
     /**
      * Generate or Regenerate Quiz with AI for a given lesson
      */
-    async generateQuizWithAI(lessonId: string): Promise<Quiz> {
+    async generateQuizWithAI(lessonId: string, count: number = 5): Promise<Quiz> {
         const lesson = await this.prisma.lesson.findUnique({
             where: { id: lessonId },
         });
@@ -28,8 +29,8 @@ export class QuizService {
             throw new BadRequestException('Lesson has no content to generate a quiz from');
         }
 
-        // 1. Call AI to generate 5 questions
-        const aiQuestions = await this.aiService.generateQuiz(lesson.body);
+        // 1. Call AI to generate X questions
+        const aiQuestions = await this.aiService.generateQuiz(lesson.body, count);
         if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
             throw new InternalServerErrorException('AI failed to generate a valid question list');
         }
@@ -51,6 +52,47 @@ export class QuizService {
                 lessonId,
                 questions: {
                     create: aiQuestions.map((q: any) => ({
+                        content: q.content,
+                        options: JSON.stringify(q.options),
+                        correctAnswer: q.correctAnswer,
+                    })),
+                },
+            },
+            include: { questions: true },
+        }) as unknown as Quiz;
+    }
+
+    /**
+     * Update an existing quiz manually
+     */
+    async updateQuiz(input: UpdateQuizInput): Promise<Quiz> {
+        const { lessonId, questions } = input;
+
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: lessonId },
+        });
+
+        if (!lesson) {
+            throw new NotFoundException(`Lesson with ID ${lessonId} not found`);
+        }
+
+        // 1. Delete existing quiz if exists to fully replace
+        const existingQuiz = await this.prisma.quiz.findUnique({
+            where: { lessonId },
+        });
+
+        if (existingQuiz) {
+            await this.prisma.quiz.delete({
+                where: { id: existingQuiz.id },
+            });
+        }
+
+        // 2. Create new Quiz and Questions
+        return this.prisma.quiz.create({
+            data: {
+                lessonId,
+                questions: {
+                    create: questions.map((q: any) => ({
                         content: q.content,
                         options: JSON.stringify(q.options),
                         correctAnswer: q.correctAnswer,

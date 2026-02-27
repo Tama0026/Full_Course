@@ -14,8 +14,8 @@ export class Question {
     @Field(() => String)
     options: string; // JSON string
 
-    @Field(() => Int)
-    correctAnswer: number;
+    @Field(() => Int, { nullable: true })
+    correctAnswer?: number;
 
     @Field()
     createdAt: Date;

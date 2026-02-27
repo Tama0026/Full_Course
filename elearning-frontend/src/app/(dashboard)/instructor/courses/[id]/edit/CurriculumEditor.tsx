@@ -28,6 +28,7 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
+import QuizEditor from "@/components/instructor/QuizEditor";
 import { UPDATE_CURRICULUM, GET_COURSE_DETAIL, GENERATE_LESSON_CONTENT } from "@/lib/graphql/course";
 import { GENERATE_QUIZ_WITH_AI } from "@/lib/graphql/quiz";
 import { useApolloClient } from "@apollo/client/react";
@@ -62,7 +63,6 @@ export default function CurriculumEditor({
 }) {
     const apolloClient = useApolloClient();
     const [generatingAi, setGeneratingAi] = useState(false);
-    const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
     const [updateCurriculum, { loading: saving }] = useMutation(UPDATE_CURRICULUM, {
         refetchQueries: [{ query: GET_COURSE_DETAIL, variables: { id: courseId } }],
@@ -141,47 +141,6 @@ export default function CurriculumEditor({
             setGeneratingAi(false);
         }
     };
-
-    const generateQuiz = async () => {
-        if (!editingLesson || generatingQuiz) return;
-
-        const lessonId = getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.id`);
-        if (!lessonId) {
-            alert("Vui lòng lưu thay đổi chương trình học (Save) trước khi bạn có thể tạo Quiz cho bài này.");
-            return;
-        }
-
-        const lessonBody = getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.body`);
-        if (!lessonBody || lessonBody.trim() === "") {
-            alert("Bài học không có nội dung markdown để tạo Quiz. Bạn có thể tự viết markdown hoặc dùng tính năng Tạo nội dung AI.");
-            return;
-        }
-
-        if (!confirm("Hệ thống sẽ dựa vào Nội dung Markdown để tạo ra 5 câu hỏi trắc nghiệm. Bạn có chắc chắn muốn tạo Quiz mới? Bất kỳ Quiz cũ nào cũng sẽ bị ghi đè.")) {
-            return;
-        }
-
-        setGeneratingQuiz(true);
-        try {
-            await apolloClient.mutate({
-                mutation: GENERATE_QUIZ_WITH_AI,
-                variables: { lessonId },
-                fetchPolicy: "no-cache",
-            });
-            alert("🎉 Đã tạo Quiz thành công!");
-        } catch (err: any) {
-            console.error("[AI Quiz] Generation failed:", err?.message || err);
-            const errMsg: string = err?.message || err?.graphQLErrors?.[0]?.message || "";
-            if (errMsg.includes("RATE_LIMIT") || errMsg.includes("429")) {
-                alert("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
-            } else {
-                alert(`Lỗi khi tạo Quiz AI: ${errMsg || "Unknown error"}`);
-            }
-        } finally {
-            setGeneratingQuiz(false);
-        }
-    };
-
     const onSave = async (data: CurriculumFormValues) => {
         try {
             await updateCurriculum({
@@ -192,16 +151,22 @@ export default function CurriculumEditor({
                             id: sec.id || undefined,
                             title: sec.title || `Chương ${sIdx + 1}`,
                             order: sIdx,
-                            lessons: sec.lessons.map((les, lIdx) => ({
-                                id: les.id || undefined,
-                                title: les.title || `Bài học ${lIdx + 1}`,
-                                type: les.type,
-                                videoUrl: les.videoUrl,
-                                body: les.body,
-                                duration: les.duration,
-                                isPreview: les.isPreview,
-                                order: lIdx,
-                            })),
+                            lessons: sec.lessons.map((les, lIdx) => {
+                                // Auto-correct type: if videoUrl exists, it must be a VIDEO lesson.
+                                // Otherwise, if it has no video but has body text, it's a DOCUMENT.
+                                const inferredType = les.videoUrl ? "VIDEO" : "DOCUMENT";
+
+                                return {
+                                    id: les.id || undefined,
+                                    title: les.title || `Bài học ${lIdx + 1}`,
+                                    type: inferredType,
+                                    videoUrl: les.videoUrl,
+                                    body: les.body,
+                                    duration: les.duration,
+                                    isPreview: les.isPreview,
+                                    order: lIdx,
+                                };
+                            }),
                         })),
                     },
                 },
@@ -392,7 +357,7 @@ export default function CurriculumEditor({
                                 <label className="mb-2 block text-sm font-semibold text-slate-700">Upload File (Video / PDF)</label>
                                 <CloudinaryUploader
                                     resourceType="auto"
-                                    onUploadSuccess={(url) => {
+                                    onUploadSuccess={(url: string) => {
                                         setValue(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.videoUrl`, url, { shouldDirty: true });
                                     }}
                                 />
@@ -437,17 +402,17 @@ export default function CurriculumEditor({
                                     placeholder="Viết nội dung markdown ở đây..."
                                     className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-y font-mono mb-2"
                                 />
-                                <div className="flex justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={generateQuiz}
-                                        disabled={generatingQuiz}
-                                        className="inline-flex items-center gap-2 rounded-lg bg-orange-100 px-3 py-2 text-sm font-medium text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50"
-                                        title="Dựa vào Markdown để tạo 5 câu hỏi"
-                                    >
-                                        {generatingQuiz ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                        Tự động tạo Quiz
-                                    </button>
+                                <div className="mt-8 pt-6 border-t border-slate-200">
+                                    {getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.id`) ? (
+                                        <QuizEditor
+                                            lessonId={getValues(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.id`) as string}
+                                            lessonBody={watch(`sections.${editingLesson.sectionIndex}.lessons.${editingLesson.lessonIndex}.body`) || ""}
+                                        />
+                                    ) : (
+                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                            Vui lòng lưu thay đổi chương trình học (Save) trước khi bạn có thể quản lý Quiz cho bài học mới này.
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

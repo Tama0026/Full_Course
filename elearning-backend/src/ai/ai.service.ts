@@ -143,15 +143,15 @@ Requirements:
     }
 
     /**
-     * AI Professional Assessment — evaluates user skills based on completed courses
-     * and their actual lesson content (body text).
+     * AI Professional Assessment — evaluates user skills based on COMPLETED lessons only.
+     * If no lessons have been completed yet, returns a zero-score result immediately.
      */
     async assessSkill(userId: string): Promise<string> {
         if (!process.env.GEMINI_API_KEY) {
             throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
         }
 
-        // Get user's enrollments with course details
+        // Fetch all enrollments with lesson-level progress details
         const enrollments = await this.prisma.enrollment.findMany({
             where: { userId },
             include: {
@@ -159,13 +159,12 @@ Requirements:
                     select: {
                         id: true,
                         title: true,
-                        description: true,
                         sections: {
                             select: {
                                 title: true,
                                 order: true,
                                 lessons: {
-                                    select: { title: true, type: true, body: true, order: true },
+                                    select: { id: true, title: true, type: true, body: true, order: true },
                                     orderBy: { order: 'asc' },
                                 },
                             },
@@ -173,35 +172,46 @@ Requirements:
                         },
                     },
                 },
-                progresses: true,
+                // progresses contains one record per completed lesson
+                progresses: { select: { lessonId: true } },
             },
         });
 
-        // Build detailed course content for AI
+        // ── Key fix: collect only COMPLETED lessons ──────────────────────────
+        // Build detailed course content for AI — COMPLETED LESSONS ONLY
         const courseDetails: string[] = [];
         const completedCourses: string[] = [];
+        let totalCompletedLessons = 0;
 
         for (const enrollment of enrollments) {
             const course = enrollment.course;
             const totalLessons = course.sections.reduce((sum, s) => sum + s.lessons.length, 0);
-            const isCompleted = totalLessons > 0 && enrollment.progresses.length >= totalLessons;
 
-            if (isCompleted) completedCourses.push(course.title);
+            // Build a set of lesson IDs that are actually completed
+            const completedLessonIds = new Set(enrollment.progresses.map(p => p.lessonId));
+            const numCompleted = completedLessonIds.size;
+            totalCompletedLessons += numCompleted;
 
-            // Build curriculum with lesson body content (truncate each to 500 chars)
-            let curriculum = `\n📘 Khóa học: "${course.title}" (${isCompleted ? 'ĐÃ HOÀN THÀNH' : `đang học ${enrollment.progresses.length}/${totalLessons} bài`})\n`;
-            curriculum += `   Mô tả: ${course.description}\n`;
+            if (numCompleted === 0) continue; // Skip courses with zero progress
+
+            const isFullyCompleted = numCompleted >= totalLessons && totalLessons > 0;
+            if (isFullyCompleted) completedCourses.push(course.title);
+
+            // Only include content of ACTUALLY COMPLETED lessons
+            let curriculum = `\n📘 Khóa học: "${course.title}" (${isFullyCompleted ? 'ĐÃ HOÀN THÀNH' : `${numCompleted}/${totalLessons} bài đã học`})\n`;
 
             for (const section of course.sections) {
+                const completedInSection = section.lessons.filter(l => completedLessonIds.has(l.id));
+                if (completedInSection.length === 0) continue;
+
                 curriculum += `   📂 Chương: ${section.title}\n`;
-                for (const lesson of section.lessons) {
-                    curriculum += `      📄 ${lesson.title} [${lesson.type}]`;
+                for (const lesson of completedInSection) {
+                    curriculum += `      ✅ ${lesson.title} [${lesson.type}]`;
                     if (lesson.body) {
-                        // Truncate body to 500 chars to stay within token limits
                         const bodyPreview = lesson.body.slice(0, 500).replace(/\n/g, ' ');
                         curriculum += `\n         Nội dung: ${bodyPreview}${lesson.body.length > 500 ? '...' : ''}`;
                     } else if (lesson.type === 'VIDEO') {
-                        curriculum += ` (video — chưa có tóm tắt nội dung)`;
+                        curriculum += ` (video bài học đã xem)`;
                     }
                     curriculum += '\n';
                 }
@@ -209,51 +219,63 @@ Requirements:
             courseDetails.push(curriculum);
         }
 
+        // ── Early exit: student has not completed ANY lesson ──────────────────
+        if (totalCompletedLessons === 0) {
+            const noDataResult = JSON.stringify({
+                overallScore: 0,
+                skills: [],
+                level: "Chưa có dữ liệu",
+                summary: "Học viên chưa hoàn thành bài học nào. Hãy bắt đầu học và hoàn thành ít nhất một bài học để nhận đánh giá kỹ năng chính xác.",
+                recommendations: [
+                    "Hãy đăng ký một khóa học phù hợp với mục tiêu nghề nghiệp của bạn.",
+                    "Hoàn thành ít nhất vài bài học đầu tiên để AI có thể đánh giá điểm mạnh và điểm yếu của bạn.",
+                    "Sau khi học xong, nhấn nút 'Hoàn thành' ở cuối mỗi bài để hệ thống ghi nhận tiến độ.",
+                ],
+            });
+
+            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: noDataResult } });
+            return noDataResult;
+        }
+
         const prompt = `
 You are a professional career advisor and tech skill assessor.
 
-Below is the DETAILED CURRICULUM and LESSON CONTENT that a user has studied:
+Below is the list of lessons a student has ACTUALLY COMPLETED (lessons they did NOT complete are excluded):
 ${courseDetails.join('\n---\n')}
 
 ${completedCourses.length > 0 ? `Fully completed courses: ${JSON.stringify(completedCourses)}` : 'No courses fully completed yet.'}
 
-Task: Based on the ACTUAL CONTENT of the lessons above (not just course titles), evaluate their technical proficiency.
+Task: Based ONLY on the content of the COMPLETED lessons above, evaluate their technical proficiency.
 Return a JSON object (and ONLY a JSON object, no markdown fences) with this exact structure:
 {
   "overallScore": <number 1-100>,
   "skills": [
-    { "name": "<specific skill category based on lesson content>", "score": <number 1-100> }
+    { "name": "<specific skill extracted from completed lesson content>", "score": <number 1-100> }
   ],
   "level": "<Intern/Fresher/Junior/Mid-Level/Senior/Expert>",
-  "summary": "<2-3 sentence Vietnamese summary analyzing what they learned based on the actual lesson content>",
-  "recommendations": ["<specific recommendation 1 in Vietnamese based on gaps in their curriculum>", "<recommendation 2>", "<recommendation 3>"]
+  "summary": "<2-3 sentence Vietnamese summary of what they have ACTUALLY learned>",
+  "recommendations": ["<recommendation 1 in Vietnamese>", "<recommendation 2>", "<recommendation 3>"]
 }
 
 Rules:
-- Extract SPECIFIC skill categories from the lesson content (e.g. "React Hooks", "SQL Queries", "REST API Design"), not generic ones
-- Score should reflect depth of content studied — shallow introductions = lower score
-- Completing courses raises score, just enrolling gives partial credit
-- Be realistic — 1-2 beginner courses = Junior (20-40)
+- ONLY evaluate skills from COMPLETED lessons — do NOT assume knowledge from uncompleted lessons
+- Scores should reflect actual depth: 1-5 completed intro lessons = Fresher (15-30 score max)
+- Completing full courses significantly raises score
+- Freshers who completed only a few intro lessons should score 10-25 maximum
+- Extract SPECIFIC skills from lesson bodies (e.g. "React Hooks", "CSS Flexbox"), not generic topics
 - Write summary and recommendations in Vietnamese
-- Recommendations should suggest SPECIFIC topics/courses to fill gaps
 - Return ONLY valid JSON
         `;
 
         try {
-            console.log(`[AiService] Assessing skills for user ${userId} — ${enrollments.length} enrolled, ${completedCourses.length} completed, prompt: ${prompt.length} chars`);
+            console.log(`[AiService] Assessing skills for user ${userId} — ${totalCompletedLessons} lessons completed across ${courseDetails.length} courses`);
             const text = await this.generateWithFallback(prompt);
             console.log(`[AiService] Assessment done — ${text.length} chars`);
 
-            // Clean response
             let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
             JSON.parse(cleaned); // validate
 
-            // Save to user
-            await this.prisma.user.update({
-                where: { id: userId },
-                data: { aiRank: cleaned },
-            });
-
+            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: cleaned } });
             return cleaned;
         } catch (error: any) {
             const msg = error?.message || '';
@@ -265,20 +287,20 @@ Rules:
         }
     }
     /**
-     * AI Quiz Generation — generate 5 MCQ questions from lesson content
+     * AI Quiz Generation — generate N MCQ questions from lesson content
      */
-    async generateQuiz(lessonContent: string): Promise<any[]> {
+    async generateQuiz(lessonContent: string, count: number = 5): Promise<any[]> {
         if (!process.env.GEMINI_API_KEY) {
             throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
         }
 
         const prompt = `
-You are an expert instructor. Based on the following lesson content, generate exactly 5 multiple-choice questions to test the student's knowledge.
+You are an expert instructor. Based on the following lesson content, generate exactly ${count} multiple-choice questions to test the student's knowledge.
 
 Lesson content:
 ${lessonContent.slice(0, 3000)} // Truncated to avoid token limit if too long
 
-Return ONLY a valid JSON array of 5 questions with this exact structure. Do not return markdown, just the JSON list:
+Return ONLY a valid JSON array of ${count} questions with this exact structure. Do not return markdown, just the JSON list:
 [
   {
     "content": "Nội dung câu hỏi ở đây?",
@@ -303,6 +325,58 @@ Note: 'correctAnswer' is the 0-based index of the correct option in the 'options
                 throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
             }
             throw new InternalServerErrorException('Lỗi khi tạo Quiz từ AI.');
+        }
+    }
+
+    /**
+     * AI Tutor — answers a student's question using the lesson content as context.
+     */
+    async askTutor(question: string, lessonId: string): Promise<string> {
+        if (!process.env.GEMINI_API_KEY) {
+            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+        }
+
+        // Fetch lesson body for context
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: lessonId },
+            select: { title: true, body: true, type: true },
+        });
+
+        const lessonContext = lesson?.body
+            ? `Tên bài học: ${lesson.title}\n\nNội dung bài học:\n${lesson.body.slice(0, 3000)}`
+            : lesson
+                ? `Tên bài học: ${lesson.title} (Bài học dạng video, không có nội dung văn bản.)`
+                : 'Không tìm thấy nội dung bài học.';
+
+        const prompt = `
+Bạn là một AI Tutor thân thiện, chuyên hỗ trợ học viên học lập trình.
+
+Ngữ cảnh bài học mà học viên đang học:
+---
+${lessonContext}
+---
+
+Câu hỏi của học viên: "${question}"
+
+Hướng dẫn:
+- Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu (tối đa 300 từ).
+- Trả lời DỰA VÀO nội dung bài học ở trên làm nền tảng.
+- Nếu câu hỏi nằm ngoài phạm vi bài học, trả lời nhẹ nhàng và hướng học viên về đúng chủ đề.
+- Nếu cần dùng code ví dụ, dùng markdown code block.
+- KHÔNG được bịa thông tin, chỉ trả lời những gì bạn biết chắc.
+        `;
+
+        try {
+            console.log(`[AiService] askTutor — lessonId: ${lessonId}, question: "${question.slice(0, 80)}"`);
+            const text = await this.generateWithFallback(prompt);
+            return text || 'Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.';
+        } catch (error: any) {
+            const msg = error?.message || '';
+            console.error(`[AiService] askTutor error:`, msg.slice(0, 200));
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                throw new InternalServerErrorException('RATE_LIMIT: AI đang bận. Vui lòng chờ vài giây.');
+            }
+            throw new InternalServerErrorException('Lỗi khi hỏi AI Tutor.');
         }
     }
 }

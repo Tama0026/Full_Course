@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Context } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Context, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { QuizService } from './quiz.service';
 import { Quiz } from './entities/quiz.entity';
@@ -9,6 +9,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { EnrollmentGuard } from '../common/guards/enrollment.guard';
+import { UpdateQuizInput } from './dto/update-quiz.input';
 
 @Resolver(() => Quiz)
 export class QuizResolver {
@@ -17,14 +18,39 @@ export class QuizResolver {
     @Mutation(() => Quiz)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    async generateQuizWithAI(@Args('lessonId') lessonId: string): Promise<Quiz> {
-        return this.quizService.generateQuizWithAI(lessonId);
+    async generateQuizWithAI(
+        @Args('lessonId') lessonId: string,
+        @Args({ name: 'count', type: () => Int, defaultValue: 5 }) count: number,
+    ): Promise<Quiz> {
+        return this.quizService.generateQuizWithAI(lessonId, count);
+    }
+
+    @Mutation(() => Quiz)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async updateQuiz(@Args('input') input: UpdateQuizInput): Promise<Quiz> {
+        return this.quizService.updateQuiz(input);
     }
 
     @Query(() => Quiz, { nullable: true })
     @UseGuards(JwtAuthGuard, EnrollmentGuard)
-    async getQuiz(@Args('lessonId') lessonId: string): Promise<Quiz | null> {
-        return this.quizService.getQuizByLesson(lessonId);
+    async getQuiz(
+        @Args('lessonId') lessonId: string,
+        @Context() context: any,
+    ): Promise<Quiz | null> {
+        const user = context.req.user;
+        const quiz = await this.quizService.getQuizByLesson(lessonId);
+
+        if (quiz && user.role === Role.STUDENT) {
+            // Strip out correctAnswer for students to prevent cheating via GraphQL devtools
+            quiz.questions = quiz.questions.map((q) => {
+                const safeQuestion = { ...q };
+                delete safeQuestion.correctAnswer;
+                return safeQuestion;
+            });
+        }
+
+        return quiz;
     }
 
     @Mutation(() => SubmitQuizResponse)

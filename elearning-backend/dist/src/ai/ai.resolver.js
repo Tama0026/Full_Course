@@ -44,6 +44,10 @@ let AiResolver = class AiResolver {
         console.log(`[AiResolver] assessSkill done — ${result.length} chars`);
         return result;
     }
+    async askTutor(question, lessonId) {
+        console.log(`[AiResolver] askTutor — lessonId: ${lessonId}`);
+        return this.aiService.askTutor(question, lessonId);
+    }
 };
 exports.AiResolver = AiResolver;
 __decorate([
@@ -71,6 +75,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AiResolver.prototype, "assessSkill", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => String, { name: 'askTutor' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, graphql_1.Args)('question')),
+    __param(1, (0, graphql_1.Args)('lessonId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], AiResolver.prototype, "askTutor", null);
 exports.AiResolver = AiResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [ai_service_1.AiService])

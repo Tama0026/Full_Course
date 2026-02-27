@@ -20,7 +20,7 @@ let QuizService = class QuizService {
         this.prisma = prisma;
         this.aiService = aiService;
     }
-    async generateQuizWithAI(lessonId) {
+    async generateQuizWithAI(lessonId, count = 5) {
         const lesson = await this.prisma.lesson.findUnique({
             where: { id: lessonId },
         });
@@ -30,7 +30,7 @@ let QuizService = class QuizService {
         if (!lesson.body || lesson.body.trim().length === 0) {
             throw new common_1.BadRequestException('Lesson has no content to generate a quiz from');
         }
-        const aiQuestions = await this.aiService.generateQuiz(lesson.body);
+        const aiQuestions = await this.aiService.generateQuiz(lesson.body, count);
         if (!Array.isArray(aiQuestions) || aiQuestions.length === 0) {
             throw new common_1.InternalServerErrorException('AI failed to generate a valid question list');
         }
@@ -47,6 +47,36 @@ let QuizService = class QuizService {
                 lessonId,
                 questions: {
                     create: aiQuestions.map((q) => ({
+                        content: q.content,
+                        options: JSON.stringify(q.options),
+                        correctAnswer: q.correctAnswer,
+                    })),
+                },
+            },
+            include: { questions: true },
+        });
+    }
+    async updateQuiz(input) {
+        const { lessonId, questions } = input;
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: lessonId },
+        });
+        if (!lesson) {
+            throw new common_1.NotFoundException(`Lesson with ID ${lessonId} not found`);
+        }
+        const existingQuiz = await this.prisma.quiz.findUnique({
+            where: { lessonId },
+        });
+        if (existingQuiz) {
+            await this.prisma.quiz.delete({
+                where: { id: existingQuiz.id },
+            });
+        }
+        return this.prisma.quiz.create({
+            data: {
+                lessonId,
+                questions: {
+                    create: questions.map((q) => ({
                         content: q.content,
                         options: JSON.stringify(q.options),
                         correctAnswer: q.correctAnswer,

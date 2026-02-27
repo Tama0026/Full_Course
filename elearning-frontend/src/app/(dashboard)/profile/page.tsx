@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
     User as UserIcon, Award, Brain, Edit3, Save, X, Loader2,
     Mail, Calendar, Shield, ChevronRight, Star, TrendingUp,
-    BookOpen, Sparkles, AlertCircle, CheckCircle2,
+    BookOpen, Sparkles, AlertCircle, CheckCircle2, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GET_PROFILE, UPDATE_PROFILE, GET_MY_CERTIFICATES, ASSESS_SKILL } from "@/lib/graphql/profile";
@@ -39,8 +40,8 @@ function SkillBar({ name, score }: { name: string; score: number }) {
 
 /* ─── Certificate Card Component ─── */
 function CertificateCard({ cert }: { cert: Certificate }) {
-    return (
-        <div className="group relative overflow-hidden rounded-xl border-2 border-blue-100 bg-gradient-to-br from-white via-blue-50/30 to-blue-100/20 p-6 transition-all hover:border-blue-300 hover:shadow-lg">
+    const inner = (
+        <div className="group relative overflow-hidden rounded-xl border-2 border-blue-100 bg-gradient-to-br from-white via-blue-50/30 to-blue-100/20 p-6 transition-all hover:border-blue-300 hover:shadow-lg cursor-pointer">
             {/* Decorative corner */}
             <div className="absolute top-0 right-0 h-20 w-20">
                 <div className="absolute top-0 right-0 h-full w-full bg-blue-600 clip-corner" />
@@ -52,31 +53,47 @@ function CertificateCard({ cert }: { cert: Certificate }) {
                     <Award className="h-5 w-5" />
                     <span className="text-xs font-bold uppercase tracking-wider">Chứng Chỉ Hoàn Thành</span>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">{cert.courseName}</h3>
+                <h3 className="text-lg font-bold text-slate-900 leading-tight">{cert.courseNameAtIssue || cert.courseName}</h3>
             </div>
 
             <div className="border-t border-blue-100 pt-3 space-y-1">
-                <p className="text-sm text-slate-600"><span className="font-medium">Người nhận:</span> {cert.userName}</p>
+                <p className="text-sm text-slate-600"><span className="font-medium">Người nhận:</span> {cert.userName || "Học viên"}</p>
                 <p className="text-sm text-slate-500">
                     <span className="font-medium">Ngày cấp:</span> {new Date(cert.issueDate).toLocaleDateString('vi-VN')}
                 </p>
                 <p className="text-xs text-slate-400 font-mono mt-2">Mã: {cert.certificateCode}</p>
             </div>
 
+            {cert.certificateUrl && (
+                <div className="mt-3 flex items-center gap-1 text-xs font-medium text-blue-500">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Xem chứng chỉ
+                </div>
+            )}
+
             <style jsx>{`
                 .clip-corner { clip-path: polygon(100% 0, 0 0, 100% 100%); }
             `}</style>
         </div>
     );
+
+    if (cert.certificateUrl) {
+        return (
+            <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer">
+                {inner}
+            </a>
+        );
+    }
+    return inner;
 }
 
 /* ─── Main Profile Page ─── */
 export default function ProfilePage() {
-    const { data: profileData, loading: profileLoading, refetch: refetchProfile } = useQuery(GET_PROFILE);
-    const { data: certsData, loading: certsLoading } = useQuery(GET_MY_CERTIFICATES);
-    const { data: enrollData } = useQuery(GET_MY_ENROLLMENTS);
-    const [updateProfile, { loading: saving }] = useMutation(UPDATE_PROFILE);
-    const [assessSkill, { loading: assessing }] = useMutation(ASSESS_SKILL);
+    const { data: profileData, loading: profileLoading, refetch: refetchProfile } = useQuery<any>(GET_PROFILE);
+    const { data: certsData, loading: certsLoading } = useQuery<any>(GET_MY_CERTIFICATES);
+    const { data: enrollData } = useQuery<any>(GET_MY_ENROLLMENTS);
+    const [updateProfile, { loading: saving }] = useMutation<any>(UPDATE_PROFILE);
+    const [assessSkill, { loading: assessing }] = useMutation<any>(ASSESS_SKILL);
 
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({ name: "", headline: "", bio: "" });
@@ -133,6 +150,9 @@ export default function ProfilePage() {
     }
 
     const levelColors: Record<string, string> = {
+        "Newbie": "bg-gray-100 text-gray-700 border-gray-200",
+        "Entry-Level": "bg-gray-100 text-gray-700 border-gray-200",
+        "Beginner": "bg-gray-100 text-gray-700 border-gray-200",
         Junior: "bg-amber-100 text-amber-700 border-amber-200",
         "Mid-Level": "bg-blue-100 text-blue-700 border-blue-200",
         Senior: "bg-purple-100 text-purple-700 border-purple-200",
@@ -257,7 +277,7 @@ export default function ProfilePage() {
                                             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                                                 <TrendingUp className="h-4 w-4 text-blue-500" /> Kỹ năng chi tiết
                                             </h3>
-                                            {aiRank.skills.map((s, i) => (
+                                            {aiRank.skills && aiRank.skills.map((s, i) => (
                                                 <SkillBar key={i} name={s.name} score={s.score} />
                                             ))}
                                         </div>
@@ -268,7 +288,7 @@ export default function ProfilePage() {
                                                 <Star className="h-4 w-4" /> Khuyến nghị từ AI
                                             </h3>
                                             <ul className="space-y-1.5">
-                                                {aiRank.recommendations.map((r, i) => (
+                                                {aiRank.recommendations && aiRank.recommendations.map((r, i) => (
                                                     <li key={i} className="flex items-start gap-2 text-sm text-blue-700">
                                                         <ChevronRight className="h-4 w-4 shrink-0 mt-0.5" />
                                                         <span>{r}</span>
@@ -320,12 +340,29 @@ export default function ProfilePage() {
                             <div className="divide-y divide-slate-100">
                                 {enrollments.length > 0 ? enrollments.map((enrollment: any) => {
                                     const course = enrollment.course;
-                                    const totalLessons = course?.sections?.flatMap((s: any) => s.lessons || []).length || 0;
+                                    const totalLessons = (course?.sections || []).flatMap((s: any) => s.lessons || []).length || 0;
                                     const completed = enrollment.progresses?.length || 0;
                                     const pct = totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0;
+
+                                    // Find first lesson to navigate to
+                                    const sortedSections = [...(course?.sections || [])].sort((a: any, b: any) => a.order - b.order);
+                                    const firstLesson = sortedSections.flatMap((s: any) =>
+                                        [...(s.lessons || [])].sort((a: any, b: any) => a.order - b.order)
+                                    )[0];
+                                    const courseHref = firstLesson
+                                        ? `/courses/${course.id}/lessons/${firstLesson.id}`
+                                        : `/student`;
+
                                     return (
-                                        <div key={enrollment.id} className="px-6 py-4 hover:bg-slate-50 transition-colors">
-                                            <h3 className="text-sm font-semibold text-slate-800 line-clamp-2">{course?.title}</h3>
+                                        <Link
+                                            key={enrollment.id}
+                                            href={courseHref}
+                                            className="block px-6 py-4 hover:bg-blue-50 transition-colors group"
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <h3 className="text-sm font-semibold text-slate-800 line-clamp-2 group-hover:text-blue-700 transition-colors">{course?.title}</h3>
+                                                <ChevronRight className="mt-0.5 h-4 w-4 flex-shrink-0 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                                            </div>
                                             <div className="mt-2 flex items-center gap-2">
                                                 <div className="h-1.5 flex-1 rounded-full bg-slate-100">
                                                     <div className={cn("h-full rounded-full transition-all", pct === 100 ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${pct}%` }} />
@@ -337,7 +374,7 @@ export default function ProfilePage() {
                                                     <CheckCircle2 className="h-3 w-3" /> Đã hoàn thành
                                                 </span>
                                             )}
-                                        </div>
+                                        </Link>
                                     );
                                 }) : (
                                     <div className="px-6 py-8 text-center">

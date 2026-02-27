@@ -37,6 +37,38 @@ let LearningService = class LearningService {
         if (!enrollment) {
             throw new common_1.NotFoundException('You are not enrolled in this course');
         }
+        if (!lesson.isPreview) {
+            const sections = await this.prisma.section.findMany({
+                where: { courseId },
+                select: {
+                    id: true,
+                    lessons: {
+                        select: { id: true, type: true },
+                        orderBy: { order: 'asc' },
+                    },
+                },
+                orderBy: { order: 'asc' },
+            });
+            const allLessons = sections.flatMap((s) => s.lessons);
+            const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+            if (currentIndex > 0) {
+                const prevLesson = allLessons[currentIndex - 1];
+                const prevQuiz = await this.prisma.quiz.findUnique({
+                    where: { lessonId: prevLesson.id }
+                });
+                if (prevQuiz) {
+                    let completedLessons = [];
+                    try {
+                        const rawEnrollment = enrollment;
+                        completedLessons = JSON.parse(rawEnrollment.completedLessons || '[]');
+                    }
+                    catch (e) { }
+                    if (!completedLessons.includes(prevLesson.id)) {
+                        throw new common_1.ForbiddenException('Lesson is locked. Please complete the previous lesson and its quiz first.');
+                    }
+                }
+            }
+        }
         const existingProgress = await this.prisma.progress.findUnique({
             where: {
                 enrollmentId_lessonId: {
@@ -150,6 +182,18 @@ let LearningService = class LearningService {
         return this.prisma.certificate.findMany({
             where: { userId },
             orderBy: { issueDate: 'desc' },
+        });
+    }
+    async updateVideoProgress(userId, lessonId, currentTime) {
+        return this.prisma.videoProgress.upsert({
+            where: { userId_lessonId: { userId, lessonId } },
+            update: { currentTime },
+            create: { userId, lessonId, currentTime },
+        });
+    }
+    async getVideoProgress(userId, lessonId) {
+        return this.prisma.videoProgress.findUnique({
+            where: { userId_lessonId: { userId, lessonId } },
         });
     }
 };

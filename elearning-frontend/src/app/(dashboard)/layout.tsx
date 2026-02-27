@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import LogoutButton from "@/components/common/LogoutButton";
+import SidebarRouter from "@/components/common/SidebarRouter";
 
 export const metadata: Metadata = {
     title: "Dashboard | E-Learning",
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * (dashboard) Route Group Layout — Dashboard shell with navigation.
+ * (dashboard) Route Group Layout — sidebar-based dashboard shell.
  */
 export default function DashboardLayout({
     children,
@@ -15,53 +15,24 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-screen bg-slate-50">
-            {/* Top navigation */}
-            <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-8">
-                    <a
-                        href="/"
-                        className="flex items-center gap-2 text-lg font-bold text-primary-600"
-                    >
-                        <svg
-                            className="h-6 w-6"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                        </svg>
-                        E-Learning
-                    </a>
-
-                    <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
-                        <a href="/dashboard" className="hover:text-primary-600 transition-colors">
-                            Dashboard
-                        </a>
-                        <a href="/courses" className="hover:text-primary-600 transition-colors">
-                            Khóa học
-                        </a>
-                        <a href="/certificates" className="hover:text-primary-600 transition-colors">
-                            Chứng chỉ
-                        </a>
-                        <a href="/profile" className="hover:text-primary-600 transition-colors">
-                            Hồ sơ
-                        </a>
-                        <div className="ml-4 pl-4 border-l border-slate-200">
-                            <LogoutButton />
-                        </div>
-                    </nav>
-                </div>
-            </header>
+        <div className="flex min-h-screen bg-slate-50">
+            {/* Sidebar — auto-selects Instructor or Student sidebar */}
+            <SidebarRouter />
 
             {/* Main content */}
-            <main className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
-                {children}
-            </main>
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Top bar */}
+                <header className="sticky top-0 z-20 flex items-center justify-between h-14 px-6 bg-white border-b border-slate-100">
+                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <span className="font-medium text-slate-800">E-Learning</span>
+                    </div>
+                </header>
+
+                {/* Page content */}
+                <main className="flex-1 p-6 overflow-auto">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }

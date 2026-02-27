@@ -102,9 +102,28 @@ let CoursesService = class CoursesService {
         return lesson;
     }
     async toggleCourseStatus(id) {
-        const course = await this.prisma.course.findUnique({ where: { id } });
+        const course = await this.prisma.course.findUnique({
+            where: { id },
+            include: {
+                sections: {
+                    include: {
+                        lessons: {
+                            include: { quiz: true }
+                        }
+                    }
+                }
+            }
+        });
         if (!course) {
             throw new common_1.NotFoundException(`Course with ID "${id}" not found`);
+        }
+        if (!course.isActive) {
+            const allLessons = course.sections.flatMap(s => s.lessons);
+            const invalidLessons = allLessons.filter(lesson => !lesson.body || lesson.body.trim() === '' || !lesson.quiz);
+            if (invalidLessons.length > 0) {
+                const errorDetails = invalidLessons.map(l => `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`).join(' ');
+                throw new common_1.BadRequestException(`Không thể xuất bản khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
+            }
         }
         return this.prisma.course.update({
             where: { id },
@@ -112,20 +131,20 @@ let CoursesService = class CoursesService {
         });
     }
     async getInstructorStats(instructorId) {
-        const totalCourses = await this.prisma.course.count({
-            where: { instructorId },
-        });
         const courses = await this.prisma.course.findMany({
             where: { instructorId },
-            select: { id: true, price: true },
+            select: { id: true, title: true, price: true },
         });
+        const totalCourses = courses.length;
         const courseIds = courses.map((c) => c.id);
         if (courseIds.length === 0) {
-            return { totalCourses, totalStudents: 0, totalRevenue: 0, avgCompletionRate: 0 };
+            return { totalCourses, totalStudents: 0, totalRevenue: 0, avgCompletionRate: 0, courseBreakdown: [] };
         }
-        const totalStudents = await this.prisma.enrollment.count({
+        const enrollments = await this.prisma.enrollment.findMany({
             where: { courseId: { in: courseIds } },
+            select: { id: true, courseId: true },
         });
+        const totalStudents = enrollments.length;
         const completedOrders = await this.prisma.order.findMany({
             where: { courseId: { in: courseIds }, status: 'COMPLETED' },
             select: { courseId: true },
@@ -140,7 +159,34 @@ let CoursesService = class CoursesService {
         });
         const maxPossible = totalLessons * Math.max(totalStudents, 1);
         const avgCompletionRate = maxPossible > 0 ? Math.round((completedLessons / maxPossible) * 100) : 0;
-        return { totalCourses, totalStudents, totalRevenue, avgCompletionRate };
+        const courseBreakdown = await Promise.all(courses.map(async (course) => {
+            const courseEnrollmentIds = enrollments
+                .filter((e) => e.courseId === course.id)
+                .map((e) => e.id);
+            const studentCount = courseEnrollmentIds.length;
+            const courseLessons = await this.prisma.lesson.count({
+                where: { section: { courseId: course.id } },
+            });
+            const courseCompletedLessons = await this.prisma.progress.count({
+                where: { enrollmentId: { in: courseEnrollmentIds } },
+            });
+            const maxPoss = courseLessons * Math.max(studentCount, 1);
+            const completionRate = maxPoss > 0 ? Math.round((courseCompletedLessons / maxPoss) * 100) : 0;
+            let avgQuizScore = 0;
+            try {
+                const submissions = await this.prisma.quizSubmission.findMany({
+                    where: { quiz: { lesson: { section: { courseId: course.id } } } },
+                    select: { score: true, totalQuestions: true },
+                });
+                if (submissions.length > 0) {
+                    const totalScore = submissions.reduce((sum, s) => sum + (s.totalQuestions > 0 ? (s.score / s.totalQuestions) * 100 : 0), 0);
+                    avgQuizScore = Math.round(totalScore / submissions.length);
+                }
+            }
+            catch { }
+            return { courseId: course.id, title: course.title, studentCount, completionRate, avgQuizScore };
+        }));
+        return { totalCourses, totalStudents, totalRevenue, avgCompletionRate, courseBreakdown };
     }
     async updateCurriculum(courseId, input) {
         return this.prisma.$transaction(async (tx) => {

@@ -8,5 +8,6 @@ export declare class AiService {
     searchCourses(query: string): Promise<string>;
     generateLessonContent(title: string): Promise<string>;
     assessSkill(userId: string): Promise<string>;
-    generateQuiz(lessonContent: string): Promise<any[]>;
+    generateQuiz(lessonContent: string, count?: number): Promise<any[]>;
+    askTutor(question: string, lessonId: string): Promise<string>;
 }

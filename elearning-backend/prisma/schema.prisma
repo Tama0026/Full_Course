@@ -27,79 +27,81 @@ enum OrderStatus {
 // ==================== MODELS ====================
 
 model User {
-  id          String        @id @default(uuid())
-  email       String        @unique
-  password    String
-  name        String?
-  headline    String?
-  bio         String?
-  avatar      String?
-  aiRank      String?       // JSON string for AI assessment results
-  role        Role          @default(STUDENT)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  headline  String?
+  bio       String?
+  avatar    String?
+  aiRank    String? // JSON string for AI assessment results
+  role      Role     @default(STUDENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  courses      Course[]      @relation("InstructorCourses")
-  orders       Order[]
-  enrollments  Enrollment[]
-  comments     Comment[]
-  notes        Note[]
-  certificates Certificate[]
+  courses         Course[]        @relation("InstructorCourses")
+  orders          Order[]
+  enrollments     Enrollment[]
+  comments        Comment[]
+  notes           Note[]
+  certificates    Certificate[]
+  videoProgresses VideoProgress[]
 }
 
 model Course {
-  id           String       @id @default(uuid())
+  id           String   @id @default(uuid())
   title        String
   description  String
   price        Float
-  published    Boolean      @default(false)
-  isActive     Boolean      @default(true)
+  published    Boolean  @default(false)
+  isActive     Boolean  @default(true)
   instructorId String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  instructor    User          @relation("InstructorCourses", fields: [instructorId], references: [id])
-  sections      Section[]
-  orders        Order[]
-  enrollments   Enrollment[]
-  certificates  Certificate[]
+  instructor   User          @relation("InstructorCourses", fields: [instructorId], references: [id])
+  sections     Section[]
+  orders       Order[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
 }
 
 model Section {
-  id       String   @id @default(uuid())
-  title    String
-  order    Int
+  id        String   @id @default(uuid())
+  title     String
+  order     Int
   courseId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  lessons  Lesson[]
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
 }
 
 model Lesson {
-  id        String     @id @default(uuid())
+  id        String   @id @default(uuid())
   title     String
-  type      String     @default("VIDEO") // VIDEO or DOCUMENT
+  type      String   @default("VIDEO") // VIDEO or DOCUMENT
   videoUrl  String?
   body      String?
-  duration  Int?       // In seconds
+  duration  Int? // In seconds
   format    String?
-  isPreview Boolean    @default(false)
+  isPreview Boolean  @default(false)
   order     Int
   sectionId String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  section    Section    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
-  progresses Progress[]
-  comments   Comment[]
-  notes      Note[]
-  quiz       Quiz?
+  section         Section         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progresses      Progress[]
+  comments        Comment[]
+  notes           Note[]
+  quiz            Quiz?
+  videoProgresses VideoProgress[]
 }
 
 model Quiz {
@@ -109,41 +111,41 @@ model Quiz {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  lesson    Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
 
 model Question {
   id            String   @id @default(uuid())
   quizId        String
   content       String
-  options       String   // JSON string
+  options       String // JSON string
   correctAnswer Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 }
 
 model Order {
   id        String      @id @default(uuid())
   userId    String
-  courseId   String
+  courseId  String
   status    OrderStatus @default(PENDING)
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 
   // Relations
-  user      User        @relation(fields: [userId], references: [id])
-  course    Course      @relation(fields: [courseId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
 }
 
 model Enrollment {
-  id               String     @id @default(uuid())
+  id               String   @id @default(uuid())
   userId           String
   courseId         String
-  completedLessons String     @default("[]") // JSON string field to support SQLite
-  isFinished       Boolean    @default(false)
-  enrolledAt       DateTime   @default(now())
+  completedLessons String   @default("[]") // JSON string field to support SQLite
+  isFinished       Boolean  @default(false)
+  enrolledAt       DateTime @default(now())
 
   // Relations
   user       User       @relation(fields: [userId], references: [id])
@@ -154,32 +156,32 @@ model Enrollment {
 }
 
 model Progress {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   enrollmentId String
   lessonId     String
-  completedAt  DateTime   @default(now())
+  completedAt  DateTime @default(now())
 
   // Relations
-  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
-  lesson       Lesson     @relation(fields: [lessonId], references: [id])
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id])
 
   @@unique([enrollmentId, lessonId])
 }
 
 model Comment {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   content   String
   userId    String
   lessonId  String
   parentId  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  user      User      @relation(fields: [userId], references: [id])
-  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
+  user    User      @relation(fields: [userId], references: [id])
+  lesson  Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[] @relation("CommentReplies")
 }
 
 model Note {
@@ -187,13 +189,13 @@ model Note {
   content        String
   userId         String
   lessonId       String
-  videoTimestamp  Float    @default(0)
+  videoTimestamp Float    @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   // Relations
-  user           User     @relation(fields: [userId], references: [id])
-  lesson         Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
 
 model Certificate {
@@ -208,8 +210,22 @@ model Certificate {
   createdAt         DateTime @default(now())
 
   // Relations
-  user            User     @relation(fields: [userId], references: [id])
-  course          Course   @relation(fields: [courseId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
 
   @@unique([userId, courseId])
+}
+
+model VideoProgress {
+  id          String   @id @default(uuid())
+  userId      String
+  lessonId    String
+  currentTime Float    @default(0) // Playback position in seconds
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
 }

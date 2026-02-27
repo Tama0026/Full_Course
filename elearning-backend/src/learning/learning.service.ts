@@ -3,6 +3,7 @@ import {
     NotFoundException,
     ConflictException,
     BadRequestException,
+    ForbiddenException,
 } from '@nestjs/common';
 import { EnrollmentRepository } from './enrollment.repository';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,6 +11,7 @@ import {
     Enrollment as PrismaEnrollment,
     Progress as PrismaProgress,
     Certificate as PrismaCertificate,
+    VideoProgress as PrismaVideoProgress,
 } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -61,6 +63,43 @@ export class LearningService {
             throw new NotFoundException(
                 'You are not enrolled in this course',
             );
+        }
+
+        // Check if the lesson is locked
+        if (!lesson.isPreview) {
+            const sections = await this.prisma.section.findMany({
+                where: { courseId },
+                select: {
+                    id: true,
+                    lessons: {
+                        select: { id: true, type: true },
+                        orderBy: { order: 'asc' },
+                    },
+                },
+                orderBy: { order: 'asc' },
+            });
+
+            const allLessons = sections.flatMap((s) => s.lessons);
+            const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+
+            if (currentIndex > 0) {
+                const prevLesson = allLessons[currentIndex - 1];
+                const prevQuiz = await this.prisma.quiz.findUnique({
+                    where: { lessonId: prevLesson.id }
+                });
+
+                if (prevQuiz) {
+                    let completedLessons: string[] = [];
+                    try {
+                        const rawEnrollment = enrollment as any;
+                        completedLessons = JSON.parse(rawEnrollment.completedLessons || '[]');
+                    } catch (e) { }
+
+                    if (!completedLessons.includes(prevLesson.id)) {
+                        throw new ForbiddenException('Lesson is locked. Please complete the previous lesson and its quiz first.');
+                    }
+                }
+            }
         }
 
         // Check if already completed
@@ -240,6 +279,35 @@ export class LearningService {
         return this.prisma.certificate.findMany({
             where: { userId },
             orderBy: { issueDate: 'desc' },
+        });
+    }
+
+    /**
+     * Update (or create) the saved video playback position for a lesson.
+     * Allows cross-device resume functionality.
+     */
+    async updateVideoProgress(
+        userId: string,
+        lessonId: string,
+        currentTime: number,
+    ): Promise<PrismaVideoProgress> {
+        return this.prisma.videoProgress.upsert({
+            where: { userId_lessonId: { userId, lessonId } },
+            update: { currentTime },
+            create: { userId, lessonId, currentTime },
+        });
+    }
+
+    /**
+     * Get the saved video playback position for a lesson.
+     * Returns null if no position has been saved yet.
+     */
+    async getVideoProgress(
+        userId: string,
+        lessonId: string,
+    ): Promise<PrismaVideoProgress | null> {
+        return this.prisma.videoProgress.findUnique({
+            where: { userId_lessonId: { userId, lessonId } },
         });
     }
 }

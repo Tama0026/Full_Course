@@ -7,4 +7,5 @@ export declare class AiResolver {
     assessSkill(user: {
         id: string;
     }): Promise<string>;
+    askTutor(question: string, lessonId: string): Promise<string>;
 }

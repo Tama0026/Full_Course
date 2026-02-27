@@ -46,4 +46,17 @@ export class AiResolver {
         console.log(`[AiResolver] assessSkill done — ${result.length} chars`);
         return result;
     }
+
+    /**
+     * AI Tutor — answers a student question using current lesson as context.
+     */
+    @Mutation(() => String, { name: 'askTutor' })
+    @UseGuards(JwtAuthGuard)
+    async askTutor(
+        @Args('question') question: string,
+        @Args('lessonId') lessonId: string,
+    ): Promise<string> {
+        console.log(`[AiResolver] askTutor — lessonId: ${lessonId}`);
+        return this.aiService.askTutor(question, lessonId);
+    }
 }
