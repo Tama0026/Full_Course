@@ -58,8 +58,26 @@ Install dependencies:
 npm install
 ```
 
-Configure Environment Variables:
-Create a `.env` file in the `elearning-backend` directory and add your connection strings and secrets (e.g., `DATABASE_URL`, `JWT_SECRET`, Cloudinary credentials, Google GenAI API key).
+**Configure Environment Variables:**
+Create a `.env` file in the `elearning-backend` directory and add your connection strings and secrets as follows:
+```env
+# Database connection string
+DATABASE_URL="file:./dev.db"  # Use your PostgreSQL/MySQL URL here if not using SQLite
+
+# JWT Configuration
+JWT_SECRET="super-secret-key-change-in-production"
+JWT_EXPIRES_IN="15m"
+JWT_REFRESH_SECRET="super-refresh-secret-key-change-in-production"
+JWT_REFRESH_EXPIRES_IN="7d"
+
+# Google Gemini API
+GEMINI_API_KEY="your_gemini_api_key_here"
+
+# Cloudinary Setup (replace with your real credentials)
+CLOUDINARY_CLOUD_NAME="your_cloud_name"
+CLOUDINARY_API_KEY="your_api_key"
+CLOUDINARY_API_SECRET="your_api_secret"
+```
 
 Set up Prisma and Database:
 ```bash
@@ -85,14 +103,31 @@ Install dependencies:
 npm install
 ```
 
-Configure Environment Variables:
-Create a `.env` or `.env.local` file in the `elearning-frontend` directory and add necessary variables (e.g., `NEXT_PUBLIC_GRAPHQL_ENDPOINT`).
+**Configure Environment Variables:**
+Create a `.env.local` (or `.env`) file in the `elearning-frontend` directory and add the following variables:
+```env
+NEXT_PUBLIC_GRAPHQL_ENDPOINT="http://127.0.0.1:3000/graphql"
+JWT_SECRET="super-secret-key-change-in-production"
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your_cloud_name"
+```
 
 Start the development server:
 ```bash
 npm run dev
 ```
 The frontend application will run at `http://localhost:3000` (or `http://localhost:3001` if port 3000 is occupied).
+
+### 3. Cloudinary Certificate Template Setup
+To enable the automatic generation of course certificates upon completion, you need to upload a **Certificate Template Image** to Cloudinary with a specific **Public ID**.
+
+1. Go to your Cloudinary Media Library dashboard.
+2. Upload a blank certificate image (e.g., a `.jpg` or `.png` file) that serves as the background template for your certificates.
+3. Once uploaded, edit the image details and **rename its Public ID** to EXACTLY:
+   ```text
+   swt470ijgwmqhm6utf6h
+   ```
+   *(Note: This is the ID hardcoded in `elearning-backend/src/cloudinary/cloudinary.service.ts` to dynamically render student names, course names, and dates over the template).*
+4. Alternatively, if you want to use a different template ID, you must change the `templatePublicId` variable inside the `generateCertificateUrl` method located in `elearning-backend/src/cloudinary/cloudinary.service.ts`.
 
 ## Common Commands
 
