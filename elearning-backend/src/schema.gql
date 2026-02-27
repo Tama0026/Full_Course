@@ -1,0 +1,346 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponse {
+  accessToken: String!
+  refreshToken: String!
+  user: User!
+}
+
+type Certificate {
+  certificateCode: String!
+  certificateUrl: String
+  courseId: String!
+  courseName: String
+  courseNameAtIssue: String
+  createdAt: DateTime!
+  id: ID!
+  issueDate: DateTime!
+  userId: String!
+  userName: String
+}
+
+type CloudinarySignature {
+  apiKey: String!
+  cloudName: String!
+  folder: String!
+  signature: String!
+  timestamp: Int!
+  type: String!
+}
+
+type Comment {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  lessonId: String!
+  parentId: String
+  replies: [Comment!]
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+}
+
+type Course {
+  createdAt: DateTime!
+  description: String!
+  id: ID!
+  instructor: User
+  instructorId: String!
+  isActive: Boolean!
+  price: Float!
+  published: Boolean!
+  sections: [Section!]
+  title: String!
+  updatedAt: DateTime!
+}
+
+type CourseProgress {
+  completedItems: [Progress!]!
+  completedLessons: Float!
+  enrollment: Enrollment!
+  progressPercentage: Float!
+  totalLessons: Float!
+}
+
+input CreateCommentInput {
+  content: String!
+  lessonId: String!
+  parentId: String
+}
+
+input CreateCourseInput {
+  description: String!
+  price: Float!
+  published: Boolean = false
+  title: String!
+}
+
+input CreateLessonInput {
+  body: String
+  duration: Int
+  format: String
+  isPreview: Boolean = false
+  order: Int!
+  sectionId: String!
+  title: String!
+  type: String
+  videoUrl: String
+}
+
+input CreateNoteInput {
+  content: String!
+  lessonId: String!
+  videoTimestamp: Float = 0
+}
+
+input CreateOrderInput {
+  courseId: String!
+}
+
+input CreateSectionInput {
+  courseId: String!
+  order: Int!
+  title: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Enrollment {
+  completedLessons: String!
+  course: Course
+  courseId: String!
+  enrolledAt: DateTime!
+  id: ID!
+  isFinished: Boolean!
+  progresses: [Progress!]
+  user: User
+  userId: String!
+}
+
+type InstructorStats {
+  avgCompletionRate: Int!
+  totalCourses: Int!
+  totalRevenue: Float!
+  totalStudents: Int!
+}
+
+type Lesson {
+  body: String
+  createdAt: DateTime!
+  duration: Int
+  format: String
+  id: ID!
+  isLocked: Boolean!
+  isPreview: Boolean!
+  order: Int!
+  quiz: Quiz
+  sectionId: String!
+  title: String!
+  type: String!
+  updatedAt: DateTime!
+  videoUrl: String
+}
+
+input LessonCurriculumInput {
+  body: String
+  duration: Int
+  id: String
+  isPreview: Boolean
+  order: Int
+  title: String!
+  type: String! = "VIDEO"
+  videoUrl: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  assessSkill: String!
+  claimCertificate(courseId: String!): Certificate!
+  createComment(input: CreateCommentInput!): Comment!
+  createCourse(input: CreateCourseInput!): Course!
+  createLesson(input: CreateLessonInput!): Lesson!
+  createNote(input: CreateNoteInput!): Note!
+  createOrder(input: CreateOrderInput!): Order!
+  createSection(input: CreateSectionInput!): Section!
+  deleteComment(id: String!): Comment!
+  deleteCourse(id: String!): Course!
+  deleteLesson(id: String!): Lesson!
+  deleteNote(id: String!): Note!
+  deleteSection(id: String!): Section!
+  generateLessonContent(nonce: Float, title: String!): String!
+  generateQuizWithAI(lessonId: String!): Quiz!
+  login(input: LoginInput!): AuthResponse!
+  markLessonComplete(lessonId: String!): Progress!
+  refreshToken(refreshToken: String!): AuthResponse!
+  register(input: RegisterInput!): AuthResponse!
+  submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
+  toggleCourseStatus(id: String!): Course!
+  updateCourse(id: String!, input: UpdateCourseInput!): Course!
+  updateCurriculum(id: String!, input: UpdateCurriculumInput!): Course!
+  updateNote(id: String!, input: UpdateNoteInput!): Note!
+  updateProfile(input: UpdateProfileInput!): User!
+}
+
+type Note {
+  content: String!
+  createdAt: DateTime!
+  id: ID!
+  lessonId: String!
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+  videoTimestamp: Float!
+}
+
+type Order {
+  course: Course
+  courseId: String!
+  createdAt: DateTime!
+  id: ID!
+  status: OrderStatus!
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+}
+
+"""Order payment status"""
+enum OrderStatus {
+  CANCELLED
+  COMPLETED
+  PENDING
+}
+
+type Progress {
+  completedAt: DateTime!
+  enrollmentId: String!
+  id: ID!
+  lesson: Lesson
+  lessonId: String!
+}
+
+type Query {
+  allOrders: [Order!]!
+  certificateByCode(code: String!): Certificate
+  course(id: String!): Course!
+  courseProgress(courseId: String!): CourseProgress!
+  courses: [Course!]!
+  getQuiz(lessonId: String!): Quiz
+  instructorStats: InstructorStats!
+  isEnrolled(courseId: String!): Boolean!
+  lesson(lessonId: String!): Lesson!
+  lessonComments(lessonId: String!): [Comment!]!
+  lessonNotes(lessonId: String!): [Note!]!
+  me: User!
+  myCertificates: [Certificate!]!
+  myCourses: [Course!]!
+  myEnrollments: [Enrollment!]!
+  myOrders: [Order!]!
+  order(id: String!): Order!
+  suggestCourses(query: String!): String!
+  uploadSignature: CloudinarySignature!
+}
+
+type Question {
+  content: String!
+  correctAnswer: Int!
+  createdAt: DateTime!
+  id: ID!
+  options: String!
+  quizId: String!
+  updatedAt: DateTime!
+}
+
+type Quiz {
+  createdAt: DateTime!
+  id: ID!
+  lessonId: String!
+  questions: [Question!]!
+  updatedAt: DateTime!
+}
+
+input QuizAnswerInput {
+  questionId: String!
+  selectedOption: Int!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  role: Role = STUDENT
+}
+
+"""User roles for RBAC"""
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+type Section {
+  courseId: String!
+  createdAt: DateTime!
+  id: ID!
+  lessons: [Lesson!]
+  order: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+input SectionCurriculumInput {
+  id: String
+  lessons: [LessonCurriculumInput!]! = []
+  order: Int
+  title: String!
+}
+
+type SubmitQuizResponse {
+  message: String
+  score: Int!
+  success: Boolean!
+  totalQuestions: Int!
+}
+
+input UpdateCourseInput {
+  description: String
+  isActive: Boolean
+  price: Float
+  published: Boolean
+  title: String
+}
+
+input UpdateCurriculumInput {
+  sections: [SectionCurriculumInput!]!
+}
+
+input UpdateNoteInput {
+  content: String!
+}
+
+input UpdateProfileInput {
+  avatar: String
+  bio: String
+  headline: String
+  name: String
+}
+
+type User {
+  aiRank: String
+  avatar: String
+  bio: String
+  createdAt: DateTime!
+  email: String!
+  headline: String
+  id: ID!
+  name: String
+  role: Role!
+  updatedAt: DateTime!
+}

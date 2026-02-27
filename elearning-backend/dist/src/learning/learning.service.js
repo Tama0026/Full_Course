@@ -1,0 +1,163 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LearningService = void 0;
+const common_1 = require("@nestjs/common");
+const enrollment_repository_1 = require("./enrollment.repository");
+const prisma_service_1 = require("../prisma/prisma.service");
+const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
+const uuid_1 = require("uuid");
+let LearningService = class LearningService {
+    enrollmentRepository;
+    prisma;
+    cloudinaryService;
+    constructor(enrollmentRepository, prisma, cloudinaryService) {
+        this.enrollmentRepository = enrollmentRepository;
+        this.prisma = prisma;
+        this.cloudinaryService = cloudinaryService;
+    }
+    async markLessonComplete(userId, lessonId) {
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: lessonId },
+            include: { section: { select: { courseId: true } } },
+        });
+        if (!lesson) {
+            throw new common_1.NotFoundException(`Lesson with ID "${lessonId}" not found`);
+        }
+        const courseId = lesson.section.courseId;
+        const enrollment = await this.enrollmentRepository.findByUserAndCourse(userId, courseId);
+        if (!enrollment) {
+            throw new common_1.NotFoundException('You are not enrolled in this course');
+        }
+        const existingProgress = await this.prisma.progress.findUnique({
+            where: {
+                enrollmentId_lessonId: {
+                    enrollmentId: enrollment.id,
+                    lessonId,
+                },
+            },
+        });
+        if (existingProgress) {
+            throw new common_1.ConflictException('Lesson already marked as complete');
+        }
+        return this.prisma.progress.create({
+            data: {
+                enrollmentId: enrollment.id,
+                lessonId,
+            },
+            include: { lesson: true },
+        });
+    }
+    async getProgress(userId, courseId) {
+        const enrollment = await this.enrollmentRepository.findByUserAndCourse(userId, courseId);
+        if (!enrollment) {
+            throw new common_1.NotFoundException('You are not enrolled in this course');
+        }
+        const totalLessons = await this.prisma.lesson.count({
+            where: {
+                section: { courseId },
+            },
+        });
+        const completedLessons = await this.prisma.progress.count({
+            where: {
+                enrollmentId: enrollment.id,
+            },
+        });
+        const completedItems = await this.prisma.progress.findMany({
+            where: {
+                enrollmentId: enrollment.id,
+            },
+            include: { lesson: true },
+            orderBy: { completedAt: 'desc' },
+        });
+        const progressPercentage = totalLessons > 0
+            ? Math.round((completedLessons / totalLessons) * 100 * 100) / 100
+            : 0;
+        return {
+            enrollment,
+            progressPercentage,
+            completedLessons,
+            totalLessons,
+            completedItems,
+        };
+    }
+    async getMyEnrollments(userId) {
+        return this.enrollmentRepository.findByUserId(userId);
+    }
+    async isEnrolled(userId, courseId) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: {
+                userId_courseId: { userId, courseId },
+            },
+        });
+        return !!enrollment;
+    }
+    async claimCertificate(userId, courseId) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } },
+            include: { user: true, course: true },
+        });
+        if (!enrollment) {
+            throw new common_1.BadRequestException('Bạn chưa đăng ký khóa học này!');
+        }
+        const totalLessons = await this.prisma.lesson.count({
+            where: { section: { courseId } },
+        });
+        const completedLessons = await this.prisma.progress.count({
+            where: { enrollmentId: enrollment.id },
+        });
+        if (totalLessons === 0 || completedLessons < totalLessons) {
+            throw new common_1.BadRequestException(`Bạn chưa hoàn thành khóa học này! (${completedLessons}/${totalLessons} bài học)`);
+        }
+        if (!enrollment.isFinished) {
+            await this.prisma.enrollment.update({
+                where: { id: enrollment.id },
+                data: { isFinished: true },
+            });
+        }
+        let certificate = await this.prisma.certificate.findUnique({
+            where: { userId_courseId: { userId, courseId } }
+        });
+        if (certificate) {
+            return certificate;
+        }
+        const studentName = enrollment.user.name || 'Học viên';
+        const courseName = enrollment.course.title;
+        const issueDateObj = new Date();
+        const issueDateStr = `${issueDateObj.getDate()}/${issueDateObj.getMonth() + 1}/${issueDateObj.getFullYear()}`;
+        const certificateUrl = this.cloudinaryService.generateCertificateUrl(studentName, courseName, issueDateStr);
+        certificate = await this.prisma.certificate.create({
+            data: {
+                certificateCode: `CERT-${(0, uuid_1.v4)().split('-')[0].toUpperCase()}`,
+                userId,
+                courseId,
+                courseNameAtIssue: courseName,
+                certificateUrl,
+                issueDate: issueDateObj,
+            }
+        });
+        return certificate;
+    }
+    async getMyCertificates(userId) {
+        return this.prisma.certificate.findMany({
+            where: { userId },
+            orderBy: { issueDate: 'desc' },
+        });
+    }
+};
+exports.LearningService = LearningService;
+exports.LearningService = LearningService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [enrollment_repository_1.EnrollmentRepository,
+        prisma_service_1.PrismaService,
+        cloudinary_service_1.CloudinaryService])
+], LearningService);
+//# sourceMappingURL=learning.service.js.map
