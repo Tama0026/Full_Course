@@ -20,6 +20,7 @@ const enrollment_entity_1 = require("./entities/enrollment.entity");
 const progress_entity_1 = require("./entities/progress.entity");
 const course_progress_entity_1 = require("./entities/course-progress.entity");
 const certificate_entity_1 = require("./entities/certificate.entity");
+const video_progress_entity_1 = require("./entities/video-progress.entity");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const optional_jwt_auth_guard_1 = require("../common/guards/optional-jwt-auth.guard");
 const enrollment_guard_1 = require("../common/guards/enrollment.guard");
@@ -50,6 +51,12 @@ let LearningResolver = class LearningResolver {
     }
     async getMyCertificates(user) {
         return this.learningService.getMyCertificates(user.id);
+    }
+    async updateVideoProgress(user, lessonId, currentTime) {
+        return this.learningService.updateVideoProgress(user.id, lessonId, currentTime);
+    }
+    async getVideoProgress(user, lessonId) {
+        return this.learningService.getVideoProgress(user.id, lessonId);
     }
 };
 exports.LearningResolver = LearningResolver;
@@ -105,6 +112,25 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], LearningResolver.prototype, "getMyCertificates", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => video_progress_entity_1.VideoProgress),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)('lessonId')),
+    __param(2, (0, graphql_1.Args)('currentTime', { type: () => Number })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Number]),
+    __metadata("design:returntype", Promise)
+], LearningResolver.prototype, "updateVideoProgress", null);
+__decorate([
+    (0, graphql_1.Query)(() => video_progress_entity_1.VideoProgress, { name: 'videoProgress', nullable: true }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)('lessonId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], LearningResolver.prototype, "getVideoProgress", null);
 exports.LearningResolver = LearningResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [learning_service_1.LearningService])

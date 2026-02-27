@@ -64,6 +64,14 @@ type CourseProgress {
   totalLessons: Float!
 }
 
+type CourseStats {
+  avgQuizScore: Float!
+  completionRate: Int!
+  courseId: String!
+  studentCount: Int!
+  title: String!
+}
+
 input CreateCommentInput {
   content: String!
   lessonId: String!
@@ -124,6 +132,7 @@ type Enrollment {
 
 type InstructorStats {
   avgCompletionRate: Int!
+  courseBreakdown: [CourseStats!]!
   totalCourses: Int!
   totalRevenue: Float!
   totalStudents: Int!
@@ -163,6 +172,7 @@ input LoginInput {
 }
 
 type Mutation {
+  askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
   claimCertificate(courseId: String!): Certificate!
   createComment(input: CreateCommentInput!): Comment!
@@ -177,7 +187,8 @@ type Mutation {
   deleteNote(id: String!): Note!
   deleteSection(id: String!): Section!
   generateLessonContent(nonce: Float, title: String!): String!
-  generateQuizWithAI(lessonId: String!): Quiz!
+  generateLessonContentWithQuiz(lessonId: String!, quizCount: Int! = 5, title: String!): String!
+  generateQuizWithAI(count: Int! = 5, lessonId: String!): Quiz!
   login(input: LoginInput!): AuthResponse!
   markLessonComplete(lessonId: String!): Progress!
   refreshToken(refreshToken: String!): AuthResponse!
@@ -188,6 +199,8 @@ type Mutation {
   updateCurriculum(id: String!, input: UpdateCurriculumInput!): Course!
   updateNote(id: String!, input: UpdateNoteInput!): Note!
   updateProfile(input: UpdateProfileInput!): User!
+  updateQuiz(input: UpdateQuizInput!): Quiz!
+  updateVideoProgress(currentTime: Float!, lessonId: String!): VideoProgress!
 }
 
 type Note {
@@ -247,16 +260,24 @@ type Query {
   order(id: String!): Order!
   suggestCourses(query: String!): String!
   uploadSignature: CloudinarySignature!
+  videoProgress(lessonId: String!): VideoProgress
 }
 
 type Question {
   content: String!
-  correctAnswer: Int!
+  correctAnswer: Int
   createdAt: DateTime!
   id: ID!
   options: String!
   quizId: String!
   updatedAt: DateTime!
+}
+
+input QuestionInput {
+  content: String!
+  correctAnswer: Int!
+  id: String
+  options: [String!]!
 }
 
 type Quiz {
@@ -332,6 +353,11 @@ input UpdateProfileInput {
   name: String
 }
 
+input UpdateQuizInput {
+  lessonId: String!
+  questions: [QuestionInput!]!
+}
+
 type User {
   aiRank: String
   avatar: String
@@ -343,4 +369,12 @@ type User {
   name: String
   role: Role!
   updatedAt: DateTime!
+}
+
+type VideoProgress {
+  currentTime: Float!
+  id: ID!
+  lessonId: String!
+  updatedAt: DateTime!
+  userId: String!
 }

@@ -68,7 +68,22 @@ export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const user = await getTokenPayload(request);
 
-    // ── 1) Protected routes — redirect to login if unauthenticated ──
+    // If user is INSTRUCTOR, they can ONLY access /instructor prefixed pages (and API/static ones ignored by matcher)
+    // If they try to access the root '/' or any other route, redirect them back to their dashboard.
+    if (user && user.role === "INSTRUCTOR") {
+        if (!matchesPrefix(pathname, INSTRUCTOR_PREFIXES)) {
+            return NextResponse.redirect(new URL(ROUTES.INSTRUCTOR, request.url));
+        }
+    }
+
+    // If user is ADMIN, they can ONLY access /admin prefixed pages
+    if (user && user.role === "ADMIN") {
+        if (!matchesPrefix(pathname, ADMIN_PREFIXES)) {
+            return NextResponse.redirect(new URL(ROUTES.ADMIN, request.url));
+        }
+    }
+
+    // ── 1) Protected routes — redirect to login if unauthenticated (For Students mainly) ──
     if (matchesPrefix(pathname, PROTECTED_PREFIXES)) {
         if (!user) {
             const loginUrl = new URL(ROUTES.LOGIN, request.url);
@@ -79,31 +94,18 @@ export async function middleware(request: NextRequest) {
         // ── 2) Student-only routes — only STUDENT can access ──
         if (matchesPrefix(pathname, STUDENT_PREFIXES)) {
             if (user.role !== "STUDENT") {
-                // Instructor/Admin trying to access student pages → send to their dashboard
-                return NextResponse.redirect(new URL(getDashboardForRole(user.role), request.url));
-            }
-        }
-
-        // ── 3) Instructor-only routes — only INSTRUCTOR/ADMIN can access ──
-        if (matchesPrefix(pathname, INSTRUCTOR_PREFIXES)) {
-            if (user.role !== "INSTRUCTOR" && user.role !== "ADMIN") {
-                // Student trying to access instructor pages → send to student dashboard
-                return NextResponse.redirect(new URL(getDashboardForRole(user.role), request.url));
-            }
-        }
-
-        // ── 4) Admin-only routes ──
-        if (matchesPrefix(pathname, ADMIN_PREFIXES)) {
-            if (user.role !== "ADMIN") {
                 return NextResponse.redirect(new URL(getDashboardForRole(user.role), request.url));
             }
         }
     }
 
-    // ── 5) Auth pages — redirect to correct dashboard if already logged in ──
+    // ── 3) Auth pages — redirect to correct dashboard if already logged in ──
     if (AUTH_PAGES.includes(pathname) && user) {
         return NextResponse.redirect(new URL(getDashboardForRole(user.role), request.url));
     }
+
+    // Prevent direct access to '/' if you are not a student (students can see home, others are redirected above)
+    // But since the logic above already redirects INSTRUCTOR and ADMIN if they hit '/', we are safe.
 
     return NextResponse.next();
 }

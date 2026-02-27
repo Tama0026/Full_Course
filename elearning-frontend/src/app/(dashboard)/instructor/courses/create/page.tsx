@@ -50,7 +50,6 @@ export default function CreateCoursePage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
-    const [published, setPublished] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Step 2: Curriculum
@@ -219,7 +218,7 @@ export default function CreateCoursePage() {
                         title: title.trim(),
                         description: description.trim(),
                         price: parseFloat(price),
-                        published,
+                        published: false,
                     },
                 },
             });
@@ -341,7 +340,7 @@ export default function CreateCoursePage() {
                                 {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid gap-4 sm:grid-cols-1">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giá (VNĐ) *</label>
                                     <input
@@ -353,23 +352,6 @@ export default function CreateCoursePage() {
                                         className={cn("w-full rounded-lg border px-4 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20", errors.price ? "border-red-300 focus:border-red-500" : "border-slate-300 focus:border-primary-500")}
                                     />
                                     {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Trạng thái</label>
-                                    <button
-                                        onClick={() => setPublished(!published)}
-                                        className={cn(
-                                            "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-all",
-                                            published
-                                                ? "border-green-300 bg-green-50 text-green-700"
-                                                : "border-slate-300 text-slate-500"
-                                        )}
-                                    >
-                                        {published ? "Công khai" : "Bản nháp"}
-                                        <div className={cn("h-5 w-9 rounded-full transition-colors flex items-center px-0.5", published ? "bg-green-500" : "bg-slate-300")}>
-                                            <div className={cn("h-4 w-4 rounded-full bg-white transition-transform", published ? "translate-x-4" : "translate-x-0")} />
-                                        </div>
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -482,12 +464,6 @@ export default function CreateCoursePage() {
                                         <span className="text-xs font-semibold uppercase text-slate-400">Bài học</span>
                                         <p className="text-lg font-bold text-slate-900 mt-0.5">{totalLessons}</p>
                                     </div>
-                                </div>
-                                <div>
-                                    <span className="text-xs font-semibold uppercase text-slate-400">Trạng thái</span>
-                                    <p className={cn("text-sm font-medium mt-0.5", published ? "text-green-600" : "text-amber-600")}>
-                                        {published ? "Công khai ngay" : "Bản nháp"}
-                                    </p>
                                 </div>
                             </div>
 

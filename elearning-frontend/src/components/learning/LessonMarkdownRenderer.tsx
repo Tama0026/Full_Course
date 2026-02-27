@@ -218,7 +218,7 @@ export default function LessonMarkdownRenderer({ body, title, className }: Lesso
                     ),
 
                     /* ── Code blocks ── */
-                    code: ({ className: codeClassName, children, ...props }) => {
+                    code: ({ className: codeClassName, children }) => {
                         const match = /language-(\w+)/.exec(codeClassName || "");
                         const codeString = String(children).replace(/\n$/, "");
 
@@ -260,7 +260,7 @@ export default function LessonMarkdownRenderer({ body, title, className }: Lesso
 
                         // Inline code
                         return (
-                            <code className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700 border border-blue-100" {...props}>
+                            <code className="rounded-md bg-blue-50 px-1.5 py-0.5 text-xs font-mono text-blue-700 border border-blue-100">
                                 {children}
                             </code>
                         );

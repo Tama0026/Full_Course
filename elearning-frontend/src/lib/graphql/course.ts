@@ -119,6 +119,13 @@ export const GET_INSTRUCTOR_STATS = gql`
       totalStudents
       totalRevenue
       avgCompletionRate
+      courseBreakdown {
+        courseId
+        title
+        studentCount
+        completionRate
+        avgQuizScore
+      }
     }
   }
 `;
@@ -132,6 +139,12 @@ export const SUGGEST_COURSES = gql`
 export const GENERATE_LESSON_CONTENT = gql`
   mutation GenerateLessonContent($title: String!, $nonce: Float) {
     generateLessonContent(title: $title, nonce: $nonce)
+  }
+`;
+
+export const GENERATE_LESSON_CONTENT_WITH_QUIZ = gql`
+  mutation GenerateLessonContentWithQuiz($title: String!, $lessonId: String!, $quizCount: Int = 5) {
+    generateLessonContentWithQuiz(title: $title, lessonId: $lessonId, quizCount: $quizCount)
   }
 `;
 

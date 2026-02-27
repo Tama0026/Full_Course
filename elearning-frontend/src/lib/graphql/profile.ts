@@ -17,9 +17,9 @@ export const UPDATE_PROFILE = gql`
 `;
 
 export const GET_MY_CERTIFICATES = gql`
-  query GetMyCertificates {
+  query GetMyCertificatesProfile {
     myCertificates {
-      id certificateCode userId courseId userName courseName issueDate createdAt
+      id certificateCode userId courseId userName courseName courseNameAtIssue issueDate createdAt
     }
   }
 `;

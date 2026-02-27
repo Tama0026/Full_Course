@@ -3,7 +3,7 @@ import { gql } from "@apollo/client";
 export const GET_LESSON = gql`
   query GetLesson($lessonId: String!) {
     lesson(lessonId: $lessonId) {
-      id title order type videoUrl body sectionId
+      id title order type videoUrl body sectionId isLocked
       createdAt updatedAt
     }
   }
@@ -93,6 +93,27 @@ export const GET_MY_CERTIFICATES = gql`
       certificateUrl
       issueDate
       createdAt
+    }
+  }
+`;
+
+export const UPDATE_VIDEO_PROGRESS = gql`
+  mutation UpdateVideoProgress($lessonId: String!, $currentTime: Float!) {
+    updateVideoProgress(lessonId: $lessonId, currentTime: $currentTime) {
+      id
+      lessonId
+      currentTime
+      updatedAt
+    }
+  }
+`;
+
+export const GET_VIDEO_PROGRESS = gql`
+  query GetVideoProgress($lessonId: String!) {
+    videoProgress(lessonId: $lessonId) {
+      id
+      lessonId
+      currentTime
     }
   }
 `;

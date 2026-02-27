@@ -5,6 +5,7 @@ import { Enrollment } from './entities/enrollment.entity';
 import { Progress } from './entities/progress.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { Certificate } from './entities/certificate.entity';
+import { VideoProgress } from './entities/video-progress.entity';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../common/guards/optional-jwt-auth.guard';
 import { EnrollmentGuard } from '../common/guards/enrollment.guard';
@@ -93,5 +94,37 @@ export class LearningResolver {
         @CurrentUser() user: { id: string },
     ): Promise<Certificate[]> {
         return this.learningService.getMyCertificates(user.id) as unknown as Certificate[];
+    }
+
+    /**
+     * Save video playback position (upsert) for cross-device resume.
+     */
+    @Mutation(() => VideoProgress)
+    @UseGuards(JwtAuthGuard)
+    async updateVideoProgress(
+        @CurrentUser() user: { id: string },
+        @Args('lessonId') lessonId: string,
+        @Args('currentTime', { type: () => Number }) currentTime: number,
+    ): Promise<VideoProgress> {
+        return this.learningService.updateVideoProgress(
+            user.id,
+            lessonId,
+            currentTime,
+        ) as unknown as VideoProgress;
+    }
+
+    /**
+     * Get saved video position for a specific lesson.
+     */
+    @Query(() => VideoProgress, { name: 'videoProgress', nullable: true })
+    @UseGuards(JwtAuthGuard)
+    async getVideoProgress(
+        @CurrentUser() user: { id: string },
+        @Args('lessonId') lessonId: string,
+    ): Promise<VideoProgress | null> {
+        return this.learningService.getVideoProgress(
+            user.id,
+            lessonId,
+        ) as unknown as VideoProgress | null;
     }
 }

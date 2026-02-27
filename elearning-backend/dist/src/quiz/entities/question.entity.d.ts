@@ -3,7 +3,7 @@ export declare class Question {
     quizId: string;
     content: string;
     options: string;
-    correctAnswer: number;
+    correctAnswer?: number;
     createdAt: Date;
     updatedAt: Date;
 }

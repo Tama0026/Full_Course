@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 /* ======================================================
    E-learning Design System — Blue / White / Dark Slate
    Tailwind CSS v4 @theme configuration
@@ -94,13 +94,16 @@ body {
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--color-muted);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--color-slate-300);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-slate-400);
 }

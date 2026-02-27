@@ -3,6 +3,7 @@ import { Enrollment } from './entities/enrollment.entity';
 import { Progress } from './entities/progress.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { Certificate } from './entities/certificate.entity';
+import { VideoProgress } from './entities/video-progress.entity';
 export declare class LearningResolver {
     private readonly learningService;
     constructor(learningService: LearningService);
@@ -24,4 +25,10 @@ export declare class LearningResolver {
     getMyCertificates(user: {
         id: string;
     }): Promise<Certificate[]>;
+    updateVideoProgress(user: {
+        id: string;
+    }, lessonId: string, currentTime: number): Promise<VideoProgress>;
+    getVideoProgress(user: {
+        id: string;
+    }, lessonId: string): Promise<VideoProgress | null>;
 }

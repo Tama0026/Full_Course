@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Toaster } from "sonner";
 import { ApolloWrapper } from "@/lib/apollo-client";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="vi" className={inter.variable}>
       <body className="antialiased">
         <ApolloWrapper>{children}</ApolloWrapper>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

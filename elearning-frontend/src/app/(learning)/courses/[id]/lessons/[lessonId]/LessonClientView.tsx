@@ -19,10 +19,11 @@ import {
     Download,
     PartyPopper,
 } from "lucide-react";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
 import { Course, Lesson, Progress, Section } from "@/lib/graphql/types";
-import { MARK_LESSON_COMPLETE, CLAIM_CERTIFICATE } from "@/lib/graphql/learning";
+import { MARK_LESSON_COMPLETE, CLAIM_CERTIFICATE, UPDATE_VIDEO_PROGRESS, GET_VIDEO_PROGRESS } from "@/lib/graphql/learning";
+import AiTutorWidget from "@/components/common/AiTutorWidget";
 import {
     Dialog,
     DialogContent,
@@ -189,6 +190,28 @@ export function LessonClientView({
 
     const [markComplete] = useMutation(MARK_LESSON_COMPLETE);
     const [claimCertificate] = useMutation(CLAIM_CERTIFICATE);
+    const [saveVideoProgress] = useMutation<any>(UPDATE_VIDEO_PROGRESS);
+
+    // Fetch saved video time for the current lesson
+    const { data: videoProgressData } = useQuery<any>(GET_VIDEO_PROGRESS, {
+        variables: { lessonId: activeLessonId },
+        fetchPolicy: "network-only",
+        skip: !activeLessonId,
+    });
+
+    // Seek to saved position when video is ready
+    const savedCurrentTime: number = videoProgressData?.videoProgress?.currentTime ?? 0;
+
+    // Save video progress every 10 seconds
+    const progressSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (progressSaveIntervalRef.current) {
+                clearInterval(progressSaveIntervalRef.current);
+            }
+        };
+    }, []);
 
     // Flatten all lessons from sections
     const allLessons = course.sections?.flatMap(s => s.lessons || []) || [];
@@ -233,6 +256,14 @@ export function LessonClientView({
             newSet.add(activeLessonId);
             setCompletedIds(newSet);
             setProgress(Math.round((newSet.size / Math.max(1, allLessons.length)) * 100));
+
+            // Auto-navigate to next lesson or claim certificate if last
+            if (nextLesson && !nextLesson.isLocked) {
+                navigateToLesson(nextLesson.id);
+            } else if (!nextLesson) {
+                // If it's the very last lesson, scroll to top so they see the certificate banner
+                window.scrollTo({ top: 0, behavior: "smooth" });
+            }
         } catch (error) {
             console.error("Failed to mark lesson complete:", error);
             // In a real app, maybe show a toast here
@@ -370,10 +401,34 @@ export function LessonClientView({
                                         controls
                                         controlsList="nodownload"
                                         className="absolute top-0 left-0 w-full h-full bg-black relative z-20"
-                                        onCanPlay={() => {
-                                            console.log('[VideoPlayer] Native video can play:', activeLesson.videoUrl?.substring(0, 80));
+                                        onCanPlay={(e) => {
+                                            const videoEl = e.currentTarget;
+                                            if (savedCurrentTime > 5) {
+                                                videoEl.currentTime = savedCurrentTime;
+                                            }
                                             setVideoReady(true);
                                             setVideoError(false);
+                                        }}
+                                        onPlay={() => {
+                                            if (progressSaveIntervalRef.current) clearInterval(progressSaveIntervalRef.current);
+                                            progressSaveIntervalRef.current = setInterval(() => {
+                                                const el = playerRef.current as HTMLVideoElement | null;
+                                                if (el && !el.paused && el.currentTime > 0) {
+                                                    saveVideoProgress({ variables: { lessonId: activeLessonId, currentTime: el.currentTime } });
+                                                }
+                                            }, 10_000);
+                                        }}
+                                        onPause={(e) => {
+                                            if (progressSaveIntervalRef.current) {
+                                                clearInterval(progressSaveIntervalRef.current);
+                                                progressSaveIntervalRef.current = null;
+                                            }
+                                            const ct = e.currentTarget.currentTime;
+                                            if (ct > 0) saveVideoProgress({ variables: { lessonId: activeLessonId, currentTime: ct } });
+                                        }}
+                                        onEnded={() => {
+                                            if (progressSaveIntervalRef.current) clearInterval(progressSaveIntervalRef.current);
+                                            saveVideoProgress({ variables: { lessonId: activeLessonId, currentTime: 0 } });
                                         }}
                                         onError={(e) => {
                                             console.error('[VideoPlayer] Native video error:', e, 'URL:', activeLesson.videoUrl?.substring(0, 80));
@@ -426,16 +481,7 @@ export function LessonClientView({
                             <h1 className="text-xl font-bold text-slate-900 lg:text-2xl">{activeLesson?.title}</h1>
                             <p className="mt-1 text-sm text-slate-500">Tiến độ khóa học: {progress}%</p>
                         </div>
-                        {!isCompleted ? (
-                            <button
-                                onClick={handleMarkComplete}
-                                disabled={marking}
-                                className="shrink-0 flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
-                            >
-                                {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                                Hoàn thành
-                            </button>
-                        ) : (
+                        {isCompleted && (
                             <span className="shrink-0 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 px-4 py-2 text-sm font-medium text-green-700">
                                 <CheckCircle2 className="h-4 w-4" /> Đã hoàn thành
                             </span>
@@ -450,7 +496,15 @@ export function LessonClientView({
                     {/* Navigation buttons */}
                     <div className="flex items-center justify-between mb-6">
                         <button
-                            onClick={() => prevLesson && navigateToLesson(prevLesson.id)}
+                            onClick={() => {
+                                if (prevLesson) {
+                                    if (prevLesson.isLocked) {
+                                        alert("🔒 Bài học này đã bị khóa.");
+                                        return;
+                                    }
+                                    navigateToLesson(prevLesson.id);
+                                }
+                            }}
                             disabled={!prevLesson}
                             className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         >
@@ -458,7 +512,13 @@ export function LessonClientView({
                         </button>
                         {nextLesson && (
                             <button
-                                onClick={() => navigateToLesson(nextLesson.id)}
+                                onClick={() => {
+                                    if (nextLesson.isLocked) {
+                                        alert("🔒 Bài học này đã bị khóa. Vui lòng hoàn thành bài học hiện tại (hoặc Quiz) trước khi qua bài này.");
+                                        return;
+                                    }
+                                    navigateToLesson(nextLesson.id);
+                                }}
                                 className="flex items-center gap-1 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
                             >
                                 Bài tiếp theo <ChevronRight className="h-4 w-4" />
@@ -607,6 +667,14 @@ export function LessonClientView({
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* AI Tutor floating widget — context-aware to the active lesson */}
+            {activeLesson && (
+                <AiTutorWidget
+                    lessonId={activeLesson.id}
+                    lessonTitle={activeLesson.title}
+                />
+            )}
         </>
     );
 }

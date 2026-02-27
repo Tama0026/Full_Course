@@ -9,6 +9,7 @@ export declare class CoursesService {
     private readonly courseRepository;
     private readonly prisma;
     constructor(courseRepository: CourseRepository, prisma: PrismaService);
+    validateCourseContent(courseId: string): Promise<void>;
     createCourse(input: CreateCourseInput, instructorId: string): Promise<PrismaCourse>;
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
     deleteCourse(id: string): Promise<PrismaCourse>;
@@ -26,6 +27,13 @@ export declare class CoursesService {
         totalStudents: number;
         totalRevenue: number;
         avgCompletionRate: number;
+        courseBreakdown: {
+            courseId: string;
+            title: string;
+            studentCount: number;
+            completionRate: number;
+            avgQuizScore: number;
+        }[];
     }>;
     updateCurriculum(courseId: string, input: any): Promise<({
         sections: ({

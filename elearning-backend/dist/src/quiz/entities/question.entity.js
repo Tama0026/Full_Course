@@ -38,7 +38,7 @@ __decorate([
     __metadata("design:type", String)
 ], Question.prototype, "options", void 0);
 __decorate([
-    (0, graphql_1.Field)(() => graphql_1.Int),
+    (0, graphql_1.Field)(() => graphql_1.Int, { nullable: true }),
     __metadata("design:type", Number)
 ], Question.prototype, "correctAnswer", void 0);
 __decorate([
