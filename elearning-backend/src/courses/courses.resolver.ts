@@ -189,6 +189,18 @@ export class LessonResolver {
 export class CoursesResolver {
     constructor(private readonly coursesService: CoursesService) { }
 
+    // ==================== RESOLVE FIELDS ====================
+
+    @ResolveField('learningOutcomes', () => [String])
+    resolveLearningOutcomes(@Parent() course: any): string[] {
+        if (Array.isArray(course.learningOutcomes)) return course.learningOutcomes;
+        try {
+            return JSON.parse(course.learningOutcomes || '[]');
+        } catch {
+            return [];
+        }
+    }
+
     // ==================== PUBLIC QUERIES ====================
 
     /**

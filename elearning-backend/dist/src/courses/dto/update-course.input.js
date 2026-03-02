@@ -18,6 +18,9 @@ let UpdateCourseInput = class UpdateCourseInput {
     price;
     published;
     isActive;
+    thumbnail;
+    category;
+    learningOutcomes;
 };
 exports.UpdateCourseInput = UpdateCourseInput;
 __decorate([
@@ -51,6 +54,23 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpdateCourseInput.prototype, "isActive", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCourseInput.prototype, "thumbnail", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCourseInput.prototype, "category", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], UpdateCourseInput.prototype, "learningOutcomes", void 0);
 exports.UpdateCourseInput = UpdateCourseInput = __decorate([
     (0, graphql_1.InputType)()
 ], UpdateCourseInput);

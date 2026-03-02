@@ -23,6 +23,7 @@ export declare class LessonResolver {
 export declare class CoursesResolver {
     private readonly coursesService;
     constructor(coursesService: CoursesService);
+    resolveLearningOutcomes(course: any): string[];
     getCourses(): Promise<Course[]>;
     getCourse(id: string): Promise<Course>;
     getMyCourses(user: {

@@ -9,12 +9,14 @@ import {
     Shield,
     Star,
     TrendingUp,
+    Trophy,
     Users,
     Sparkles,
     Zap,
 } from "lucide-react";
 import { motion, useInView, type Variants } from "framer-motion";
 import Link from "next/link";
+import Leaderboard from "@/components/gamification/Leaderboard";
 
 /* ── Framer Motion Variants ── */
 const fadeInUp: Variants = {
@@ -230,8 +232,24 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                                         href={`/courses/${course.id}`}
                                         className="group flex flex-col h-full rounded-2xl border border-slate-200 bg-white p-5 transition-all hover:shadow-xl hover:-translate-y-1 hover:border-primary-200"
                                     >
-                                        <div className="mb-4 aspect-video w-full rounded-xl bg-gradient-to-br from-primary-100 via-indigo-50 to-violet-100 flex items-center justify-center">
-                                            <BookOpen className="h-10 w-10 text-primary-300 group-hover:text-primary-500 transition-colors" />
+                                        <div className="mb-4 aspect-video w-full rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 via-indigo-50 to-violet-100 flex items-center justify-center relative">
+                                            {course.thumbnail ? (
+                                                <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                            ) : (
+                                                <BookOpen className="h-10 w-10 text-primary-300 group-hover:text-primary-500 transition-colors" />
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            {course.category && (
+                                                <span className="text-[10px] font-bold uppercase tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded-md">
+                                                    {course.category}
+                                                </span>
+                                            )}
+                                            <div className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                                                <Star className="h-3.5 w-3.5 fill-current" />
+                                                {course.averageRating > 0 ? course.averageRating.toFixed(1) : "Mới"}
+                                                {course.reviewCount > 0 && <span className="text-slate-400 font-normal">({course.reviewCount})</span>}
+                                            </div>
                                         </div>
                                         <h3 className="text-sm font-semibold text-slate-900 line-clamp-2 group-hover:text-primary-700 transition-colors">
                                             {course.title}
@@ -241,7 +259,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                                         </p>
                                         <div className="mt-auto pt-4 flex items-center justify-between">
                                             <span className="text-xs text-slate-400">
-                                                {course.lessonCount} bài học
+                                                {course.totalDuration > 0 ? `${Math.round(course.totalDuration / 3600)} giờ học` : `${course.lessonCount || 0} bài học`}
                                             </span>
                                             <span className="text-sm font-bold text-primary-600">
                                                 {course.price > 0
@@ -323,6 +341,32 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                             </motion.div>
                         ))}
                     </motion.div>
+                </div>
+            </section>
+
+            {/* ════════════════════════════════════════════════
+          LEADERBOARD SECTION
+          ════════════════════════════════════════════════ */}
+            <section className="py-20 lg:py-28 bg-white">
+                <div className="mx-auto max-w-3xl px-4 lg:px-8">
+                    <motion.div
+                        className="text-center mb-10"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: false, margin: "-80px" }}
+                        variants={fadeInUp}
+                    >
+                        <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-amber-700 mb-4">
+                            <Trophy className="h-3.5 w-3.5" /> Top Students
+                        </span>
+                        <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
+                            Bảng xếp hạng
+                        </h2>
+                        <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-500">
+                            Những học viên xuất sắc nhất trên nền tảng.
+                        </p>
+                    </motion.div>
+                    <Leaderboard variant="compact" limit={5} />
                 </div>
             </section>
 

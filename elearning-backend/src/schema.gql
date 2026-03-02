@@ -2,10 +2,52 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type AchievementStats {
+  earnedBadges: Int!
+  globalRank: Int!
+  percentile: Float!
+  totalBadges: Int!
+  totalPoints: Int!
+  userAvatar: String
+  userName: String
+}
+
 type AuthResponse {
   accessToken: String!
   refreshToken: String!
   user: User!
+}
+
+type BadgeType {
+  awardedAt: DateTime
+  courseId: String
+  courseName: String
+  creatorId: String!
+  criteria: String!
+  description: String!
+  icon: String!
+  id: ID!
+  name: String!
+}
+
+type BadgeWithStatus {
+  awardedAt: DateTime
+  courseId: String
+  courseName: String
+  criteria: String!
+  description: String!
+  earned: Boolean!
+  icon: String!
+  id: String!
+  name: String!
+}
+
+type Category {
+  createdAt: DateTime!
+  id: ID!
+  name: String!
+  order: Int!
+  slug: String!
 }
 
 type Certificate {
@@ -19,6 +61,11 @@ type Certificate {
   issueDate: DateTime!
   userId: String!
   userName: String
+}
+
+input ChatMessageInput {
+  content: String!
+  role: String!
 }
 
 type CloudinarySignature {
@@ -43,16 +90,22 @@ type Comment {
 }
 
 type Course {
+  averageRating: Float!
+  category: String
   createdAt: DateTime!
   description: String!
   id: ID!
   instructor: User
   instructorId: String!
   isActive: Boolean!
+  learningOutcomes: [String!]!
   price: Float!
   published: Boolean!
+  reviewCount: Float!
   sections: [Section!]
+  thumbnail: String
   title: String!
+  totalDuration: Float!
   updatedAt: DateTime!
 }
 
@@ -72,6 +125,18 @@ type CourseStats {
   title: String!
 }
 
+input CreateBadgeInput {
+  courseId: String!
+  criteria: String!
+  description: String!
+  icon: String! = "🏅"
+  name: String!
+}
+
+input CreateCategoryInput {
+  name: String!
+}
+
 input CreateCommentInput {
   content: String!
   lessonId: String!
@@ -79,9 +144,12 @@ input CreateCommentInput {
 }
 
 input CreateCourseInput {
+  category: String
   description: String!
+  learningOutcomes: [String!]
   price: Float!
   published: Boolean = false
+  thumbnail: String
   title: String!
 }
 
@@ -138,6 +206,22 @@ type InstructorStats {
   totalStudents: Int!
 }
 
+type InterviewResponse {
+  courseId: String!
+  courseName: String!
+  reply: String!
+}
+
+type LeaderboardEntry {
+  id: ID!
+  rank: Int
+  totalPoints: Int!
+  updatedAt: DateTime!
+  userAvatar: String
+  userId: String!
+  userName: String
+}
+
 type Lesson {
   body: String
   createdAt: DateTime!
@@ -174,15 +258,20 @@ input LoginInput {
 type Mutation {
   askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
+  chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
   claimCertificate(courseId: String!): Certificate!
+  createCategory(input: CreateCategoryInput!): Category!
   createComment(input: CreateCommentInput!): Comment!
   createCourse(input: CreateCourseInput!): Course!
+  createCourseBadge(input: CreateBadgeInput!): BadgeType!
   createLesson(input: CreateLessonInput!): Lesson!
   createNote(input: CreateNoteInput!): Note!
   createOrder(input: CreateOrderInput!): Order!
   createSection(input: CreateSectionInput!): Section!
+  deleteCategory(id: String!): Category!
   deleteComment(id: String!): Comment!
   deleteCourse(id: String!): Course!
+  deleteCourseBadge(badgeId: String!): Boolean!
   deleteLesson(id: String!): Lesson!
   deleteNote(id: String!): Note!
   deleteSection(id: String!): Section!
@@ -194,8 +283,10 @@ type Mutation {
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
   submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
+  suggestLearningOutcomes(description: String!, title: String!): [String!]!
   toggleCourseStatus(id: String!): Course!
   updateCourse(id: String!, input: UpdateCourseInput!): Course!
+  updateCourseBadge(badgeId: String!, input: UpdateBadgeInput!): BadgeType!
   updateCurriculum(id: String!, input: UpdateCurriculumInput!): Course!
   updateNote(id: String!, input: UpdateNoteInput!): Note!
   updateProfile(input: UpdateProfileInput!): User!
@@ -241,24 +332,33 @@ type Progress {
 }
 
 type Query {
+  allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
+  categories: [Category!]!
   certificateByCode(code: String!): Certificate
   course(id: String!): Course!
+  courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
   courses: [Course!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!
   isEnrolled(courseId: String!): Boolean!
+  isInterviewUnlocked(courseId: String!): Boolean!
   lesson(lessonId: String!): Lesson!
   lessonComments(lessonId: String!): [Comment!]!
   lessonNotes(lessonId: String!): [Note!]!
   me: User!
+  myAchievementStats: AchievementStats!
+  myBadges: [BadgeType!]!
   myCertificates: [Certificate!]!
   myCourses: [Course!]!
+  myCreatedBadges: [BadgeType!]!
   myEnrollments: [Enrollment!]!
   myOrders: [Order!]!
+  myPoints: Int!
   order(id: String!): Order!
   suggestCourses(query: String!): String!
+  topStudents(limit: Int! = 10): [LeaderboardEntry!]!
   uploadSignature: CloudinarySignature!
   videoProgress(lessonId: String!): VideoProgress
 }
@@ -330,11 +430,21 @@ type SubmitQuizResponse {
   totalQuestions: Int!
 }
 
+input UpdateBadgeInput {
+  criteria: String
+  description: String
+  icon: String
+  name: String
+}
+
 input UpdateCourseInput {
+  category: String
   description: String
   isActive: Boolean
+  learningOutcomes: [String!]
   price: Float
   published: Boolean
+  thumbnail: String
   title: String
 }
 

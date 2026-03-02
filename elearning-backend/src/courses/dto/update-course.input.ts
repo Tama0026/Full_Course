@@ -28,4 +28,18 @@ export class UpdateCourseInput {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @Field({ nullable: true })
+    @IsOptional()
+    @IsString()
+    thumbnail?: string;
+
+    @Field({ nullable: true })
+    @IsOptional()
+    @IsString()
+    category?: string;
+
+    @Field(() => [String], { nullable: true })
+    @IsOptional()
+    learningOutcomes?: string[];
 }

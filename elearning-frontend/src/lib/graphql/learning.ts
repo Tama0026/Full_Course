@@ -40,6 +40,7 @@ export const GET_MY_ENROLLMENTS = gql`
       course {
         id
         title
+        thumbnail
         instructor { id email }
         sections {
           id

@@ -115,5 +115,19 @@ export class AiResolver {
         console.log(`[AiResolver] askTutor — lessonId: ${lessonId}`);
         return this.aiService.askTutor(question, lessonId);
     }
+
+    /**
+     * AI Learning Outcomes — suggests 5-8 learning outcomes for a course.
+     */
+    @Mutation(() => [String], { name: 'suggestLearningOutcomes' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async suggestLearningOutcomes(
+        @Args('title') title: string,
+        @Args('description') description: string,
+    ): Promise<string[]> {
+        console.log(`[AiResolver] suggestLearningOutcomes — title: "${title}"`);
+        return this.aiService.suggestLearningOutcomes(title, description);
+    }
 }
 

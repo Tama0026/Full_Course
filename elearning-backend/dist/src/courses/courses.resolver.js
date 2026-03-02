@@ -198,6 +198,16 @@ let CoursesResolver = class CoursesResolver {
     constructor(coursesService) {
         this.coursesService = coursesService;
     }
+    resolveLearningOutcomes(course) {
+        if (Array.isArray(course.learningOutcomes))
+            return course.learningOutcomes;
+        try {
+            return JSON.parse(course.learningOutcomes || '[]');
+        }
+        catch {
+            return [];
+        }
+    }
     async getCourses() {
         return this.coursesService.getPublishedCourses();
     }
@@ -242,6 +252,13 @@ let CoursesResolver = class CoursesResolver {
     }
 };
 exports.CoursesResolver = CoursesResolver;
+__decorate([
+    (0, graphql_1.ResolveField)('learningOutcomes', () => [String]),
+    __param(0, (0, graphql_1.Parent)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Array)
+], CoursesResolver.prototype, "resolveLearningOutcomes", null);
 __decorate([
     (0, graphql_1.Query)(() => [course_entity_1.Course], { name: 'courses' }),
     (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),

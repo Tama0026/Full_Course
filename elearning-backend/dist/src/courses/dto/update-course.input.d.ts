@@ -4,4 +4,7 @@ export declare class UpdateCourseInput {
     price?: number;
     published?: boolean;
     isActive?: boolean;
+    thumbnail?: string;
+    category?: string;
+    learningOutcomes?: string[];
 }

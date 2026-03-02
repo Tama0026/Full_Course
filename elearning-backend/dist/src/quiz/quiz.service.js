@@ -13,12 +13,15 @@ exports.QuizService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const ai_service_1 = require("../ai/ai.service");
+const gamification_service_1 = require("../gamification/gamification.service");
 let QuizService = class QuizService {
     prisma;
     aiService;
-    constructor(prisma, aiService) {
+    gamificationService;
+    constructor(prisma, aiService, gamificationService) {
         this.prisma = prisma;
         this.aiService = aiService;
+        this.gamificationService = gamificationService;
     }
     async generateQuizWithAI(lessonId, count = 5) {
         const lesson = await this.prisma.lesson.findUnique({
@@ -110,6 +113,7 @@ let QuizService = class QuizService {
         }
         const isPassed = (score / totalQuestions) >= 0.8;
         if (isPassed) {
+            await this.gamificationService.addPoints(userId, score * 10);
             const lesson = await this.prisma.lesson.findUnique({
                 where: { id: lessonId },
                 include: { section: { select: { courseId: true } } },
@@ -158,6 +162,7 @@ exports.QuizService = QuizService;
 exports.QuizService = QuizService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        ai_service_1.AiService])
+        ai_service_1.AiService,
+        gamification_service_1.GamificationService])
 ], QuizService);
 //# sourceMappingURL=quiz.service.js.map

@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { triggerConfetti } from "@/lib/confetti";
+
 interface QuizSectionProps {
     lessonId: string;
     onSuccess?: () => void;
@@ -56,8 +58,11 @@ export default function QuizSection({ lessonId, onSuccess }: QuizSectionProps) {
 
             if ((res.data as any)?.submitQuiz) {
                 setResult((res.data as any).submitQuiz);
-                if ((res.data as any).submitQuiz.success && onSuccess) {
-                    onSuccess(); // Trigger parent refresh to unlock next lesson
+                if ((res.data as any).submitQuiz.success) {
+                    triggerConfetti();
+                    if (onSuccess) {
+                        onSuccess(); // Trigger parent refresh to unlock next lesson
+                    }
                 }
             }
         } catch (err: any) {

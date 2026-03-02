@@ -52,6 +52,7 @@ let CoursesService = class CoursesService {
         }
         return this.courseRepository.create({
             ...input,
+            learningOutcomes: input.learningOutcomes ? JSON.stringify(input.learningOutcomes) : '[]',
             instructorId,
         });
     }
@@ -63,9 +64,11 @@ let CoursesService = class CoursesService {
         if (input.published === true || input.isActive === true) {
             await this.validateCourseContent(id);
         }
-        return this.courseRepository.update(id, {
-            ...input,
-        });
+        const updateData = { ...input };
+        if (input.learningOutcomes !== undefined) {
+            updateData.learningOutcomes = JSON.stringify(input.learningOutcomes);
+        }
+        return this.courseRepository.update(id, updateData);
     }
     async deleteCourse(id) {
         const course = await this.courseRepository.findById(id);
@@ -278,6 +281,20 @@ let CoursesService = class CoursesService {
                     }
                 }
             }
+            const updatedSections = await tx.section.findMany({
+                where: { courseId },
+                include: { lessons: { select: { duration: true } } },
+            });
+            let newTotalDuration = 0;
+            for (const section of updatedSections) {
+                for (const lesson of section.lessons) {
+                    newTotalDuration += lesson.duration || 0;
+                }
+            }
+            await tx.course.update({
+                where: { id: courseId },
+                data: { totalDuration: newTotalDuration },
+            });
             return tx.course.findUnique({
                 where: { id: courseId },
                 include: {

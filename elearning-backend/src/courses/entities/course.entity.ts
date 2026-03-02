@@ -16,6 +16,24 @@ export class Course {
     @Field(() => Float)
     price: number;
 
+    @Field({ nullable: true })
+    thumbnail?: string;
+
+    @Field({ nullable: true })
+    category?: string;
+
+    @Field(() => [String], { nullable: true })
+    learningOutcomes?: string[];
+
+    @Field(() => Float)
+    averageRating: number;
+
+    @Field(() => Float)
+    reviewCount: number;
+
+    @Field(() => Float)
+    totalDuration: number;
+
     @Field()
     published: boolean;
 

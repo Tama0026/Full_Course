@@ -385,6 +385,82 @@ Hướng dẫn:
             throw new common_1.InternalServerErrorException('Lỗi khi hỏi AI Tutor.');
         }
     }
+    async conductInterview(courseContext, courseName, userMessage, history) {
+        if (!process.env.GEMINI_API_KEY) {
+            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+        }
+        let conversationHistory = '';
+        if (history.length > 0) {
+            conversationHistory = '\n\nLịch sử hội thoại trước đó:\n';
+            for (const msg of history.slice(-10)) {
+                const role = msg.role === 'user' ? 'Ứng viên' : 'Nhà tuyển dụng';
+                conversationHistory += `${role}: ${msg.content}\n`;
+            }
+        }
+        const prompt = `
+Bạn là một nhà tuyển dụng công nghệ (Tech Recruiter) chuyên nghiệp, đang phỏng vấn một ứng viên.
+
+Kiến thức của ứng viên dựa trên khóa học sau:
+---
+${courseContext.slice(0, 4000)}
+---
+
+Tên khóa học: "${courseName}"
+${conversationHistory}
+
+Tin nhắn mới từ ứng viên: "${userMessage}"
+
+Hướng dẫn phỏng vấn:
+- Hỏi các câu hỏi kỹ thuật liên quan đến nội dung khóa học trên.
+- Bắt đầu từ câu hỏi dễ, sau đó tăng dần độ khó.
+- Nếu ứng viên trả lời đúng, khen ngợi ngắn gọn rồi hỏi câu tiếp theo khó hơn.
+- Nếu ứng viên trả lời sai hoặc thiếu, giải thích ngắn gọn đáp án đúng rồi chuyển sang câu khác.
+- Nếu đây là tin nhắn đầu tiên (chưa có lịch sử), hãy chào hỏi chuyên nghiệp và bắt đầu với câu hỏi đầu tiên.
+- Giữ phong cách chuyên nghiệp nhưng thân thiện.
+- Trả lời bằng tiếng Việt, tối đa 200 từ.
+- Tự động đánh giá ứng viên đạt hoặc không đạt sau khi kết thúc phỏng vấn.
+- Hỏi số lượng câu hỏi vừa đủ để đánh giá
+- Dùng Markdown nếu cần format code.
+        `;
+        try {
+            console.log(`[AiService] conductInterview — course: "${courseName}", msg: "${userMessage.slice(0, 60)}"`);
+            const text = await this.generateWithFallback(prompt);
+            return text || 'Xin lỗi, tôi không thể xử lý câu trả lời lúc này.';
+        }
+        catch (error) {
+            const msg = error?.message || '';
+            console.error(`[AiService] conductInterview error:`, msg.slice(0, 200));
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                throw new common_1.InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
+            }
+            throw new common_1.InternalServerErrorException('Lỗi khi phỏng vấn AI.');
+        }
+    }
+    async suggestLearningOutcomes(title, description) {
+        if (!process.env.GEMINI_API_KEY) {
+            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
+        }
+        const prompt = `Bạn là chuyên gia thiết kế khóa học. Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5-8 mục tiêu học tập (string). Mỗi mục bắt đầu bằng động từ hành động. Chỉ trả về JSON, không giải thích.`;
+        try {
+            console.log(`[AiService] Suggesting learning outcomes — title: "${title}"`);
+            const text = await this.generateWithFallback(prompt);
+            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+            const outcomes = JSON.parse(cleaned);
+            if (!Array.isArray(outcomes)) {
+                throw new Error('AI response is not an array');
+            }
+            console.log(`[AiService] Learning outcomes done — ${outcomes.length} items`);
+            return outcomes.map((o) => String(o));
+        }
+        catch (error) {
+            const msg = error?.message || '';
+            console.error(`[AiService] suggestLearningOutcomes error:`, msg.slice(0, 200));
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                throw new common_1.InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
+            }
+            throw new common_1.InternalServerErrorException(`Learning outcomes generation failed: ${msg.slice(0, 100) || 'unknown'}`);
+        }
+    }
 };
 exports.AiService = AiService;
 exports.AiService = AiService = __decorate([

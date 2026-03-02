@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
+import { GET_CATEGORIES } from "@/lib/graphql/category";
 import {
     ArrowLeft,
     Check,
@@ -13,6 +14,10 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 import { GET_COURSE_DETAIL, UPDATE_COURSE, GET_MY_COURSES } from "@/lib/graphql/course";
 import CurriculumEditor from "./CurriculumEditor";
+import LearningOutcomesEditor from "./LearningOutcomesEditor";
+import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
+
+
 
 export default function EditCoursePage() {
     const params = useParams();
@@ -24,6 +29,9 @@ export default function EditCoursePage() {
         skip: !courseId,
     });
 
+    const { data: catData } = useQuery<any>(GET_CATEGORIES);
+    const categories: string[] = (catData?.categories || []).map((c: any) => c.name);
+
     const [updateCourse, { loading: saving }] = useMutation(UPDATE_COURSE, {
         refetchQueries: [{ query: GET_MY_COURSES }],
     });
@@ -32,6 +40,8 @@ export default function EditCoursePage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
+    const [category, setCategory] = useState("");
+    const [thumbnail, setThumbnail] = useState("");
     const [published, setPublished] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -43,6 +53,8 @@ export default function EditCoursePage() {
             setTitle(data.course.title || "");
             setDescription(data.course.description || "");
             setPrice(String(data.course.price ?? ""));
+            setCategory(data.course.category || "");
+            setThumbnail(data.course.thumbnail || "");
             setPublished(data.course.published ?? false);
         }
     }, [data]);
@@ -69,6 +81,9 @@ export default function EditCoursePage() {
                         title: title.trim(),
                         description: description.trim(),
                         price: parseFloat(price),
+                        published,
+                        category,
+                        thumbnail: thumbnail || null,
                     },
                 },
             });
@@ -165,8 +180,8 @@ export default function EditCoursePage() {
                         {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
                     </div>
 
-                    {/* Price */}
-                    <div className="grid gap-4 sm:grid-cols-1">
+                    {/* Price & Category & Thumbnail */}
+                    <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                                 Giá (VNĐ) *
@@ -186,6 +201,55 @@ export default function EditCoursePage() {
                             )}
                             {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
                         </div>
+                        <div>
+                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">Chuyên mục *</label>
+                            <select
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
+                            >
+                                {categories.length === 0 && <option value="">Đang tải...</option>}
+                                {categories.map((c: string) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ảnh bìa khóa học</label>
+                        <CloudinaryUploader
+                            resourceType="auto"
+                            currentUrl={thumbnail}
+                            onUploadSuccess={(url) => setThumbnail(url)}
+                            onClear={() => setThumbnail("")}
+                        />
+                        <p className="mt-1.5 text-xs text-slate-500">Khuyến nghị ảnh tỷ lệ 16:9, kích thước tối thiểu 1280x720px.</p>
+                    </div>
+
+                    {/* Publish Toggle */}
+                    <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-5 py-4">
+                        <div>
+                            <p className="text-sm font-semibold text-slate-700">Xuất bản khóa học</p>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                {published
+                                    ? "Khóa học đang hiển thị công khai cho học viên."
+                                    : "Khóa học đang ẩn. Bật để học viên có thể nhìn thấy."}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setPublished(!published)}
+                            className={cn(
+                                "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500/20",
+                                published ? "bg-emerald-500" : "bg-slate-300"
+                            )}
+                        >
+                            <span
+                                className={cn(
+                                    "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
+                                    published ? "translate-x-5" : "translate-x-0"
+                                )}
+                            />
+                        </button>
                     </div>
 
                     {/* Save button */}
@@ -203,6 +267,13 @@ export default function EditCoursePage() {
                         </button>
                     </div>
                 </div>
+
+                <LearningOutcomesEditor
+                    courseId={course.id}
+                    courseTitle={course.title}
+                    courseDescription={course.description}
+                    initialOutcomes={course.learningOutcomes || []}
+                />
 
                 <CurriculumEditor courseId={course.id} initialSections={course.sections || []} />
             </div>

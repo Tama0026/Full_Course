@@ -11,4 +11,5 @@ export declare class AiResolver {
         id: string;
     }): Promise<string>;
     askTutor(question: string, lessonId: string): Promise<string>;
+    suggestLearningOutcomes(title: string, description: string): Promise<string[]>;
 }

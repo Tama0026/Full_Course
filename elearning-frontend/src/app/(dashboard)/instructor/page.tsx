@@ -229,6 +229,16 @@ export default function InstructorDashboard() {
                             return (
                                 <div key={course.id} className={cn("rounded-xl border border-slate-200 bg-white p-5 transition-all hover:shadow-sm", !course.isActive && "opacity-60")}>
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        {/* Thumbnail */}
+                                        <div className="hidden sm:block h-16 w-28 shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-violet-100 to-indigo-50">
+                                            {course.thumbnail ? (
+                                                <img src={course.thumbnail} alt={course.title} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center">
+                                                    <BookOpen className="h-6 w-6 text-violet-300" />
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <h3 className="text-base font-semibold text-slate-900 truncate">{course.title}</h3>

@@ -12,12 +12,13 @@ const quiz_service_1 = require("./quiz.service");
 const quiz_resolver_1 = require("./quiz.resolver");
 const prisma_module_1 = require("../prisma/prisma.module");
 const ai_module_1 = require("../ai/ai.module");
+const gamification_module_1 = require("../gamification/gamification.module");
 let QuizModule = class QuizModule {
 };
 exports.QuizModule = QuizModule;
 exports.QuizModule = QuizModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, ai_module_1.AiModule],
+        imports: [prisma_module_1.PrismaModule, ai_module_1.AiModule, gamification_module_1.GamificationModule],
         providers: [quiz_resolver_1.QuizResolver, quiz_service_1.QuizService],
         exports: [quiz_service_1.QuizService],
     })

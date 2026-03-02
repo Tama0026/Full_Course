@@ -2,22 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@apollo/client/react";
+import { useMutation, useQuery } from "@apollo/client/react";
 import {
     ArrowLeft,
     ArrowRight,
     BookOpen,
     Check,
+    CheckCircle2,
     GraduationCap,
     LayoutList,
     Loader2,
     Plus,
+    Sparkles,
     Trash2,
     Video,
     X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CREATE_COURSE, CREATE_SECTION, CREATE_LESSON, GET_MY_COURSES, GENERATE_LESSON_CONTENT } from "@/lib/graphql/course";
+import { CREATE_COURSE, CREATE_SECTION, CREATE_LESSON, GET_MY_COURSES, GENERATE_LESSON_CONTENT, SUGGEST_LEARNING_OUTCOMES } from "@/lib/graphql/course";
+import { GET_CATEGORIES } from "@/lib/graphql/category";
 import { useApolloClient } from "@apollo/client/react";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
 
@@ -42,14 +45,24 @@ const STEPS = [
     { label: "Xác nhận & Xuất bản", icon: Check },
 ];
 
+
+
 export default function CreateCoursePage() {
     const router = useRouter();
     const [step, setStep] = useState(0);
+
+    // Fetch categories dynamically
+    const { data: catData } = useQuery<any>(GET_CATEGORIES);
+    const categories: string[] = (catData?.categories || []).map((c: any) => c.name);
 
     // Step 1: General info
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
+    const [category, setCategory] = useState("");
+    const [thumbnail, setThumbnail] = useState("");
+    const [learningOutcomes, setLearningOutcomes] = useState<string[]>([""]);
+    const [suggestingAi, setSuggestingAi] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     // Step 2: Curriculum
@@ -74,6 +87,7 @@ export default function CreateCoursePage() {
     const [createLesson] = useMutation(CREATE_LESSON, {
         refetchQueries: [{ query: GET_MY_COURSES }],
     });
+    const [suggestOutcomesMutation] = useMutation(SUGGEST_LEARNING_OUTCOMES);
 
     const [submitting, setSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -219,6 +233,9 @@ export default function CreateCoursePage() {
                         description: description.trim(),
                         price: parseFloat(price),
                         published: false,
+                        category,
+                        thumbnail: thumbnail || null,
+                        learningOutcomes: learningOutcomes.filter(o => o.trim() !== ""),
                     },
                 },
             });
@@ -340,7 +357,7 @@ export default function CreateCoursePage() {
                                 {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-1">
+                            <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giá (VNĐ) *</label>
                                     <input
@@ -353,6 +370,98 @@ export default function CreateCoursePage() {
                                     />
                                     {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
                                 </div>
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Chuyên mục *</label>
+                                    <select
+                                        value={category}
+                                        onChange={(e) => setCategory(e.target.value)}
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
+                                    >
+                                        {categories.length === 0 && <option value="">Đang tải...</option>}
+                                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ảnh bìa khóa học</label>
+                                <CloudinaryUploader
+                                    resourceType="auto"
+                                    currentUrl={thumbnail}
+                                    onUploadSuccess={(url) => setThumbnail(url)}
+                                    onClear={() => setThumbnail("")}
+                                />
+                                <p className="mt-1.5 text-xs text-slate-500">Khuyến nghị ảnh tỷ lệ 16:9, kích thước tối thiểu 1280x720px.</p>
+                            </div>
+
+                            {/* Learning Outcomes */}
+                            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                                <div className="mb-3 flex items-center justify-between">
+                                    <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                        <GraduationCap className="h-4 w-4 text-primary-600" />
+                                        Mục tiêu học tập
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (suggestingAi || !title.trim()) return;
+                                            setSuggestingAi(true);
+                                            try {
+                                                const { data } = await suggestOutcomesMutation({
+                                                    variables: { title: title.trim(), description: description.trim() },
+                                                });
+                                                const suggested = (data as any)?.suggestLearningOutcomes;
+                                                if (Array.isArray(suggested) && suggested.length > 0) {
+                                                    setLearningOutcomes(suggested);
+                                                }
+                                            } catch (err) {
+                                                console.error("AI suggest failed:", err);
+                                            } finally {
+                                                setSuggestingAi(false);
+                                            }
+                                        }}
+                                        disabled={suggestingAi || !title.trim()}
+                                        className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:from-indigo-600 hover:to-purple-700 disabled:opacity-50 transition-all shadow-sm"
+                                    >
+                                        {suggestingAi ? (
+                                            <><Loader2 className="h-3 w-3 animate-spin" /> Đang gợi ý...</>
+                                        ) : (
+                                            <><Sparkles className="h-3 w-3" /> AI Gợi ý</>
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="mb-3 text-xs text-slate-500">Nhập tiêu đề trước, sau đó nhấn "AI Gợi ý" để tự động điền.</p>
+                                <div className="space-y-2">
+                                    {learningOutcomes.map((outcome, idx) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                                            <input
+                                                value={outcome}
+                                                onChange={(e) => {
+                                                    const copy = [...learningOutcomes];
+                                                    copy[idx] = e.target.value;
+                                                    setLearningOutcomes(copy);
+                                                }}
+                                                placeholder={`Mục tiêu ${idx + 1}...`}
+                                                className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setLearningOutcomes(learningOutcomes.filter((_, i) => i !== idx))}
+                                                className="text-slate-300 hover:text-red-500 transition-colors"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setLearningOutcomes([...learningOutcomes, ""])}
+                                    className="mt-2 flex items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-800 transition-colors"
+                                >
+                                    <Plus className="h-3.5 w-3.5" /> Thêm mục tiêu
+                                </button>
                             </div>
                         </div>
                     )}
@@ -529,104 +638,106 @@ export default function CreateCoursePage() {
             </div>
 
             {/* ═══ Lesson Dialog ═══ */}
-            {dialogOpen && (
-                <>
-                    <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setDialogOpen(false)} />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-                            <div className="mb-4 flex items-center justify-between">
-                                <h3 className="text-lg font-bold text-slate-900">Thêm bài học</h3>
-                                <button onClick={() => setDialogOpen(false)} className="text-slate-400 hover:text-slate-600">
-                                    <X className="h-5 w-5" />
-                                </button>
-                            </div>
+            {
+                dialogOpen && (
+                    <>
+                        <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={() => setDialogOpen(false)} />
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h3 className="text-lg font-bold text-slate-900">Thêm bài học</h3>
+                                    <button onClick={() => setDialogOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                        <X className="h-5 w-5" />
+                                    </button>
+                                </div>
 
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="mb-1 block text-sm font-semibold text-slate-700">Tiêu đề bài học *</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            value={lessonTitle}
-                                            onChange={(e) => setLessonTitle(e.target.value)}
-                                            placeholder="Ví dụ: Giới thiệu React Components"
-                                            className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                                        />
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="mb-1 block text-sm font-semibold text-slate-700">Tiêu đề bài học *</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                value={lessonTitle}
+                                                onChange={(e) => setLessonTitle(e.target.value)}
+                                                placeholder="Ví dụ: Giới thiệu React Components"
+                                                className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={generateAiContent}
+                                                disabled={!lessonTitle || generatingAi}
+                                                className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                                            >
+                                                {generatingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gợi ý AI (văn bản)"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
                                         <button
                                             type="button"
-                                            onClick={generateAiContent}
-                                            disabled={!lessonTitle || generatingAi}
-                                            className="flex shrink-0 items-center justify-center rounded-lg bg-indigo-600 px-3 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-                                        >
-                                            {generatingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gợi ý AI (văn bản)"}
-                                        </button>
+                                            onClick={() => setLessonType("VIDEO")}
+                                            className={cn("px-4 py-2 text-sm font-medium rounded-lg border transition-colors", lessonType === "VIDEO" ? "bg-primary-50 border-primary-500 text-primary-700" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
+                                        >Video Link</button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLessonType("DOCUMENT")}
+                                            className={cn("px-4 py-2 text-sm font-medium rounded-lg border transition-colors", lessonType === "DOCUMENT" ? "bg-primary-50 border-primary-500 text-primary-700" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
+                                        >Soạn thảo (Văn bản)</button>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setLessonType("VIDEO")}
-                                        className={cn("px-4 py-2 text-sm font-medium rounded-lg border transition-colors", lessonType === "VIDEO" ? "bg-primary-50 border-primary-500 text-primary-700" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
-                                    >Video Link</button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setLessonType("DOCUMENT")}
-                                        className={cn("px-4 py-2 text-sm font-medium rounded-lg border transition-colors", lessonType === "DOCUMENT" ? "bg-primary-50 border-primary-500 text-primary-700" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
-                                    >Soạn thảo (Văn bản)</button>
-                                </div>
-                                {lessonType === "VIDEO" ? (
-                                    <div>
-                                        <label className="mb-1 block text-sm font-semibold text-slate-700">Tải lên Video</label>
-                                        <CloudinaryUploader
-                                            resourceType="video"
-                                            currentUrl={lessonVideoUrl}
-                                            onUploadSuccess={(url: string) => setLessonVideoUrl(url)}
-                                            onClear={() => setLessonVideoUrl("")}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
+                                    {lessonType === "VIDEO" ? (
                                         <div>
-                                            <label className="mb-1 block text-sm font-semibold text-slate-700">Soạn thảo nội dung (Markdown)</label>
-                                            <textarea
-                                                value={lessonBody}
-                                                onChange={(e) => setLessonBody(e.target.value)}
-                                                rows={5}
-                                                placeholder="Nội dung bài viết..."
-                                                className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-1 block text-sm font-semibold text-slate-700">Tài liệu đính kèm (PDF - Tùy chọn)</label>
+                                            <label className="mb-1 block text-sm font-semibold text-slate-700">Tải lên Video</label>
                                             <CloudinaryUploader
-                                                resourceType="raw"
+                                                resourceType="video"
                                                 currentUrl={lessonVideoUrl}
                                                 onUploadSuccess={(url: string) => setLessonVideoUrl(url)}
                                                 onClear={() => setLessonVideoUrl("")}
                                             />
                                         </div>
-                                    </div>
-                                )}
-                            </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="mb-1 block text-sm font-semibold text-slate-700">Soạn thảo nội dung (Markdown)</label>
+                                                <textarea
+                                                    value={lessonBody}
+                                                    onChange={(e) => setLessonBody(e.target.value)}
+                                                    rows={5}
+                                                    placeholder="Nội dung bài viết..."
+                                                    className="w-full resize-none rounded-lg border border-slate-300 px-4 py-2 text-sm placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="mb-1 block text-sm font-semibold text-slate-700">Tài liệu đính kèm (PDF - Tùy chọn)</label>
+                                                <CloudinaryUploader
+                                                    resourceType="raw"
+                                                    currentUrl={lessonVideoUrl}
+                                                    onUploadSuccess={(url: string) => setLessonVideoUrl(url)}
+                                                    onClear={() => setLessonVideoUrl("")}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
 
-                            <div className="mt-6 flex justify-end gap-2">
-                                <button
-                                    onClick={() => setDialogOpen(false)}
-                                    className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                >
-                                    Hủy
-                                </button>
-                                <button
-                                    onClick={addLesson}
-                                    disabled={!lessonTitle.trim()}
-                                    className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
-                                >
-                                    Thêm
-                                </button>
+                                <div className="mt-6 flex justify-end gap-2">
+                                    <button
+                                        onClick={() => setDialogOpen(false)}
+                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        onClick={addLesson}
+                                        disabled={!lessonTitle.trim()}
+                                        className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        Thêm
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </>
-            )}
-        </div>
+                    </>
+                )
+            }
+        </div >
     );
 }

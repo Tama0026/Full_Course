@@ -14,6 +14,8 @@ import {
     VideoProgress as PrismaVideoProgress,
 } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { GamificationService } from '../gamification/gamification.service';
+import { EmailService } from '../email/email.service';
 import { v4 as uuidv4 } from 'uuid';
 
 /** Shape returned by getProgress including computed fields */
@@ -31,6 +33,8 @@ export class LearningService {
         private readonly enrollmentRepository: EnrollmentRepository,
         private readonly prisma: PrismaService,
         private readonly cloudinaryService: CloudinaryService,
+        private readonly gamificationService: GamificationService,
+        private readonly emailService: EmailService,
     ) { }
 
     /**
@@ -117,13 +121,18 @@ export class LearningService {
         }
 
         // Create progress record
-        return this.prisma.progress.create({
+        const progress = await this.prisma.progress.create({
             data: {
                 enrollmentId: enrollment.id,
                 lessonId,
             },
             include: { lesson: true },
         });
+
+        // Gamification: +5 points for completing a lesson
+        await this.gamificationService.addPoints(userId, 5);
+
+        return progress;
     }
 
     /**
@@ -268,6 +277,15 @@ export class LearningService {
                 issueDate: issueDateObj,
             }
         });
+
+        // Send congratulatory email with certificate
+        const userEmail = enrollment.user.email;
+        this.emailService.sendCertificateEmail(
+            userEmail,
+            studentName,
+            courseName,
+            certificateUrl,
+        ).catch(err => console.error('[LearningService] Email send failed:', err.message));
 
         return certificate;
     }

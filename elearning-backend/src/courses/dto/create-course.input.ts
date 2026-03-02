@@ -1,5 +1,5 @@
 import { InputType, Field, Float } from '@nestjs/graphql';
-import { IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 @InputType()
 export class CreateCourseInput {
@@ -19,4 +19,18 @@ export class CreateCourseInput {
     @Field({ nullable: true, defaultValue: false })
     @IsOptional()
     published?: boolean;
+
+    @Field({ nullable: true })
+    @IsOptional()
+    @IsString()
+    thumbnail?: string;
+
+    @Field({ nullable: true })
+    @IsOptional()
+    @IsString()
+    category?: string;
+
+    @Field(() => [String], { nullable: true })
+    @IsOptional()
+    learningOutcomes?: string[];
 }

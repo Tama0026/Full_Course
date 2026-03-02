@@ -18,10 +18,12 @@ import {
     Award,
     Download,
     PartyPopper,
-    Info, // Added Info icon
+    Info,
 } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
+import { triggerRainConfetti } from "@/lib/confetti";
+import { motion } from "framer-motion";
 import { Course, Lesson, Progress, Section } from "@/lib/graphql/types";
 import { MARK_LESSON_COMPLETE, CLAIM_CERTIFICATE, UPDATE_VIDEO_PROGRESS, GET_VIDEO_PROGRESS } from "@/lib/graphql/learning";
 import AiTutorWidget from "@/components/common/AiTutorWidget";
@@ -256,13 +258,18 @@ export function LessonClientView({
             const newSet = new Set(completedIds);
             newSet.add(activeLessonId);
             setCompletedIds(newSet);
-            setProgress(Math.round((newSet.size / Math.max(1, allLessons.length)) * 100));
+            const newProgress = Math.round((newSet.size / Math.max(1, allLessons.length)) * 100);
+            setProgress(newProgress);
 
-            // Auto-navigate to next lesson or claim certificate if last
-            if (nextLesson && !nextLesson.isLocked) {
+            // Trigger confetti and modal if all lessons are completed
+            if (newProgress >= 100 && progress < 100) {
+                triggerRainConfetti(3000);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                // Auto-claim and open certificate modal
+                handleClaimCert();
+            } else if (nextLesson && !nextLesson.isLocked) {
                 navigateToLesson(nextLesson.id);
             } else if (!nextLesson) {
-                // If it's the very last lesson, scroll to top so they see the certificate banner
                 window.scrollTo({ top: 0, behavior: "smooth" });
             }
         } catch (error) {
@@ -601,7 +608,7 @@ export function LessonClientView({
                                     <PartyPopper className="h-10 w-10 text-white" />
                                 </div>
                                 <div className="flex-1 text-center md:text-left">
-                                    <h3 className="text-xl font-bold text-slate-900">🎉 Chúc mừng! Bạn đã hoàn thành khóa học!</h3>
+                                    <h3 className="text-xl font-bold text-slate-900">Chúc mừng! Bạn đã hoàn thành khóa học!</h3>
                                     <p className="mt-1 text-sm text-slate-600">
                                         Bạn đã hoàn thành tất cả bài học trong khóa <strong>{course.title}</strong>. Nhận chứng chỉ của bạn ngay bây giờ!
                                     </p>
@@ -662,34 +669,43 @@ export function LessonClientView({
 
             {/* Certificate Preview Modal */}
             <Dialog open={certModalOpen} onOpenChange={setCertModalOpen}>
-                <DialogContent className="max-w-4xl p-6 md:p-8 bg-zinc-900 border-zinc-800 text-white rounded-2xl shadow-2xl">
-                    <DialogHeader className="mb-4">
-                        <DialogTitle className="text-xl font-bold text-yellow-400">
-                            🎉 Chứng chỉ hoàn thành khóa học
-                        </DialogTitle>
-                    </DialogHeader>
+                <DialogContent className="max-w-4xl p-6 md:p-8 bg-zinc-900 border-zinc-800 text-white rounded-2xl shadow-2xl overflow-hidden overflow-y-auto max-h-[90vh]">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                    >
+                        <DialogHeader className="mb-6 text-center">
+                            <DialogTitle className="text-2xl md:text-3xl font-bold text-yellow-400 font-sans">
+                                Chúc mừng bạn đã chinh phục thành công khóa học {course.title}!
+                            </DialogTitle>
+                            <p className="text-slate-300 mt-2 text-sm md:text-base">
+                                Công sức của bạn đã được đền đáp xứng đáng. Dưới đây là chứng chỉ hoàn thành khóa học dành riêng cho bạn.
+                            </p>
+                        </DialogHeader>
 
-                    {certUrl && (
-                        <div className="flex flex-col items-center gap-6">
-                            <div className="relative w-full aspect-[1.4/1] bg-black/50 rounded-lg overflow-hidden border border-zinc-700 shadow-xl flex justify-center items-center">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={certUrl}
-                                    alt="Chứng chỉ hoàn thành khóa học"
-                                    className="object-contain max-w-full max-h-full"
-                                />
+                        {certUrl && (
+                            <div className="flex flex-col items-center gap-6 mt-4">
+                                <div className="relative w-full aspect-[1.4/1] bg-black/50 rounded-lg overflow-hidden border border-zinc-700 shadow-xl flex justify-center items-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={certUrl}
+                                        alt="Chứng chỉ hoàn thành khóa học"
+                                        className="object-contain max-w-full max-h-full"
+                                    />
+                                </div>
+
+                                <a
+                                    href={certUrl.replace('/upload/', '/upload/fl_attachment/')}
+                                    download="Certificate.jpg"
+                                    className="inline-flex items-center gap-2 px-8 py-4 mt-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold text-lg rounded-full transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-[0_4px_20px_rgba(234,179,8,0.5)]"
+                                >
+                                    <Download className="h-6 w-6" />
+                                    Tải Xuống Chứng Chỉ
+                                </a>
                             </div>
-
-                            <a
-                                href={certUrl.replace('/upload/', '/upload/fl_attachment/')}
-                                download="Certificate.jpg"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(234,179,8,0.4)]"
-                            >
-                                <Download className="h-5 w-5" />
-                                Tải Xuống Chứng Chỉ
-                            </a>
-                        </div>
-                    )}
+                        )}
+                    </motion.div>
                 </DialogContent>
             </Dialog>
 

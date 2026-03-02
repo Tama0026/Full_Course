@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
     BookOpen,
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { motion, type Variants } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { triggerConfetti } from "@/lib/confetti";
+import Leaderboard from "@/components/gamification/Leaderboard";
 
 /* ── Framer Motion Variants ── */
 const fadeInUp: Variants = {
@@ -108,22 +110,6 @@ export default function StudentDashboard() {
 
     const [claimCertificate, { loading: claiming }] = useMutation(CLAIM_CERTIFICATE);
 
-    if (loading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
-                Có lỗi xảy ra: {error.message}
-            </div>
-        );
-    }
-
     const enrollments = data?.myEnrollments || [];
 
     const processedCourses = enrollments.map((enrollment: any) => {
@@ -140,6 +126,7 @@ export default function StudentDashboard() {
         return {
             id: course.id,
             title: course.title,
+            thumbnail: course.thumbnail,
             instructor: course.instructor?.email,
             totalLessons,
             completedLessons,
@@ -160,6 +147,12 @@ export default function StudentDashboard() {
     const totalLessonsAll = processedCourses.reduce((s: number, c: any) => s + c.totalLessons, 0);
     const overallPct = totalLessonsAll > 0 ? Math.round((totalLessonsCompleted / totalLessonsAll) * 100) : 0;
 
+    useEffect(() => {
+        if (overallPct === 100 && totalCourses > 0) {
+            triggerConfetti();
+        }
+    }, [overallPct, totalCourses]);
+
     const allProgresses: any[] = [];
     enrollments.forEach((enrollment: any) => {
         const allLessons = enrollment.course.sections?.flatMap((s: any) => s.lessons) || [];
@@ -177,6 +170,22 @@ export default function StudentDashboard() {
 
     allProgresses.sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
     const recentActivity = allProgresses.slice(0, 5);
+
+    if (loading) {
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
+                Có lỗi xảy ra: {error.message}
+            </div>
+        );
+    }
 
     const handleClaimCert = async (courseId: string) => {
         try {
@@ -208,7 +217,7 @@ export default function StudentDashboard() {
                     <ProgressDonut percentage={overallPct} />
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 lg:text-3xl">
-                            Xin chào! 👋
+                            Xin chào!
                         </h1>
                         <p className="mt-1 text-slate-500">
                             Tiếp tục hành trình học tập của bạn.
@@ -283,8 +292,12 @@ export default function StudentDashboard() {
                             transition={{ type: "spring", stiffness: 300, damping: 20 }}
                             className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-lg"
                         >
-                            <div className="mb-4 aspect-video w-full rounded-xl bg-gradient-to-br from-primary-100 via-indigo-50 to-violet-100 flex items-center justify-center">
-                                <BookOpen className="h-10 w-10 text-primary-300" />
+                            <div className="mb-4 aspect-video w-full rounded-xl overflow-hidden bg-gradient-to-br from-primary-100 via-indigo-50 to-violet-100 flex items-center justify-center">
+                                {course.thumbnail ? (
+                                    <img src={course.thumbnail} alt={course.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                ) : (
+                                    <BookOpen className="h-10 w-10 text-primary-300" />
+                                )}
                             </div>
 
                             <h3 className="text-sm font-semibold text-slate-900 line-clamp-2 group-hover:text-primary-700 transition-colors">
@@ -379,12 +392,22 @@ export default function StudentDashboard() {
                 </motion.div>
             )}
 
+            {/* ═══ Leaderboard ═══ */}
+            <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={fadeInUp}
+                className="mt-10"
+            >
+                <Leaderboard variant="full" limit={10} />
+            </motion.div>
+
             {/* ═══ Certificate Modal ═══ */}
             <Dialog open={certModalOpen} onOpenChange={setCertModalOpen}>
                 <DialogContent className="max-w-4xl p-6 md:p-8 bg-zinc-900 border-zinc-800 text-white rounded-2xl shadow-2xl">
                     <DialogHeader className="mb-4">
                         <DialogTitle className="flex justify-between items-center text-xl font-bold text-yellow-400">
-                            <span>🎉 Chúc mừng bạn đã hoàn thành khóa học!</span>
+                            <span>Chúc mừng bạn đã hoàn thành khóa học!</span>
                         </DialogTitle>
                     </DialogHeader>
 

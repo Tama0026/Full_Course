@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import SidebarRouter from "@/components/common/SidebarRouter";
 
 export const metadata: Metadata = {
-    title: "Dashboard | E-Learning",
+    title: "Dashboard",
     description: "Quản lý khóa học và theo dõi tiến độ học tập.",
 };
 
