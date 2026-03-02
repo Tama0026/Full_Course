@@ -18,6 +18,7 @@ import {
     Award,
     Download,
     PartyPopper,
+    Info, // Added Info icon
 } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
@@ -558,12 +559,36 @@ export function LessonClientView({
                         {activeTab === "discussion" && <DiscussionSection lessonId={activeLessonId} currentUserId={currentUserId} />}
                     </div>
 
-                    {/* Quiz Section - always below overview content */}
-                    {activeTab === "overview" && (
-                        <QuizSection
-                            lessonId={activeLessonId}
-                            onSuccess={() => handleMarkComplete()}
-                        />
+                    {/* Quiz Section & AI Tutor - always below overview content */}
+                    {activeTab === "overview" && activeLesson && (
+                        <div className="mt-8 space-y-6">
+                            {/* Quiz enforcement note */}
+                            <div className="flex items-start gap-3 rounded-xl bg-indigo-50 border border-indigo-100 p-4 text-indigo-800">
+                                <Info className="h-5 w-5 shrink-0 text-indigo-600 mt-0.5" />
+                                <div className="text-sm">
+                                    <p className="font-semibold">Hướng dẫn hoàn thành bài học</p>
+                                    <p className="mt-1 text-indigo-700">
+                                        Bài học này sẽ tự động được đánh dấu hoàn thành <strong>chỉ khi bạn vượt qua bài trắc nghiệm (Quiz) với số điểm từ 80% trở lên.</strong><br />
+                                        Hãy ôn tập kỹ nội dung và sử dụng AI Tutor bên dưới nếu bạn có nội dung chưa hiểu rõ nhé!
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Inline AI Tutor Component */}
+                            <div className="mb-6">
+                                <AiTutorWidget
+                                    lessonId={activeLessonId}
+                                    lessonTitle={activeLesson.title}
+                                    inline={true}
+                                />
+                            </div>
+
+                            {/* Quiz Component */}
+                            <QuizSection
+                                lessonId={activeLessonId}
+                                onSuccess={() => handleMarkComplete()}
+                            />
+                        </div>
                     )}
 
                     {/* 🎉 Course Completion Banner */}

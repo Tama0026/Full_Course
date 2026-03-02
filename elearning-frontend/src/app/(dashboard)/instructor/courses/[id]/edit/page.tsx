@@ -69,7 +69,6 @@ export default function EditCoursePage() {
                         title: title.trim(),
                         description: description.trim(),
                         price: parseFloat(price),
-                        published,
                     },
                 },
             });
@@ -166,8 +165,8 @@ export default function EditCoursePage() {
                         {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
                     </div>
 
-                    {/* Price + Published */}
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    {/* Price */}
+                    <div className="grid gap-4 sm:grid-cols-1">
                         <div>
                             <label className="mb-1.5 block text-sm font-semibold text-slate-700">
                                 Giá (VNĐ) *
@@ -186,26 +185,6 @@ export default function EditCoursePage() {
                                 <p className="mt-1 text-xs text-slate-400">{formatPrice(parseFloat(price))}</p>
                             )}
                             {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                                Trạng thái hiển thị
-                            </label>
-                            <button
-                                type="button"
-                                onClick={() => setPublished(!published)}
-                                className={cn(
-                                    "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-all",
-                                    published
-                                        ? "border-green-300 bg-green-50 text-green-700"
-                                        : "border-slate-300 text-slate-500"
-                                )}
-                            >
-                                {published ? "Công khai" : "Bản nháp"}
-                                <div className={cn("h-5 w-9 rounded-full transition-colors flex items-center px-0.5", published ? "bg-green-500" : "bg-slate-300")}>
-                                    <div className={cn("h-4 w-4 rounded-full bg-white transition-transform", published ? "translate-x-4" : "translate-x-0")} />
-                                </div>
-                            </button>
                         </div>
                     </div>
 
