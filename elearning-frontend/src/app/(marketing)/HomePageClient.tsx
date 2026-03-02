@@ -200,7 +200,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="text-center"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "-80px" }}
+                        viewport={{ once: false, margin: "-80px" }}
                         variants={fadeInUp}
                     >
                         <span className="inline-flex items-center gap-2 rounded-full bg-primary-50 border border-primary-200 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-primary-700 mb-4">
@@ -220,7 +220,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "-60px" }}
+                        viewport={{ once: false, margin: "-60px" }}
                         variants={staggerContainer}
                     >
                         {featuredCourses.length > 0 ? (
@@ -264,7 +264,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="mt-12 text-center"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true }}
+                        viewport={{ once: false }}
                         variants={fadeInUp}
                     >
                         <Link
@@ -287,7 +287,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="text-center"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "-80px" }}
+                        viewport={{ once: false, margin: "-80px" }}
                         variants={fadeInUp}
                     >
                         <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
@@ -302,7 +302,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "-60px" }}
+                        viewport={{ once: false, margin: "-60px" }}
                         variants={staggerContainer}
                     >
                         {WHY_US.map(({ icon: Icon, title, desc, gradient }) => (
@@ -335,7 +335,7 @@ export default function HomePageClient({ featuredCourses }: HomePageClientProps)
                         className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 px-8 py-16 text-center text-white shadow-2xl sm:px-16"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, margin: "-60px" }}
+                        viewport={{ once: false, margin: "-60px" }}
                         variants={scaleIn}
                     >
                         {/* Decorative inner glow */}
