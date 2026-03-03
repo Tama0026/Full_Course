@@ -390,6 +390,7 @@ let CoursesService = class CoursesService {
                 lastActive,
                 progressTimeline,
                 lastRemindedAt: en.lastRemindedAt,
+                requestedAt: en.requestedAt,
                 enrolledAt: en.enrolledAt,
                 status: en.status,
             };
@@ -415,7 +416,7 @@ let CoursesService = class CoursesService {
             return true;
         await this.prisma.enrollment.update({
             where: { id: enrollment.id },
-            data: { status: 'APPROVED' },
+            data: { status: 'APPROVED', enrolledAt: new Date() },
         });
         console.log(`[NOTIFICATION OUTBOX] Gửi tới: ${enrollment.user.email}`);
         console.log(`[NOTIFICATION CONTENT] Chúc mừng! Đơn đăng ký khóa học "${course.title}" của bạn đã được phê duyệt. Hãy bắt đầu học ngay nhé!`);

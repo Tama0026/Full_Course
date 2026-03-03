@@ -13,7 +13,7 @@ export class OrdersService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   /**
    * Create a new order for a course.
@@ -89,6 +89,7 @@ export class OrdersService {
           userId,
           courseId: input.courseId,
           status: enrollmentStatus,
+          enrolledAt: enrollmentStatus === 'APPROVED' ? new Date() : undefined,
         },
       });
 

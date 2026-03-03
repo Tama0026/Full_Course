@@ -96,8 +96,9 @@ export default function CourseStudentsPage() {
                                     <tr>
                                         <th className="px-6 py-4 font-semibold">Thông tin Học viên</th>
                                         <th className="px-6 py-4 font-semibold text-center">Tiến độ</th>
-                                        <th className="px-6 py-4 font-semibold">Ngày tham gia</th>
-                                        <th className="px-6 py-4 font-semibold">Hoạt động cuối</th>
+                                        <th className="px-6 py-4 font-semibold">Ngày đăng ký</th>
+                                        <th className="px-6 py-4 font-semibold">Ngày được duyệt</th>
+                                        <th className="px-6 py-4 font-semibold">Hoạt động cuối trên khóa học</th>
                                         <th className="px-6 py-4 font-semibold text-right">Thao tác</th>
                                     </tr>
                                 </thead>
@@ -141,12 +142,21 @@ export default function CourseStudentsPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    {st.enrolledAt ? (
+                                                    {st.requestedAt ? (
                                                         <div className="text-xs text-slate-600 font-medium">
-                                                            {format(new Date(st.enrolledAt), "dd/MM/yyyy", { locale: vi })}
+                                                            {format(new Date(st.requestedAt), "dd/MM/yyyy", { locale: vi })}
                                                         </div>
                                                     ) : (
                                                         <span className="text-xs text-slate-400 italic">Không rõ</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {st.enrolledAt ? (
+                                                        <div className="text-xs text-slate-600 font-medium">
+                                                            {format(new Date(st.enrolledAt), "dd/MM/yyyy HH:mm", { locale: vi })}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-amber-500 italic font-medium">Chưa tham gia (Chờ duyệt)</span>
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">

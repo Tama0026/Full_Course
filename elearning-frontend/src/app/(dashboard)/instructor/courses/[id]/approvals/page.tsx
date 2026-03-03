@@ -6,11 +6,12 @@ import { Loader2, CheckCircle, XCircle, Search, User, Clock } from "lucide-react
 import Image from "next/image";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 
-
-export default function ApprovalsPage({ params }: { params: { id: string } }) {
-    const courseId = params.id;
+export default function ApprovalsPage() {
+    const params = useParams();
+    const courseId = params.id as string;
     const [searchTerm, setSearchTerm] = useState("");
 
     const { data, loading, error, refetch } = useQuery<any>(GET_COURSE_STUDENTS, {
@@ -128,17 +129,17 @@ export default function ApprovalsPage({ params }: { params: { id: string } }) {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-6 py-4 text-center whitespace-nowrap">
                                             <div className="flex items-center justify-center gap-1.5 text-slate-500">
                                                 <Clock className="w-4 h-4" />
                                                 <span>
-                                                    {st.enrolledAt
-                                                        ? format(new Date(parseInt(st.enrolledAt as any)), "dd/MM/yyyy HH:mm")
+                                                    {st.requestedAt
+                                                        ? format(new Date(st.requestedAt), "dd/MM/yyyy HH:mm")
                                                         : "N/A"}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => handleReject(st.id)}

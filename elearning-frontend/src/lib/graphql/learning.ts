@@ -18,7 +18,7 @@ export const GET_COURSE_PROGRESS = gql`
       completedItems {
         id lessonId completedAt
       }
-      enrollment { id courseId userId enrolledAt }
+      enrollment { id courseId userId requestedAt enrolledAt }
     }
   }
 `;
@@ -35,6 +35,8 @@ export const GET_MY_ENROLLMENTS = gql`
   query GetMyEnrollments {
     myEnrollments {
       id
+      status
+      requestedAt
       enrolledAt
       isFinished
       course {

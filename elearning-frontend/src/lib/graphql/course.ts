@@ -68,6 +68,8 @@ export const GET_MY_COURSES = gql`
       averageRating
       reviewCount
       totalDuration
+      maxStudents
+      isApprovalRequired
       instructorId
       sections {
         id title order
@@ -81,7 +83,7 @@ export const GET_MY_COURSES = gql`
 export const CREATE_COURSE = gql`
   mutation CreateCourse($input: CreateCourseInput!) {
     createCourse(input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes
+      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;
@@ -89,7 +91,7 @@ export const CREATE_COURSE = gql`
 export const UPDATE_COURSE = gql`
   mutation UpdateCourse($id: String!, $input: UpdateCourseInput!) {
     updateCourse(id: $id, input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes
+      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;
@@ -196,6 +198,7 @@ export const GET_COURSE_STUDENTS = gql`
       progressPercent
       lastActive
       lastRemindedAt
+      requestedAt
       enrolledAt
       status
       progressTimeline {

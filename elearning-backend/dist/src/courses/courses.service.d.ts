@@ -20,15 +20,15 @@ export declare class CoursesService {
             sections: number;
         };
         instructor: {
-            name: string | null;
             id: string;
+            name: string | null;
             email: string;
         };
     } & {
-        category: string | null;
-        description: string;
         id: string;
+        description: string;
         createdAt: Date;
+        category: string | null;
         updatedAt: Date;
         title: string;
         price: number;
@@ -67,32 +67,32 @@ export declare class CoursesService {
     updateCurriculum(courseId: string, input: any): Promise<({
         sections: ({
             lessons: {
-                order: number;
-                type: string;
-                format: string | null;
-                body: string | null;
                 id: string;
                 createdAt: Date;
+                order: number;
                 updatedAt: Date;
                 title: string;
+                type: string;
                 videoUrl: string | null;
+                body: string | null;
                 duration: number | null;
+                format: string | null;
                 isPreview: boolean;
                 sectionId: string;
             }[];
         } & {
-            order: number;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
             courseId: string;
+            createdAt: Date;
+            order: number;
+            updatedAt: Date;
             title: string;
         })[];
     } & {
-        category: string | null;
-        description: string;
         id: string;
+        description: string;
         createdAt: Date;
+        category: string | null;
         updatedAt: Date;
         title: string;
         price: number;
@@ -120,7 +120,8 @@ export declare class CoursesService {
             completedAt: Date;
         }[];
         lastRemindedAt: Date | null;
-        enrolledAt: Date;
+        requestedAt: Date;
+        enrolledAt: Date | null;
         status: string;
     }[]>;
     approveEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;

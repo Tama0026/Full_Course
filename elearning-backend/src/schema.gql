@@ -275,7 +275,9 @@ input CreateCommentInput {
 input CreateCourseInput {
   category: String
   description: String!
+  isApprovalRequired: Boolean = false
   learningOutcomes: [String!]
+  maxStudents: Int
   price: Float!
   published: Boolean = false
   thumbnail: String
@@ -327,10 +329,12 @@ type Enrollment {
   completedLessons: String!
   course: Course
   courseId: String!
-  enrolledAt: DateTime!
+  enrolledAt: DateTime
   id: ID!
   isFinished: Boolean!
   progresses: [Progress!]
+  requestedAt: DateTime!
+  status: String!
   user: User
   userId: String!
 }
@@ -605,7 +609,9 @@ input UpdateCourseInput {
   category: String
   description: String
   isActive: Boolean
+  isApprovalRequired: Boolean
   learningOutcomes: [String!]
+  maxStudents: Int
   price: Float
   published: Boolean
   thumbnail: String

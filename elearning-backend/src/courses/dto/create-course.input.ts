@@ -1,4 +1,4 @@
-import { InputType, Field, Float } from '@nestjs/graphql';
+import { InputType, Field, Float, Int } from '@nestjs/graphql';
 import {
   IsNotEmpty,
   IsNumber,
@@ -39,4 +39,12 @@ export class CreateCourseInput {
   @Field(() => [String], { nullable: true })
   @IsOptional()
   learningOutcomes?: string[];
+
+  @Field(() => Int, { nullable: true })
+  @IsOptional()
+  maxStudents?: number;
+
+  @Field({ nullable: true, defaultValue: false })
+  @IsOptional()
+  isApprovalRequired?: boolean;
 }

@@ -59,7 +59,8 @@ export declare class CoursesResolver {
             completedAt: Date;
         }[];
         lastRemindedAt: Date | null;
-        enrolledAt: Date;
+        requestedAt: Date;
+        enrolledAt: Date | null;
         status: string;
     }[]>;
     sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;

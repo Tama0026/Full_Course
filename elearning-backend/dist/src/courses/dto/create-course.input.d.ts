@@ -6,4 +6,6 @@ export declare class CreateCourseInput {
     thumbnail?: string;
     category?: string;
     learningOutcomes?: string[];
+    maxStudents?: number;
+    isApprovalRequired?: boolean;
 }

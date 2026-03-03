@@ -3,13 +3,13 @@ export declare class AssessmentsService {
     private prisma;
     constructor(prisma: PrismaService);
     getAssessments(userRole: string, userId: string): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }[]>;
@@ -24,13 +24,13 @@ export declare class AssessmentsService {
             assessmentId: string;
         }[];
     } & {
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }) | null>;
@@ -41,13 +41,13 @@ export declare class AssessmentsService {
         passingScore: number;
         isActive: boolean;
     }): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }>;
@@ -58,24 +58,24 @@ export declare class AssessmentsService {
         passingScore: number;
         isActive: boolean;
     }>): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }>;
     deleteAssessment(id: string, creatorId: string): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }>;
@@ -105,8 +105,8 @@ export declare class AssessmentsService {
     }>;
     startAttempt(assessmentId: string, userId: string): Promise<{
         id: string;
-        userId: string;
         completedAt: Date | null;
+        userId: string;
         score: number | null;
         assessmentId: string;
         passed: boolean;
@@ -118,8 +118,8 @@ export declare class AssessmentsService {
         answer: string;
     }[]): Promise<{
         id: string;
-        userId: string;
         completedAt: Date | null;
+        userId: string;
         score: number | null;
         assessmentId: string;
         passed: boolean;

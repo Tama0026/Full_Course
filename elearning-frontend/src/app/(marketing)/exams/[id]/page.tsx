@@ -8,8 +8,11 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-export default function TakeAssessmentPage({ params }: { params: { id: string } }) {
-    const assessmentId = params.id;
+import { useParams } from "next/navigation";
+
+export default function TakeAssessmentPage() {
+    const params = useParams();
+    const assessmentId = params.id as string;
 
     // UI states
     const [viewState, setViewState] = useState<"intro" | "taking" | "result">("intro");

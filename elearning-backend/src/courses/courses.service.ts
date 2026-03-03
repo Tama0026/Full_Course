@@ -17,7 +17,7 @@ export class CoursesService {
   constructor(
     private readonly courseRepository: CourseRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   // ==================== VALIDATION ====================
 
@@ -550,9 +550,9 @@ export class CoursesService {
         totalLessons === 0
           ? 0
           : Math.min(
-              100,
-              Math.round((en.progresses.length / totalLessons) * 100),
-            );
+            100,
+            Math.round((en.progresses.length / totalLessons) * 100),
+          );
 
       const progressTimeline = en.progresses.map((p) => ({
         lessonTitle: p.lesson.title,
@@ -573,6 +573,7 @@ export class CoursesService {
         lastActive,
         progressTimeline,
         lastRemindedAt: en.lastRemindedAt,
+        requestedAt: en.requestedAt,
         enrolledAt: en.enrolledAt,
         status: en.status,
       };
@@ -606,7 +607,7 @@ export class CoursesService {
 
     await this.prisma.enrollment.update({
       where: { id: enrollment.id },
-      data: { status: 'APPROVED' },
+      data: { status: 'APPROVED', enrolledAt: new Date() },
     });
 
     // Trigger Notification (Simulated Email/System Notification)

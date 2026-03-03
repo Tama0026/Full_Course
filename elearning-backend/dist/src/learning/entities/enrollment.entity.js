@@ -20,10 +20,12 @@ let Enrollment = class Enrollment {
     courseId;
     user;
     course;
+    requestedAt;
     enrolledAt;
     progresses;
     completedLessons;
     isFinished;
+    status;
 };
 exports.Enrollment = Enrollment;
 __decorate([
@@ -49,6 +51,10 @@ __decorate([
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Date)
+], Enrollment.prototype, "requestedAt", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
 ], Enrollment.prototype, "enrolledAt", void 0);
 __decorate([
     (0, graphql_1.Field)(() => [progress_entity_1.Progress], { nullable: true }),
@@ -62,6 +68,10 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)
 ], Enrollment.prototype, "isFinished", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], Enrollment.prototype, "status", void 0);
 exports.Enrollment = Enrollment = __decorate([
     (0, graphql_1.ObjectType)()
 ], Enrollment);

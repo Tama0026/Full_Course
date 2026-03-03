@@ -21,6 +21,8 @@ let UpdateCourseInput = class UpdateCourseInput {
     thumbnail;
     category;
     learningOutcomes;
+    maxStudents;
+    isApprovalRequired;
 };
 exports.UpdateCourseInput = UpdateCourseInput;
 __decorate([
@@ -71,6 +73,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Array)
 ], UpdateCourseInput.prototype, "learningOutcomes", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateCourseInput.prototype, "maxStudents", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateCourseInput.prototype, "isApprovalRequired", void 0);
 exports.UpdateCourseInput = UpdateCourseInput = __decorate([
     (0, graphql_1.InputType)()
 ], UpdateCourseInput);

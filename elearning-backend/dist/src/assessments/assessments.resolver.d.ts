@@ -24,13 +24,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }[]>;
@@ -45,13 +45,13 @@ export declare class AssessmentsResolver {
             assessmentId: string;
         }[];
     } & {
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }) | null>;
@@ -59,13 +59,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }>;
@@ -73,13 +73,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
+        description: string;
+        creatorId: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         isActive: boolean;
-        creatorId: string;
         timeLimit: number;
         passingScore: number;
     }>;
@@ -112,8 +112,8 @@ export declare class AssessmentsResolver {
         role: string;
     }): Promise<{
         id: string;
-        userId: string;
         completedAt: Date | null;
+        userId: string;
         score: number | null;
         assessmentId: string;
         passed: boolean;
@@ -125,8 +125,8 @@ export declare class AssessmentsResolver {
         role: string;
     }): Promise<{
         id: string;
-        userId: string;
         completedAt: Date | null;
+        userId: string;
         score: number | null;
         assessmentId: string;
         passed: boolean;

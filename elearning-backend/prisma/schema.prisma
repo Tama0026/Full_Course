@@ -48,39 +48,39 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  courses         Course[]        @relation("InstructorCourses")
-  orders          Order[]
-  enrollments     Enrollment[]
-  comments        Comment[]
-  notes           Note[]
-  certificates    Certificate[]
-  videoProgresses VideoProgress[]
-  leaderboard     Leaderboard?
-  userBadges      UserBadge[]
-  createdBadges   Badge[]         @relation("BadgeCreator")
-  loginStreak     LoginStreak?
-  createdAssessments Assessment[]       @relation("AssessmentCreator")
+  courses            Course[]            @relation("InstructorCourses")
+  orders             Order[]
+  enrollments        Enrollment[]
+  comments           Comment[]
+  notes              Note[]
+  certificates       Certificate[]
+  videoProgresses    VideoProgress[]
+  leaderboard        Leaderboard?
+  userBadges         UserBadge[]
+  createdBadges      Badge[]             @relation("BadgeCreator")
+  loginStreak        LoginStreak?
+  createdAssessments Assessment[]        @relation("AssessmentCreator")
   assessmentAttempts AssessmentAttempt[]
 }
 
 model Course {
-  id            String   @id @default(uuid())
-  title         String
-  description   String
-  price         Float
-  thumbnail     String?
-  category      String?
-  learningOutcomes String  @default("[]") // JSON array of learning outcome strings
-  averageRating Float    @default(0)
-  reviewCount   Int      @default(0)
-  totalDuration Int      @default(0) // In seconds
-  published     Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  maxStudents   Int?
-  isApprovalRequired Boolean @default(false)
-  instructorId  String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  title              String
+  description        String
+  price              Float
+  thumbnail          String?
+  category           String?
+  learningOutcomes   String   @default("[]") // JSON array of learning outcome strings
+  averageRating      Float    @default(0)
+  reviewCount        Int      @default(0)
+  totalDuration      Int      @default(0) // In seconds
+  published          Boolean  @default(false)
+  isActive           Boolean  @default(true)
+  maxStudents        Int?
+  isApprovalRequired Boolean  @default(false)
+  instructorId       String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
   instructor   User          @relation("InstructorCourses", fields: [instructorId], references: [id])
@@ -163,13 +163,14 @@ model Order {
 }
 
 model Enrollment {
-  id               String   @id @default(uuid())
+  id               String    @id @default(uuid())
   userId           String
   courseId         String
   status           String    @default("APPROVED") // PENDING, APPROVED, REJECTED
   completedLessons String    @default("[]") // JSON string field to support SQLite
   isFinished       Boolean   @default(false)
-  enrolledAt       DateTime  @default(now())
+  requestedAt      DateTime  @default(now())
+  enrolledAt       DateTime?
   lastRemindedAt   DateTime?
 
   // Relations
@@ -268,21 +269,21 @@ model Leaderboard {
 }
 
 model Badge {
-  id            String      @id @default(uuid())
-  name          String      @unique
-  description   String
-  icon          String      @default("🏅")
-  criteria      String      // Legacy string, kept for display (e.g. "COMPLETE_5_LESSONS")
-  criteriaType  String      @default("LESSONS_COMPLETED") // LESSONS_COMPLETED | COURSES_COMPLETED | POINTS_EARNED | LOGIN_STREAK
-  threshold     Int         @default(1)
-  courseId       String?     // null = Global Badge, non-null = Course-Specific Badge
-  creatorId     String      // Admin userId for system badges, instructor userId for custom
-  createdAt     DateTime    @default(now())
+  id           String   @id @default(uuid())
+  name         String   @unique
+  description  String
+  icon         String   @default("🏅")
+  criteria     String // Legacy string, kept for display (e.g. "COMPLETE_5_LESSONS")
+  criteriaType String   @default("LESSONS_COMPLETED") // LESSONS_COMPLETED | COURSES_COMPLETED | POINTS_EARNED | LOGIN_STREAK
+  threshold    Int      @default(1)
+  courseId     String? // null = Global Badge, non-null = Course-Specific Badge
+  creatorId    String // Admin userId for system badges, instructor userId for custom
+  createdAt    DateTime @default(now())
 
   // Relations
-  course      Course?     @relation("CourseBadges", fields: [courseId], references: [id], onDelete: Cascade)
-  creator     User        @relation("BadgeCreator", fields: [creatorId], references: [id])
-  userBadges  UserBadge[]
+  course     Course?     @relation("CourseBadges", fields: [courseId], references: [id], onDelete: Cascade)
+  creator    User        @relation("BadgeCreator", fields: [creatorId], references: [id])
+  userBadges UserBadge[]
 }
 
 model UserBadge {
@@ -299,12 +300,12 @@ model UserBadge {
 }
 
 model LoginStreak {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  currentStreak  Int      @default(0)
-  longestStreak  Int      @default(0)
-  lastLoginDate  String   @default("") // ISO date "YYYY-MM-DD"
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastLoginDate String   @default("") // ISO date "YYYY-MM-DD"
+  updatedAt     DateTime @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -313,15 +314,15 @@ model LoginStreak {
 // ==================== STANDALONE ASSESSMENTS ====================
 
 model Assessment {
-  id           String               @id @default(uuid())
+  id           String   @id @default(uuid())
   title        String
   description  String
-  timeLimit    Int                  // Minutes
-  passingScore Int                  @default(50)
-  isActive     Boolean              @default(true)
+  timeLimit    Int // Minutes
+  passingScore Int      @default(50)
+  isActive     Boolean  @default(true)
   creatorId    String
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   creator   User                 @relation("AssessmentCreator", fields: [creatorId], references: [id])
   questions AssessmentQuestion[]
@@ -332,7 +333,7 @@ model AssessmentQuestion {
   id            String   @id @default(uuid())
   assessmentId  String
   content       String
-  options       String   // JSON string
+  options       String // JSON string
   correctAnswer Int
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

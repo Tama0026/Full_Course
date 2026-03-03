@@ -21,7 +21,10 @@ export class Enrollment {
   course?: Course;
 
   @Field()
-  enrolledAt: Date;
+  requestedAt: Date;
+
+  @Field({ nullable: true })
+  enrolledAt?: Date;
 
   @Field(() => [Progress], { nullable: true })
   progresses?: Progress[];
@@ -31,4 +34,7 @@ export class Enrollment {
 
   @Field()
   isFinished: boolean;
+
+  @Field()
+  status: string;
 }

@@ -3,25 +3,25 @@ export declare class CategoriesService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     findAll(): Promise<{
-        order: number;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         slug: string;
+        order: number;
     }[]>;
     create(name: string): Promise<{
-        order: number;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         slug: string;
+        order: number;
     }>;
     delete(id: string): Promise<{
-        order: number;
-        name: string;
         id: string;
+        name: string;
         createdAt: Date;
         slug: string;
+        order: number;
     }>;
     private generateSlug;
 }

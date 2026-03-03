@@ -80,7 +80,7 @@ let LessonResolver = class LessonResolver {
             const enrollment = await this.prisma.enrollment.findUnique({
                 where: { userId_courseId: { userId: user.id, courseId } },
             });
-            if (enrollment)
+            if (enrollment && enrollment.status === 'APPROVED')
                 isAuthorized = true;
         }
         req.authorizedCourses[courseId] = isAuthorized;
@@ -106,7 +106,7 @@ let LessonResolver = class LessonResolver {
         const enrollment = await this.prisma.enrollment.findUnique({
             where: { userId_courseId: { userId: user.id, courseId } },
         });
-        if (!enrollment)
+        if (!enrollment || enrollment.status !== 'APPROVED')
             return true;
         const sections = await this.prisma.section.findMany({
             where: { courseId },

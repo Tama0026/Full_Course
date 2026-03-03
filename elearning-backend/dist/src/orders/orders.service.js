@@ -66,6 +66,7 @@ let OrdersService = class OrdersService {
                     userId,
                     courseId: input.courseId,
                     status: enrollmentStatus,
+                    enrolledAt: enrollmentStatus === 'APPROVED' ? new Date() : undefined,
                 },
             });
             return newOrder;
