@@ -61,28 +61,7 @@ export default function CourseStudentsPage() {
     const students = studentsData?.getCourseStudents || [];
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-6 lg:p-8">
-            {/* Header */}
-            <div className="mb-8 max-w-6xl mx-auto">
-                <button
-                    onClick={() => router.push("/instructor")}
-                    className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
-                >
-                    <ArrowLeft className="h-4 w-4" /> Quay lại Dashboard
-                </button>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="flex items-center gap-3 text-2xl font-bold text-slate-900 lg:text-3xl">
-                            <Users className="h-8 w-8 text-indigo-600" />
-                            Quản lý Học viên
-                        </h1>
-                        <p className="mt-1 text-sm text-slate-500 line-clamp-1 max-w-xl">
-                            Khóa học: <span className="font-semibold text-slate-700">{course?.title}</span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
+        <div className="w-full">
             {/* Content */}
             <div className="max-w-6xl mx-auto">
                 {students.length === 0 ? (
