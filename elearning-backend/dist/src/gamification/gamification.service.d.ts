@@ -14,8 +14,8 @@ export declare class GamificationService {
         percentile: number;
         earnedBadges: any;
         totalBadges: any;
-        userName: any;
-        userAvatar: any;
+        userName: string | undefined;
+        userAvatar: string | undefined;
     }>;
     getAllBadgesWithStatus(userId: string): Promise<any>;
     createCourseBadge(input: {

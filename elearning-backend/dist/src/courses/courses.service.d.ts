@@ -35,5 +35,45 @@ export declare class CoursesService {
             avgQuizScore: number;
         }[];
     }>;
-    updateCurriculum(courseId: string, input: any): Promise<any>;
+    updateCurriculum(courseId: string, input: any): Promise<({
+        sections: ({
+            lessons: {
+                id: string;
+                order: number;
+                createdAt: Date;
+                updatedAt: Date;
+                title: string;
+                type: string;
+                videoUrl: string | null;
+                body: string | null;
+                duration: number | null;
+                format: string | null;
+                isPreview: boolean;
+                sectionId: string;
+            }[];
+        } & {
+            id: string;
+            order: number;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            courseId: string;
+        })[];
+    } & {
+        id: string;
+        createdAt: Date;
+        category: string | null;
+        updatedAt: Date;
+        title: string;
+        description: string;
+        price: number;
+        thumbnail: string | null;
+        learningOutcomes: string;
+        averageRating: number;
+        reviewCount: number;
+        totalDuration: number;
+        published: boolean;
+        isActive: boolean;
+        instructorId: string;
+    }) | null>;
 }
