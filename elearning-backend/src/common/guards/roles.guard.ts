@@ -1,8 +1,8 @@
 import {
-    Injectable,
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
@@ -17,39 +17,39 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
-    constructor(private readonly reflector: Reflector) { }
+  constructor(private readonly reflector: Reflector) {}
 
-    canActivate(context: ExecutionContext): boolean {
-        const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
-        // If no roles are required, allow access
-        if (!requiredRoles || requiredRoles.length === 0) {
-            return true;
-        }
-
-        let user;
-        if (context.getType<any>() === 'graphql') {
-            const ctx = GqlExecutionContext.create(context);
-            user = ctx.getContext().req?.user;
-        } else {
-            user = context.switchToHttp().getRequest()?.user;
-        }
-
-        if (!user) {
-            throw new ForbiddenException('User not authenticated');
-        }
-
-        const hasRole = requiredRoles.some((role) => user.role === role);
-
-        if (!hasRole) {
-            throw new ForbiddenException(
-                `Access denied. Required roles: ${requiredRoles.join(', ')}`,
-            );
-        }
-
-        return true;
+    // If no roles are required, allow access
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
     }
+
+    let user;
+    if (context.getType<any>() === 'graphql') {
+      const ctx = GqlExecutionContext.create(context);
+      user = ctx.getContext().req?.user;
+    } else {
+      user = context.switchToHttp().getRequest()?.user;
+    }
+
+    if (!user) {
+      throw new ForbiddenException('User not authenticated');
+    }
+
+    const hasRole = requiredRoles.some((role) => user.role === role);
+
+    if (!hasRole) {
+      throw new ForbiddenException(
+        `Access denied. Required roles: ${requiredRoles.join(', ')}`,
+      );
+    }
+
+    return true;
+  }
 }

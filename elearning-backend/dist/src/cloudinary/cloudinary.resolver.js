@@ -33,7 +33,7 @@ let CloudinaryResolver = class CloudinaryResolver {
             apiKey: process.env.CLOUDINARY_API_KEY || '',
             cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
             folder: 'elearning/courses',
-            type: 'upload'
+            type: 'upload',
         };
     }
 };

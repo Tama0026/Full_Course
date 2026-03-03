@@ -20,15 +20,15 @@ export declare class CoursesService {
             sections: number;
         };
         instructor: {
-            id: string;
             name: string | null;
+            id: string;
             email: string;
         };
     } & {
-        id: string;
-        description: string;
-        createdAt: Date;
         category: string | null;
+        description: string;
+        id: string;
+        createdAt: Date;
         updatedAt: Date;
         title: string;
         price: number;
@@ -39,6 +39,8 @@ export declare class CoursesService {
         totalDuration: number;
         published: boolean;
         isActive: boolean;
+        maxStudents: number | null;
+        isApprovalRequired: boolean;
         instructorId: string;
     })[]>;
     getCourseById(id: string): Promise<PrismaCourse>;
@@ -65,32 +67,32 @@ export declare class CoursesService {
     updateCurriculum(courseId: string, input: any): Promise<({
         sections: ({
             lessons: {
+                order: number;
+                type: string;
+                format: string | null;
+                body: string | null;
                 id: string;
                 createdAt: Date;
-                order: number;
                 updatedAt: Date;
                 title: string;
-                type: string;
                 videoUrl: string | null;
-                body: string | null;
                 duration: number | null;
-                format: string | null;
                 isPreview: boolean;
                 sectionId: string;
             }[];
         } & {
-            id: string;
-            courseId: string;
-            createdAt: Date;
             order: number;
+            id: string;
+            createdAt: Date;
             updatedAt: Date;
+            courseId: string;
             title: string;
         })[];
     } & {
-        id: string;
-        description: string;
-        createdAt: Date;
         category: string | null;
+        description: string;
+        id: string;
+        createdAt: Date;
         updatedAt: Date;
         title: string;
         price: number;
@@ -101,6 +103,8 @@ export declare class CoursesService {
         totalDuration: number;
         published: boolean;
         isActive: boolean;
+        maxStudents: number | null;
+        isApprovalRequired: boolean;
         instructorId: string;
     }) | null>;
     getCourseStudents(courseId: string, instructorId: string): Promise<{
@@ -116,6 +120,10 @@ export declare class CoursesService {
             completedAt: Date;
         }[];
         lastRemindedAt: Date | null;
+        enrolledAt: Date;
+        status: string;
     }[]>;
+    approveEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
+    rejectEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
     sendLearningReminder(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
 }

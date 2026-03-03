@@ -7,7 +7,7 @@ import { GET_COURSE_STUDENTS, SEND_LEARNING_REMINDER, GET_COURSE_DETAIL } from "
 import { ArrowLeft, Users, Mail, Loader2, ExternalLink } from "lucide-react";
 import StudentProgressTimeline from "@/components/instructor/StudentProgressTimeline";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { vi } from "date-fns/locale";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -96,6 +96,7 @@ export default function CourseStudentsPage() {
                                     <tr>
                                         <th className="px-6 py-4 font-semibold">Thông tin Học viên</th>
                                         <th className="px-6 py-4 font-semibold text-center">Tiến độ</th>
+                                        <th className="px-6 py-4 font-semibold">Ngày tham gia</th>
                                         <th className="px-6 py-4 font-semibold">Hoạt động cuối</th>
                                         <th className="px-6 py-4 font-semibold text-right">Thao tác</th>
                                     </tr>
@@ -138,6 +139,15 @@ export default function CourseStudentsPage() {
                                                         </span>
                                                         <span className="text-[10px] text-indigo-500 hover:underline font-medium uppercase tracking-wider">Xem Timeline</span>
                                                     </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    {st.enrolledAt ? (
+                                                        <div className="text-xs text-slate-600 font-medium">
+                                                            {format(new Date(st.enrolledAt), "dd/MM/yyyy", { locale: vi })}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-slate-400 italic">Không rõ</span>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     {st.lastActive ? (

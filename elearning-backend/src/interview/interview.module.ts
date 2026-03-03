@@ -3,7 +3,7 @@ import { InterviewResolver } from './interview.resolver';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
-    imports: [AiModule],
-    providers: [InterviewResolver],
+  imports: [AiModule],
+  providers: [InterviewResolver],
 })
-export class InterviewModule { }
+export class InterviewModule {}

@@ -42,7 +42,9 @@ let AuthResolver = class AuthResolver {
         return this.authService.refreshToken(refreshToken);
     }
     async me(user) {
-        const fullUser = await this.prisma.user.findUnique({ where: { id: user.id } });
+        const fullUser = await this.prisma.user.findUnique({
+            where: { id: user.id },
+        });
         if (!fullUser)
             throw new Error('User not found');
         return fullUser;

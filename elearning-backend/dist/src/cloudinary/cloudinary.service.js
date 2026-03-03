@@ -38,7 +38,8 @@ let CloudinaryService = class CloudinaryService {
         return !!cloudName && cloudName !== 'your_cloud_name';
     }
     getStreamingUrl(publicIdOrUrl) {
-        if (publicIdOrUrl.startsWith('http://') || publicIdOrUrl.startsWith('https://')) {
+        if (publicIdOrUrl.startsWith('http://') ||
+            publicIdOrUrl.startsWith('https://')) {
             return publicIdOrUrl;
         }
         if (!this.isConfigured())
@@ -51,7 +52,8 @@ let CloudinaryService = class CloudinaryService {
         });
     }
     getSecureDocumentUrl(publicIdOrUrl) {
-        if (publicIdOrUrl.startsWith('http://') || publicIdOrUrl.startsWith('https://')) {
+        if (publicIdOrUrl.startsWith('http://') ||
+            publicIdOrUrl.startsWith('https://')) {
             return publicIdOrUrl;
         }
         if (!this.isConfigured())
@@ -84,13 +86,20 @@ let CloudinaryService = class CloudinaryService {
         return cloudinary_1.v2.url(templatePublicId, {
             secure: true,
             transformation: [
-                { overlay: { font_family: 'Arial', font_size: 60, font_weight: 'bold', text: safeName } },
+                {
+                    overlay: {
+                        font_family: 'Arial',
+                        font_size: 60,
+                        font_weight: 'bold',
+                        text: safeName,
+                    },
+                },
                 { flags: 'layer_apply', gravity: 'center', y: -60 },
                 { overlay: { font_family: 'Arial', font_size: 40, text: safeCourse } },
                 { flags: 'layer_apply', gravity: 'center', y: 40 },
                 { overlay: { font_family: 'Arial', font_size: 25, text: safeDate } },
-                { flags: 'layer_apply', gravity: 'center', y: 130 }
-            ]
+                { flags: 'layer_apply', gravity: 'center', y: 130 },
+            ],
         });
     }
 };

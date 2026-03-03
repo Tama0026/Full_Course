@@ -5,27 +5,27 @@ import { Course } from '../../courses/entities/course.entity';
 
 @ObjectType()
 export class Order {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    userId: string;
+  @Field()
+  userId: string;
 
-    @Field()
-    courseId: string;
+  @Field()
+  courseId: string;
 
-    @Field(() => OrderStatus)
-    status: OrderStatus;
+  @Field(() => OrderStatus)
+  status: OrderStatus;
 
-    @Field(() => User, { nullable: true })
-    user?: User;
+  @Field(() => User, { nullable: true })
+  user?: User;
 
-    @Field(() => Course, { nullable: true })
-    course?: Course;
+  @Field(() => Course, { nullable: true })
+  course?: Course;
 
-    @Field()
-    createdAt: Date;
+  @Field()
+  createdAt: Date;
 
-    @Field()
-    updatedAt: Date;
+  @Field()
+  updatedAt: Date;
 }

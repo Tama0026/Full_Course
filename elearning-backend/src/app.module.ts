@@ -14,6 +14,7 @@ import { NotesModule } from './notes/notes.module';
 import { AiModule } from './ai/ai.module';
 import { QuizModule } from './quiz/quiz.module';
 import { GamificationModule } from './gamification/gamification.module';
+import { AssessmentsModule } from './assessments/assessments.module';
 import { EmailModule } from './email/email.module';
 import { InterviewModule } from './interview/interview.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -49,8 +50,9 @@ import { CategoriesModule } from './categories/categories.module';
     AiModule,
     QuizModule,
     GamificationModule,
+    AssessmentsModule,
     InterviewModule,
     CategoriesModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}

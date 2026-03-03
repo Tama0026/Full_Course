@@ -8,30 +8,30 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Resolver(() => Comment)
 export class CommentsResolver {
-    constructor(private readonly commentsService: CommentsService) { }
+  constructor(private readonly commentsService: CommentsService) {}
 
-    @Mutation(() => Comment)
-    @UseGuards(JwtAuthGuard)
-    async createComment(
-        @Args('input') input: CreateCommentInput,
-        @CurrentUser() user: { id: string },
-    ): Promise<Comment> {
-        return this.commentsService.create(input, user.id) as unknown as Comment;
-    }
+  @Mutation(() => Comment)
+  @UseGuards(JwtAuthGuard)
+  async createComment(
+    @Args('input') input: CreateCommentInput,
+    @CurrentUser() user: { id: string },
+  ): Promise<Comment> {
+    return this.commentsService.create(input, user.id) as unknown as Comment;
+  }
 
-    @Query(() => [Comment], { name: 'lessonComments' })
-    async getLessonComments(
-        @Args('lessonId') lessonId: string,
-    ): Promise<Comment[]> {
-        return this.commentsService.findByLesson(lessonId) as unknown as Comment[];
-    }
+  @Query(() => [Comment], { name: 'lessonComments' })
+  async getLessonComments(
+    @Args('lessonId') lessonId: string,
+  ): Promise<Comment[]> {
+    return this.commentsService.findByLesson(lessonId) as unknown as Comment[];
+  }
 
-    @Mutation(() => Comment)
-    @UseGuards(JwtAuthGuard)
-    async deleteComment(
-        @Args('id') id: string,
-        @CurrentUser() user: { id: string },
-    ): Promise<Comment> {
-        return this.commentsService.delete(id, user.id) as unknown as Comment;
-    }
+  @Mutation(() => Comment)
+  @UseGuards(JwtAuthGuard)
+  async deleteComment(
+    @Args('id') id: string,
+    @CurrentUser() user: { id: string },
+  ): Promise<Comment> {
+    return this.commentsService.delete(id, user.id) as unknown as Comment;
+  }
 }

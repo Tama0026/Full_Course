@@ -4,69 +4,83 @@ import { GoogleGenAI } from '@google/genai';
 
 @Injectable()
 export class AiService {
-    private ai: GoogleGenAI;
-    // Fallback chain: if a model hits rate limit, try the next one
-    private readonly MODELS = [
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-lite',
-        'gemini-flash-lite-latest',
-        'gemini-2.5-flash',
-    ];
+  private ai: GoogleGenAI;
+  // Fallback chain: if a model hits rate limit, try the next one
+  private readonly MODELS = [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-flash-lite-latest',
+    'gemini-2.5-flash',
+  ];
 
-    constructor(private readonly prisma: PrismaService) {
-        const apiKey = process.env.GEMINI_API_KEY || '';
-        if (!apiKey) {
-            console.warn('GEMINI_API_KEY is missing in environment variables. AI features will not work.');
+  constructor(private readonly prisma: PrismaService) {
+    const apiKey = process.env.GEMINI_API_KEY || '';
+    if (!apiKey) {
+      console.warn(
+        'GEMINI_API_KEY is missing in environment variables. AI features will not work.',
+      );
+    }
+    this.ai = new GoogleGenAI({
+      apiKey: apiKey || 'dummy-key-to-prevent-crash',
+    });
+  }
+
+  /** Try each model in order until one succeeds (handles per-model rate limits) */
+  private async generateWithFallback(prompt: string): Promise<string> {
+    let lastError: any;
+    for (const model of this.MODELS) {
+      try {
+        console.log(`[AiService] Trying model: ${model}`);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 60_000),
+        );
+        const response = await Promise.race([
+          this.ai.models.generateContent({ model, contents: prompt }),
+          timeoutPromise,
+        ]);
+        console.log(`[AiService] ✅ Model ${model} succeeded`);
+        return response.text || '';
+      } catch (err: any) {
+        const status =
+          err?.status ||
+          (err?.message?.includes('429')
+            ? 429
+            : err?.message?.includes('503')
+              ? 503
+              : err?.message?.includes('500')
+                ? 500
+                : 0);
+        lastError = err;
+        if (status === 429 || status === 503 || status === 500) {
+          console.warn(
+            `[AiService] ⚠️ Model ${model} failed with status ${status}, trying next...`,
+          );
+          continue;
         }
-        this.ai = new GoogleGenAI({ apiKey: apiKey || 'dummy-key-to-prevent-crash' });
+        // Non-retryable error — rethrow immediately
+        throw err;
+      }
+    }
+    // All models exhausted
+    throw lastError;
+  }
+
+  /**
+   * Search/Suggest courses using Gemini
+   */
+  async searchCourses(query: string): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      return 'Tính năng AI đang tạm thời bị vô hiệu hóa vì không tìm thấy API Key hợp lệ trong hệ thống.';
     }
 
-    /** Try each model in order until one succeeds (handles per-model rate limits) */
-    private async generateWithFallback(prompt: string): Promise<string> {
-        let lastError: any;
-        for (const model of this.MODELS) {
-            try {
-                console.log(`[AiService] Trying model: ${model}`);
-                const timeoutPromise = new Promise<never>((_, reject) =>
-                    setTimeout(() => reject(new Error('TIMEOUT')), 60_000)
-                );
-                const response = await Promise.race([
-                    this.ai.models.generateContent({ model, contents: prompt }),
-                    timeoutPromise,
-                ]);
-                console.log(`[AiService] ✅ Model ${model} succeeded`);
-                return response.text || '';
-            } catch (err: any) {
-                const status = err?.status || (err?.message?.includes('429') ? 429 : err?.message?.includes('503') ? 503 : err?.message?.includes('500') ? 500 : 0);
-                lastError = err;
-                if (status === 429 || status === 503 || status === 500) {
-                    console.warn(`[AiService] ⚠️ Model ${model} failed with status ${status}, trying next...`);
-                    continue;
-                }
-                // Non-retryable error — rethrow immediately
-                throw err;
-            }
-        }
-        // All models exhausted
-        throw lastError;
-    }
+    try {
+      const courses = await this.prisma.course.findMany({
+        where: { published: true, isActive: true },
+        select: { id: true, title: true, description: true, price: true },
+      });
 
-    /**
-     * Search/Suggest courses using Gemini
-     */
-    async searchCourses(query: string): Promise<string> {
-        if (!process.env.GEMINI_API_KEY) {
-            return "Tính năng AI đang tạm thời bị vô hiệu hóa vì không tìm thấy API Key hợp lệ trong hệ thống.";
-        }
-
-        try {
-            const courses = await this.prisma.course.findMany({
-                where: { published: true, isActive: true },
-                select: { id: true, title: true, description: true, price: true }
-            });
-
-            const catalogText = JSON.stringify(courses);
-            const prompt = `
+      const catalogText = JSON.stringify(courses);
+      const prompt = `
 You are a helpful e-learning assistant for a course platform.
 A user asked: "${query}"
 
@@ -79,36 +93,52 @@ Format the response nicely in Markdown.
 Don't invent details. If no course matches well, polite tell them so.
             `;
 
-            // [Log] Trước khi gọi Gemini
-            console.log(`[AiService] Calling Gemini for course search — query: "${query}"`);
+      // [Log] Trước khi gọi Gemini
+      console.log(
+        `[AiService] Calling Gemini for course search — query: "${query}"`,
+      );
 
-            const text = await this.generateWithFallback(prompt);
+      const text = await this.generateWithFallback(prompt);
 
-            // [Log] Sau khi nhận response
-            console.log(`[AiService] Gemini search done — ${text.length} chars`);
+      // [Log] Sau khi nhận response
+      console.log(`[AiService] Gemini search done — ${text.length} chars`);
 
-            return text || "Xin lỗi, hiện không có môn học nào phù hợp.";
-        } catch (error: any) {
-            const status = error?.status || error?.code;
-            const msg: string = error?.message || '';
-            console.error(`[AiService] searchCourses error — status: ${status}`, msg.slice(0, 200));
+      return text || 'Xin lỗi, hiện không có môn học nào phù hợp.';
+    } catch (error: any) {
+      const status = error?.status || error?.code;
+      const msg: string = error?.message || '';
+      console.error(
+        `[AiService] searchCourses error — status: ${status}`,
+        msg.slice(0, 200),
+      );
 
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.');
-            }
-            throw new InternalServerErrorException('AI suggestion failed');
-        }
+      if (
+        status === 429 ||
+        msg.includes('429') ||
+        msg.includes('RESOURCE_EXHAUSTED')
+      ) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.',
+        );
+      }
+      throw new InternalServerErrorException('AI suggestion failed');
+    }
+  }
+
+  /**
+   * Generate lesson content (document body) using Gemini
+   */
+  async generateLessonContent(
+    title: string,
+    courseTitle: string,
+  ): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException(
+        'GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env',
+      );
     }
 
-    /**
-     * Generate lesson content (document body) using Gemini
-     */
-    async generateLessonContent(title: string, courseTitle: string): Promise<string> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env");
-        }
-
-        const prompt = `
+    const prompt = `
 You are an expert instructor for a course titled "${courseTitle}". Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
 
 Requirements:
@@ -119,43 +149,63 @@ Requirements:
 - Conclude with a short summary.
         `;
 
-        try {
-            // [Log #1] Trước khi gọi Gemini
-            console.log(`[AiService] Generating lesson content — title: "${title}" @ ${new Date().toISOString()}`);
+    try {
+      // [Log #1] Trước khi gọi Gemini
+      console.log(
+        `[AiService] Generating lesson content — title: "${title}" @ ${new Date().toISOString()}`,
+      );
 
-            const text = await this.generateWithFallback(prompt);
+      const text = await this.generateWithFallback(prompt);
 
-            // [Log #2] Sau khi nhận response
-            const result = text || "Nội dung đang được cập nhật.";
-            console.log(`[AiService] Lesson content done — ${result.length} chars, finished @ ${new Date().toISOString()}`);
-            return result;
-        } catch (error: any) {
-            // [Log #3] Lỗi
-            const status = error?.status || error?.code;
-            const msg: string = error?.message || '';
-            console.error(`[AiService] generateLessonContent error — status: ${status}`, msg.slice(0, 200));
+      // [Log #2] Sau khi nhận response
+      const result = text || 'Nội dung đang được cập nhật.';
+      console.log(
+        `[AiService] Lesson content done — ${result.length} chars, finished @ ${new Date().toISOString()}`,
+      );
+      return result;
+    } catch (error: any) {
+      // [Log #3] Lỗi
+      const status = error?.status || error?.code;
+      const msg: string = error?.message || '';
+      console.error(
+        `[AiService] generateLessonContent error — status: ${status}`,
+        msg.slice(0, 200),
+      );
 
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.');
-            }
-            throw new InternalServerErrorException(`Content generation failed: ${msg.slice(0, 100) || 'unknown'}`);
-        }
+      if (
+        status === 429 ||
+        msg.includes('429') ||
+        msg.includes('RESOURCE_EXHAUSTED')
+      ) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.',
+        );
+      }
+      throw new InternalServerErrorException(
+        `Content generation failed: ${msg.slice(0, 100) || 'unknown'}`,
+      );
+    }
+  }
+
+  /**
+   * Generate lesson content AND quiz questions in a single AI call.
+   * Returns { body: string, quiz: { content: string, options: string[], correctAnswer: number }[] }
+   */
+  async generateLessonContentWithQuiz(
+    title: string,
+    courseTitle: string,
+    quizCount: number = 5,
+  ): Promise<{
+    body: string;
+    quiz: { content: string; options: string[]; correctAnswer: number }[];
+  }> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException(
+        'GEMINI_API_KEY không tồn tại trong hệ thống.',
+      );
     }
 
-    /**
-     * Generate lesson content AND quiz questions in a single AI call.
-     * Returns { body: string, quiz: { content: string, options: string[], correctAnswer: number }[] }
-     */
-    async generateLessonContentWithQuiz(
-        title: string,
-        courseTitle: string,
-        quizCount: number = 5,
-    ): Promise<{ body: string; quiz: { content: string; options: string[]; correctAnswer: number }[] }> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
-        }
-
-        const prompt = `
+    const prompt = `
 You are an expert instructor for a course titled "${courseTitle}". Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
 
 PART 1 — LESSON CONTENT:
@@ -186,131 +236,172 @@ Return ONLY a valid JSON object (no markdown fences, no extra text) with this ex
 IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON characters (newlines as \\n, quotes as \\"). Return ONLY the JSON object.
         `;
 
-        try {
-            console.log(`[AiService] Generating lesson content + quiz — title: "${title}", quizCount: ${quizCount}`);
+    try {
+      console.log(
+        `[AiService] Generating lesson content + quiz — title: "${title}", quizCount: ${quizCount}`,
+      );
 
-            const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
 
-            const result = JSON.parse(cleaned);
+      const result = JSON.parse(cleaned);
 
-            if (!result.body || !Array.isArray(result.quiz)) {
-                throw new Error('AI response missing required fields (body or quiz)');
-            }
+      if (!result.body || !Array.isArray(result.quiz)) {
+        throw new Error('AI response missing required fields (body or quiz)');
+      }
 
-            console.log(`[AiService] Content+Quiz done — body: ${result.body.length} chars, quiz: ${result.quiz.length} questions`);
-            return result;
-        } catch (error: any) {
-            const status = error?.status || error?.code;
-            const msg: string = error?.message || '';
-            console.error(`[AiService] generateLessonContentWithQuiz error — status: ${status}`, msg.slice(0, 200));
+      console.log(
+        `[AiService] Content+Quiz done — body: ${result.body.length} chars, quiz: ${result.quiz.length} questions`,
+      );
+      return result;
+    } catch (error: any) {
+      const status = error?.status || error?.code;
+      const msg: string = error?.message || '';
+      console.error(
+        `[AiService] generateLessonContentWithQuiz error — status: ${status}`,
+        msg.slice(0, 200),
+      );
 
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn hoặc quá tải. Vui lòng chờ vài phút rồi thử lại.');
-            }
-            if (status === 503 || msg.includes('503') || msg.includes('high demand')) {
-                throw new InternalServerErrorException('SERVICE_UNAVAILABLE_503: Hệ thống AI đang bị quá tải (High Demand). Vui lòng thử lại sau một lát.');
-            }
-            throw new InternalServerErrorException(`Content+Quiz generation failed: ${msg.slice(0, 100) || 'unknown'}`);
-        }
+      if (
+        status === 429 ||
+        msg.includes('429') ||
+        msg.includes('RESOURCE_EXHAUSTED')
+      ) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn hoặc quá tải. Vui lòng chờ vài phút rồi thử lại.',
+        );
+      }
+      if (
+        status === 503 ||
+        msg.includes('503') ||
+        msg.includes('high demand')
+      ) {
+        throw new InternalServerErrorException(
+          'SERVICE_UNAVAILABLE_503: Hệ thống AI đang bị quá tải (High Demand). Vui lòng thử lại sau một lát.',
+        );
+      }
+      throw new InternalServerErrorException(
+        `Content+Quiz generation failed: ${msg.slice(0, 100) || 'unknown'}`,
+      );
+    }
+  }
+
+  /**
+   * AI Professional Assessment — evaluates user skills based on COMPLETED lessons only.
+   * If no lessons have been completed yet, returns a zero-score result immediately.
+   */
+  async assessSkill(userId: string): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
     }
 
-    /**
-     * AI Professional Assessment — evaluates user skills based on COMPLETED lessons only.
-     * If no lessons have been completed yet, returns a zero-score result immediately.
-     */
-    async assessSkill(userId: string): Promise<string> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
-        }
-
-        // Fetch all enrollments with lesson-level progress details
-        const enrollments = await this.prisma.enrollment.findMany({
-            where: { userId },
-            include: {
-                course: {
-                    select: {
-                        id: true,
-                        title: true,
-                        sections: {
-                            select: {
-                                title: true,
-                                order: true,
-                                lessons: {
-                                    select: { id: true, title: true, type: true, body: true, order: true },
-                                    orderBy: { order: 'asc' },
-                                },
-                            },
-                            orderBy: { order: 'asc' },
-                        },
-                    },
+    // Fetch all enrollments with lesson-level progress details
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            sections: {
+              select: {
+                title: true,
+                order: true,
+                lessons: {
+                  select: {
+                    id: true,
+                    title: true,
+                    type: true,
+                    body: true,
+                    order: true,
+                  },
+                  orderBy: { order: 'asc' },
                 },
-                // progresses contains one record per completed lesson
-                progresses: { select: { lessonId: true } },
+              },
+              orderBy: { order: 'asc' },
             },
-        });
+          },
+        },
+        // progresses contains one record per completed lesson
+        progresses: { select: { lessonId: true } },
+      },
+    });
 
-        // ── Key fix: collect only COMPLETED lessons ──────────────────────────
-        // Build detailed course content for AI — COMPLETED LESSONS ONLY
-        const courseDetails: string[] = [];
-        const completedCourses: string[] = [];
-        let totalCompletedLessons = 0;
+    // ── Key fix: collect only COMPLETED lessons ──────────────────────────
+    // Build detailed course content for AI — COMPLETED LESSONS ONLY
+    const courseDetails: string[] = [];
+    const completedCourses: string[] = [];
+    let totalCompletedLessons = 0;
 
-        for (const enrollment of enrollments) {
-            const course = enrollment.course;
-            const totalLessons = course.sections.reduce((sum, s) => sum + s.lessons.length, 0);
+    for (const enrollment of enrollments) {
+      const course = enrollment.course;
+      const totalLessons = course.sections.reduce(
+        (sum, s) => sum + s.lessons.length,
+        0,
+      );
 
-            // Build a set of lesson IDs that are actually completed
-            const completedLessonIds = new Set(enrollment.progresses.map(p => p.lessonId));
-            const numCompleted = completedLessonIds.size;
-            totalCompletedLessons += numCompleted;
+      // Build a set of lesson IDs that are actually completed
+      const completedLessonIds = new Set(
+        enrollment.progresses.map((p) => p.lessonId),
+      );
+      const numCompleted = completedLessonIds.size;
+      totalCompletedLessons += numCompleted;
 
-            if (numCompleted === 0) continue; // Skip courses with zero progress
+      if (numCompleted === 0) continue; // Skip courses with zero progress
 
-            const isFullyCompleted = numCompleted >= totalLessons && totalLessons > 0;
-            if (isFullyCompleted) completedCourses.push(course.title);
+      const isFullyCompleted = numCompleted >= totalLessons && totalLessons > 0;
+      if (isFullyCompleted) completedCourses.push(course.title);
 
-            // Only include content of ACTUALLY COMPLETED lessons
-            let curriculum = `\n📘 Khóa học: "${course.title}" (${isFullyCompleted ? 'ĐÃ HOÀN THÀNH' : `${numCompleted}/${totalLessons} bài đã học`})\n`;
+      // Only include content of ACTUALLY COMPLETED lessons
+      let curriculum = `\n📘 Khóa học: "${course.title}" (${isFullyCompleted ? 'ĐÃ HOÀN THÀNH' : `${numCompleted}/${totalLessons} bài đã học`})\n`;
 
-            for (const section of course.sections) {
-                const completedInSection = section.lessons.filter(l => completedLessonIds.has(l.id));
-                if (completedInSection.length === 0) continue;
+      for (const section of course.sections) {
+        const completedInSection = section.lessons.filter((l) =>
+          completedLessonIds.has(l.id),
+        );
+        if (completedInSection.length === 0) continue;
 
-                curriculum += `   📂 Chương: ${section.title}\n`;
-                for (const lesson of completedInSection) {
-                    curriculum += `      ✅ ${lesson.title} [${lesson.type}]`;
-                    if (lesson.body) {
-                        const bodyPreview = lesson.body.slice(0, 500).replace(/\n/g, ' ');
-                        curriculum += `\n         Nội dung: ${bodyPreview}${lesson.body.length > 500 ? '...' : ''}`;
-                    } else if (lesson.type === 'VIDEO') {
-                        curriculum += ` (video bài học đã xem)`;
-                    }
-                    curriculum += '\n';
-                }
-            }
-            courseDetails.push(curriculum);
+        curriculum += `   📂 Chương: ${section.title}\n`;
+        for (const lesson of completedInSection) {
+          curriculum += `      ✅ ${lesson.title} [${lesson.type}]`;
+          if (lesson.body) {
+            const bodyPreview = lesson.body.slice(0, 500).replace(/\n/g, ' ');
+            curriculum += `\n         Nội dung: ${bodyPreview}${lesson.body.length > 500 ? '...' : ''}`;
+          } else if (lesson.type === 'VIDEO') {
+            curriculum += ` (video bài học đã xem)`;
+          }
+          curriculum += '\n';
         }
+      }
+      courseDetails.push(curriculum);
+    }
 
-        // ── Early exit: student has not completed ANY lesson ──────────────────
-        if (totalCompletedLessons === 0) {
-            const noDataResult = JSON.stringify({
-                overallScore: 0,
-                skills: [],
-                level: "Chưa có dữ liệu",
-                summary: "Học viên chưa hoàn thành bài học nào. Hãy bắt đầu học và hoàn thành ít nhất một bài học để nhận đánh giá kỹ năng chính xác.",
-                recommendations: [
-                    "Hãy đăng ký một khóa học phù hợp với mục tiêu nghề nghiệp của bạn.",
-                    "Hoàn thành ít nhất vài bài học đầu tiên để AI có thể đánh giá điểm mạnh và điểm yếu của bạn.",
-                    "Sau khi học xong, nhấn nút 'Hoàn thành' ở cuối mỗi bài để hệ thống ghi nhận tiến độ.",
-                ],
-            });
+    // ── Early exit: student has not completed ANY lesson ──────────────────
+    if (totalCompletedLessons === 0) {
+      const noDataResult = JSON.stringify({
+        overallScore: 0,
+        skills: [],
+        level: 'Chưa có dữ liệu',
+        summary:
+          'Học viên chưa hoàn thành bài học nào. Hãy bắt đầu học và hoàn thành ít nhất một bài học để nhận đánh giá kỹ năng chính xác.',
+        recommendations: [
+          'Hãy đăng ký một khóa học phù hợp với mục tiêu nghề nghiệp của bạn.',
+          'Hoàn thành ít nhất vài bài học đầu tiên để AI có thể đánh giá điểm mạnh và điểm yếu của bạn.',
+          "Sau khi học xong, nhấn nút 'Hoàn thành' ở cuối mỗi bài để hệ thống ghi nhận tiến độ.",
+        ],
+      });
 
-            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: noDataResult } });
-            return noDataResult;
-        }
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { aiRank: noDataResult },
+      });
+      return noDataResult;
+    }
 
-        const prompt = `
+    const prompt = `
 You are a professional career advisor and tech skill assessor.
 
 Below is the list of lessons a student has ACTUALLY COMPLETED (lessons they did NOT complete are excluded):
@@ -340,34 +431,46 @@ Rules:
 - Return ONLY valid JSON
         `;
 
-        try {
-            console.log(`[AiService] Assessing skills for user ${userId} — ${totalCompletedLessons} lessons completed across ${courseDetails.length} courses`);
-            const text = await this.generateWithFallback(prompt);
-            console.log(`[AiService] Assessment done — ${text.length} chars`);
+    try {
+      console.log(
+        `[AiService] Assessing skills for user ${userId} — ${totalCompletedLessons} lessons completed across ${courseDetails.length} courses`,
+      );
+      const text = await this.generateWithFallback(prompt);
+      console.log(`[AiService] Assessment done — ${text.length} chars`);
 
-            let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-            JSON.parse(cleaned); // validate
+      const cleaned = text
+        .replace(/```json\n?/g, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      JSON.parse(cleaned); // validate
 
-            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: cleaned } });
-            return cleaned;
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.error(`[AiService] assessSkill error:`, msg.slice(0, 200));
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
-            }
-            throw new InternalServerErrorException(`Assessment failed: ${msg.slice(0, 100)}`);
-        }
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { aiRank: cleaned },
+      });
+      return cleaned;
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] assessSkill error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
+        );
+      }
+      throw new InternalServerErrorException(
+        `Assessment failed: ${msg.slice(0, 100)}`,
+      );
     }
-    /**
-     * AI Quiz Generation — generate N MCQ questions from lesson content
-     */
-    async generateQuiz(lessonContent: string, count: number = 5): Promise<any[]> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
-        }
+  }
+  /**
+   * AI Quiz Generation — generate N MCQ questions from lesson content
+   */
+  async generateQuiz(lessonContent: string, count: number = 5): Promise<any[]> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
+    }
 
-        const prompt = `
+    const prompt = `
 You are an expert instructor. Based on the following lesson content, generate exactly ${count} multiple-choice questions to test the student's knowledge.
 
 Lesson content:
@@ -384,44 +487,51 @@ Return ONLY a valid JSON array of ${count} questions with this exact structure. 
 Note: 'correctAnswer' is the 0-based index of the correct option in the 'options' array.
 `;
 
-        try {
-            console.log(`[AiService] Generating quiz...`);
-            const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
-            const questions = JSON.parse(cleaned);
-            console.log(`[AiService] Quiz generation done, got ${questions.length} questions`);
-            return questions;
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.error(`[AiService] generateQuiz error:`, msg.slice(0, 200));
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
-            }
-            throw new InternalServerErrorException('Lỗi khi tạo Quiz từ AI.');
-        }
+    try {
+      console.log(`[AiService] Generating quiz...`);
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const questions = JSON.parse(cleaned);
+      console.log(
+        `[AiService] Quiz generation done, got ${questions.length} questions`,
+      );
+      return questions;
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] generateQuiz error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
+        );
+      }
+      throw new InternalServerErrorException('Lỗi khi tạo Quiz từ AI.');
+    }
+  }
+
+  /**
+   * AI Tutor — answers a student's question using the lesson content as context.
+   */
+  async askTutor(question: string, lessonId: string): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
     }
 
-    /**
-     * AI Tutor — answers a student's question using the lesson content as context.
-     */
-    async askTutor(question: string, lessonId: string): Promise<string> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
-        }
+    // Fetch lesson body for context
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { title: true, body: true, type: true },
+    });
 
-        // Fetch lesson body for context
-        const lesson = await this.prisma.lesson.findUnique({
-            where: { id: lessonId },
-            select: { title: true, body: true, type: true },
-        });
+    const lessonContext = lesson?.body
+      ? `Tên bài học: ${lesson.title}\n\nNội dung bài học:\n${lesson.body.slice(0, 3000)}`
+      : lesson
+        ? `Tên bài học: ${lesson.title} (Bài học dạng video, không có nội dung văn bản.)`
+        : 'Không tìm thấy nội dung bài học.';
 
-        const lessonContext = lesson?.body
-            ? `Tên bài học: ${lesson.title}\n\nNội dung bài học:\n${lesson.body.slice(0, 3000)}`
-            : lesson
-                ? `Tên bài học: ${lesson.title} (Bài học dạng video, không có nội dung văn bản.)`
-                : 'Không tìm thấy nội dung bài học.';
-
-        const prompt = `
+    const prompt = `
 Bạn là một AI Tutor thân thiện, chuyên hỗ trợ học viên học lập trình.
 
 Ngữ cảnh bài học mà học viên đang học:
@@ -439,44 +549,49 @@ Hướng dẫn:
 - KHÔNG được bịa thông tin, chỉ trả lời những gì bạn biết chắc.
         `;
 
-        try {
-            console.log(`[AiService] askTutor — lessonId: ${lessonId}, question: "${question.slice(0, 80)}"`);
-            const text = await this.generateWithFallback(prompt);
-            return text || 'Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.';
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.error(`[AiService] askTutor error:`, msg.slice(0, 200));
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: AI đang bận. Vui lòng chờ vài giây.');
-            }
-            throw new InternalServerErrorException('Lỗi khi hỏi AI Tutor.');
-        }
+    try {
+      console.log(
+        `[AiService] askTutor — lessonId: ${lessonId}, question: "${question.slice(0, 80)}"`,
+      );
+      const text = await this.generateWithFallback(prompt);
+      return text || 'Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.';
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] askTutor error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bận. Vui lòng chờ vài giây.',
+        );
+      }
+      throw new InternalServerErrorException('Lỗi khi hỏi AI Tutor.');
+    }
+  }
+
+  /**
+   * AI Interview — conducts a mock tech interview based on course content.
+   */
+  async conductInterview(
+    courseContext: string,
+    courseName: string,
+    userMessage: string,
+    history: { role: string; content: string }[],
+  ): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
     }
 
-    /**
-     * AI Interview — conducts a mock tech interview based on course content.
-     */
-    async conductInterview(
-        courseContext: string,
-        courseName: string,
-        userMessage: string,
-        history: { role: string; content: string }[],
-    ): Promise<string> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
-        }
+    // Build conversation history for context
+    let conversationHistory = '';
+    if (history.length > 0) {
+      conversationHistory = '\n\nLịch sử hội thoại trước đó:\n';
+      for (const msg of history.slice(-10)) {
+        // Keep last 10 messages
+        const role = msg.role === 'user' ? 'Ứng viên' : 'Nhà tuyển dụng';
+        conversationHistory += `${role}: ${msg.content}\n`;
+      }
+    }
 
-        // Build conversation history for context
-        let conversationHistory = '';
-        if (history.length > 0) {
-            conversationHistory = '\n\nLịch sử hội thoại trước đó:\n';
-            for (const msg of history.slice(-10)) { // Keep last 10 messages
-                const role = msg.role === 'user' ? 'Ứng viên' : 'Nhà tuyển dụng';
-                conversationHistory += `${role}: ${msg.content}\n`;
-            }
-        }
-
-        const prompt = `
+    const prompt = `
 Bạn là một nhà tuyển dụng công nghệ (Tech Recruiter) chuyên nghiệp, đang phỏng vấn một ứng viên.
 
 Kiến thức của ứng viên dựa trên khóa học sau:
@@ -502,51 +617,74 @@ Hướng dẫn phỏng vấn:
 - Dùng Markdown nếu cần format code.
         `;
 
-        try {
-            console.log(`[AiService] conductInterview — course: "${courseName}", msg: "${userMessage.slice(0, 60)}"`);
-            const text = await this.generateWithFallback(prompt);
-            return text || 'Xin lỗi, tôi không thể xử lý câu trả lời lúc này.';
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.error(`[AiService] conductInterview error:`, msg.slice(0, 200));
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
-            }
-            throw new InternalServerErrorException('Lỗi khi phỏng vấn AI.');
-        }
+    try {
+      console.log(
+        `[AiService] conductInterview — course: "${courseName}", msg: "${userMessage.slice(0, 60)}"`,
+      );
+      const text = await this.generateWithFallback(prompt);
+      return text || 'Xin lỗi, tôi không thể xử lý câu trả lời lúc này.';
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] conductInterview error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
+        );
+      }
+      throw new InternalServerErrorException('Lỗi khi phỏng vấn AI.');
+    }
+  }
+
+  /**
+   * AI Learning Outcomes Suggestion — suggests 5-8 course learning outcomes
+   * based on title and description.
+   */
+  async suggestLearningOutcomes(
+    title: string,
+    description: string,
+  ): Promise<string[]> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException(
+        'GEMINI_API_KEY không tồn tại trong hệ thống.',
+      );
     }
 
-    /**
-     * AI Learning Outcomes Suggestion — suggests 5-8 course learning outcomes
-     * based on title and description.
-     */
-    async suggestLearningOutcomes(title: string, description: string): Promise<string[]> {
-        if (!process.env.GEMINI_API_KEY) {
-            throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
-        }
+    const prompt = `Bạn là chuyên gia thiết kế khóa học. Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5-8 mục tiêu học tập (string). Mỗi mục bắt đầu bằng động từ hành động. Chỉ trả về JSON, không giải thích.`;
 
-        const prompt = `Bạn là chuyên gia thiết kế khóa học. Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5-8 mục tiêu học tập (string). Mỗi mục bắt đầu bằng động từ hành động. Chỉ trả về JSON, không giải thích.`;
+    try {
+      console.log(
+        `[AiService] Suggesting learning outcomes — title: "${title}"`,
+      );
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const outcomes = JSON.parse(cleaned);
 
-        try {
-            console.log(`[AiService] Suggesting learning outcomes — title: "${title}"`);
-            const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
-            const outcomes = JSON.parse(cleaned);
+      if (!Array.isArray(outcomes)) {
+        throw new Error('AI response is not an array');
+      }
 
-            if (!Array.isArray(outcomes)) {
-                throw new Error('AI response is not an array');
-            }
+      console.log(
+        `[AiService] Learning outcomes done — ${outcomes.length} items`,
+      );
+      return outcomes.map((o: any) => String(o));
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(
+        `[AiService] suggestLearningOutcomes error:`,
+        msg.slice(0, 200),
+      );
 
-            console.log(`[AiService] Learning outcomes done — ${outcomes.length} items`);
-            return outcomes.map((o: any) => String(o));
-        } catch (error: any) {
-            const msg = error?.message || '';
-            console.error(`[AiService] suggestLearningOutcomes error:`, msg.slice(0, 200));
-
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.');
-            }
-            throw new InternalServerErrorException(`Learning outcomes generation failed: ${msg.slice(0, 100) || 'unknown'}`);
-        }
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
+        );
+      }
+      throw new InternalServerErrorException(
+        `Learning outcomes generation failed: ${msg.slice(0, 100) || 'unknown'}`,
+      );
     }
+  }
 }

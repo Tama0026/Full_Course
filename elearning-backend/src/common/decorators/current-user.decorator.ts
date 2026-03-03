@@ -8,11 +8,11 @@ import { GqlExecutionContext } from '@nestjs/graphql';
  * Usage: @CurrentUser() user: UserPayload
  */
 export const CurrentUser = createParamDecorator(
-    (data: unknown, context: ExecutionContext) => {
-        if (context.getType<any>() === 'graphql') {
-            const ctx = GqlExecutionContext.create(context);
-            return ctx.getContext().req?.user;
-        }
-        return context.switchToHttp().getRequest()?.user;
-    },
+  (data: unknown, context: ExecutionContext) => {
+    if (context.getType<any>() === 'graphql') {
+      const ctx = GqlExecutionContext.create(context);
+      return ctx.getContext().req?.user;
+    }
+    return context.switchToHttp().getRequest()?.user;
+  },
 );

@@ -39,6 +39,8 @@ export const GET_COURSE_DETAIL = gql`
       averageRating
       reviewCount
       totalDuration
+      maxStudents
+      isApprovalRequired
       instructorId
       instructor { id email }
       sections {
@@ -194,6 +196,8 @@ export const GET_COURSE_STUDENTS = gql`
       progressPercent
       lastActive
       lastRemindedAt
+      enrolledAt
+      status
       progressTimeline {
         lessonTitle
         chapterTitle
@@ -206,5 +210,17 @@ export const GET_COURSE_STUDENTS = gql`
 export const SEND_LEARNING_REMINDER = gql`
   mutation SendLearningReminder($studentId: String!, $courseId: String!) {
     sendLearningReminder(studentId: $studentId, courseId: $courseId)
+  }
+`;
+
+export const APPROVE_ENROLLMENT = gql`
+  mutation ApproveEnrollment($studentId: String!, $courseId: String!) {
+    approveEnrollment(studentId: $studentId, courseId: $courseId)
+  }
+`;
+
+export const REJECT_ENROLLMENT = gql`
+  mutation RejectEnrollment($studentId: String!, $courseId: String!) {
+    rejectEnrollment(studentId: $studentId, courseId: $courseId)
   }
 `;

@@ -111,7 +111,7 @@ let QuizService = class QuizService {
                 score++;
             }
         }
-        const isPassed = (score / totalQuestions) >= 0.8;
+        const isPassed = score / totalQuestions >= 0.8;
         if (isPassed) {
             await this.gamificationService.addPoints(userId, score * 10);
             const lesson = await this.prisma.lesson.findUnique({
@@ -124,8 +124,8 @@ let QuizService = class QuizService {
                         userId_courseId: {
                             userId,
                             courseId: lesson.section.courseId,
-                        }
-                    }
+                        },
+                    },
                 });
                 if (enrollment) {
                     let completedLessons = [];
@@ -136,7 +136,7 @@ let QuizService = class QuizService {
                     if (!completedLessons.includes(lessonId)) {
                         completedLessons.push(lessonId);
                         const totalCourseLessons = await this.prisma.lesson.count({
-                            where: { section: { courseId: lesson.section.courseId } }
+                            where: { section: { courseId: lesson.section.courseId } },
                         });
                         const isFinished = completedLessons.length >= totalCourseLessons;
                         await this.prisma.enrollment.update({
@@ -154,7 +154,9 @@ let QuizService = class QuizService {
             success: isPassed,
             score,
             totalQuestions,
-            message: isPassed ? 'Chúc mừng bạn đã vượt qua bài kiểm tra!' : 'Bạn chưa đạt đủ 80% điểm. Đừng bỏ cuộc, hãy thử lại!',
+            message: isPassed
+                ? 'Chúc mừng bạn đã vượt qua bài kiểm tra!'
+                : 'Bạn chưa đạt đủ 80% điểm. Đừng bỏ cuộc, hãy thử lại!',
         };
     }
 };

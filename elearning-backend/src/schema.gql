@@ -68,6 +68,45 @@ type AdminStats {
   totalUsers: Int!
 }
 
+input AnswerInput {
+  answer: String!
+  questionId: String!
+}
+
+type Assessment {
+  createdAt: DateTime!
+  creatorId: String!
+  description: String!
+  id: ID!
+  isActive: Boolean!
+  passingScore: Float!
+  questions: [AssessmentQuestion]
+  timeLimit: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type AssessmentAttempt {
+  assessmentId: String!
+  completedAt: DateTime
+  id: ID!
+  isInvalid: Boolean!
+  passed: Boolean
+  score: Float
+  startedAt: DateTime!
+  userId: String!
+}
+
+type AssessmentQuestion {
+  assessmentId: String!
+  correctAnswer: String!
+  explanation: String!
+  id: ID!
+  options: [String!]!
+  order: Int!
+  prompt: String!
+}
+
 type AuthResponse {
   accessToken: String!
   refreshToken: String!
@@ -159,7 +198,9 @@ type Course {
   instructor: User
   instructorId: String!
   isActive: Boolean!
+  isApprovalRequired: Boolean!
   learningOutcomes: [String!]!
+  maxStudents: Float
   price: Float!
   published: Boolean!
   reviewCount: Float!
@@ -189,18 +230,28 @@ type CourseStats {
 type CourseStudent {
   avatar: String
   email: String!
+  enrolledAt: DateTime
   id: ID!
   lastActive: DateTime
   lastRemindedAt: DateTime
   name: String!
   progressPercent: Float!
   progressTimeline: [CourseStudentProgress!]!
+  status: String
 }
 
 type CourseStudentProgress {
   chapterTitle: String!
   completedAt: DateTime!
   lessonTitle: String!
+}
+
+input CreateAssessmentInput {
+  description: String!
+  isActive: Boolean!
+  passingScore: Float!
+  timeLimit: Int!
+  title: String!
 }
 
 input CreateBadgeInput {
@@ -251,6 +302,14 @@ input CreateNoteInput {
 
 input CreateOrderInput {
   courseId: String!
+}
+
+input CreateQuestionInput {
+  correctAnswer: String!
+  explanation: String!
+  options: [String!]!
+  order: Int!
+  prompt: String!
 }
 
 input CreateSectionInput {
@@ -343,10 +402,13 @@ type Mutation {
   adminCreateBadge(input: AdminCreateBadgeInput!): AdminBadgeType!
   adminDeleteBadge(badgeId: String!): Boolean!
   adminUpdateBadge(badgeId: String!, input: UpdateBadgeInput!): AdminBadgeType!
+  approveEnrollment(courseId: String!, studentId: String!): Boolean!
   askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
   chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
   claimCertificate(courseId: String!): Certificate!
+  createAssessment(input: CreateAssessmentInput!): Assessment!
+  createAssessmentQuestion(assessmentId: String!, input: CreateQuestionInput!): AssessmentQuestion!
   createCategory(input: CreateCategoryInput!): Category!
   createComment(input: CreateCommentInput!): Comment!
   createCourse(input: CreateCourseInput!): Course!
@@ -355,6 +417,8 @@ type Mutation {
   createNote(input: CreateNoteInput!): Note!
   createOrder(input: CreateOrderInput!): Order!
   createSection(input: CreateSectionInput!): Section!
+  deleteAssessment(id: String!): Assessment!
+  deleteAssessmentQuestion(id: String!): AssessmentQuestion!
   deleteCategory(id: String!): Category!
   deleteComment(id: String!): Comment!
   deleteCourse(id: String!): Course!
@@ -369,7 +433,10 @@ type Mutation {
   markLessonComplete(lessonId: String!): Progress!
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
+  rejectEnrollment(courseId: String!, studentId: String!): Boolean!
   sendLearningReminder(courseId: String!, studentId: String!): Boolean!
+  startAssessmentAttempt(assessmentId: String!): AssessmentAttempt!
+  submitAssessmentAttempt(answers: [AnswerInput!]!, attemptId: String!): AssessmentAttempt!
   submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
   suggestLearningOutcomes(description: String!, title: String!): [String!]!
   toggleCourseStatus(id: String!): Course!
@@ -425,6 +492,8 @@ type Query {
   adminStats: AdminStats!
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
+  assessment(id: String!): Assessment!
+  assessments: [Assessment!]!
   categories: [Category!]!
   certificateByCode(code: String!): Certificate
   course(id: String!): Course!

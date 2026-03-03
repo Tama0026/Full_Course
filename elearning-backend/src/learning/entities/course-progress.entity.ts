@@ -8,18 +8,18 @@ import { Progress } from './progress.entity';
  */
 @ObjectType()
 export class CourseProgress {
-    @Field(() => Enrollment)
-    enrollment: Enrollment;
+  @Field(() => Enrollment)
+  enrollment: Enrollment;
 
-    @Field(() => Float)
-    progressPercentage: number;
+  @Field(() => Float)
+  progressPercentage: number;
 
-    @Field()
-    completedLessons: number;
+  @Field()
+  completedLessons: number;
 
-    @Field()
-    totalLessons: number;
+  @Field()
+  totalLessons: number;
 
-    @Field(() => [Progress])
-    completedItems: Progress[];
+  @Field(() => [Progress])
+  completedItems: Progress[];
 }

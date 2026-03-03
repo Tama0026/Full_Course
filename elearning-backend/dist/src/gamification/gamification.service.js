@@ -95,7 +95,9 @@ let GamificationService = class GamificationService {
                 return this.getUserPoints(userId);
             }
             case 'LOGIN_STREAK': {
-                const streak = await this.prisma.loginStreak.findUnique({ where: { userId } });
+                const streak = await this.prisma.loginStreak.findUnique({
+                    where: { userId },
+                });
                 return streak?.currentStreak || 0;
             }
             default:
@@ -169,7 +171,9 @@ let GamificationService = class GamificationService {
             orderBy: [{ courseId: 'asc' }, { name: 'asc' }],
         });
         const valueCache = new Map();
-        const uniqueTypes = [...new Set(allBadges.map((b) => b.criteriaType))];
+        const uniqueTypes = [
+            ...new Set(allBadges.map((b) => b.criteriaType)),
+        ];
         for (const type of uniqueTypes) {
             const value = await this.getUserCurrentValue(userId, type, null);
             valueCache.set(type, value);
@@ -211,7 +215,9 @@ let GamificationService = class GamificationService {
         };
     }
     async updateCourseBadge(badgeId, creatorId, data) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         if (badge.creatorId !== creatorId)
@@ -223,7 +229,9 @@ let GamificationService = class GamificationService {
         });
     }
     async deleteCourseBadge(badgeId, creatorId) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         if (badge.creatorId !== creatorId)
@@ -285,12 +293,13 @@ let GamificationService = class GamificationService {
     }
     async adminCreateBadge(input) {
         const criteriaMap = {
-            'LESSONS_COMPLETED': (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
-            'COURSES_COMPLETED': (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
-            'POINTS_EARNED': (t) => `REACH_${t}_POINTS`,
-            'LOGIN_STREAK': (t) => `LOGIN_STREAK_${t}_DAYS`,
+            LESSONS_COMPLETED: (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+            COURSES_COMPLETED: (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+            POINTS_EARNED: (t) => `REACH_${t}_POINTS`,
+            LOGIN_STREAK: (t) => `LOGIN_STREAK_${t}_DAYS`,
         };
-        const criteriaFn = criteriaMap[input.criteriaType] || ((t) => `${input.criteriaType}_${t}`);
+        const criteriaFn = criteriaMap[input.criteriaType] ||
+            ((t) => `${input.criteriaType}_${t}`);
         const criteria = criteriaFn(input.threshold);
         const badge = await this.prisma.badge.create({
             data: {
@@ -315,7 +324,9 @@ let GamificationService = class GamificationService {
         };
     }
     async adminUpdateBadge(badgeId, data) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         const updateData = { ...data };
@@ -323,10 +334,10 @@ let GamificationService = class GamificationService {
         const newThreshold = data.threshold ?? badge.threshold;
         if (data.criteriaType || data.threshold !== undefined) {
             const criteriaMap = {
-                'LESSONS_COMPLETED': (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
-                'COURSES_COMPLETED': (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
-                'POINTS_EARNED': (t) => `REACH_${t}_POINTS`,
-                'LOGIN_STREAK': (t) => `LOGIN_STREAK_${t}_DAYS`,
+                LESSONS_COMPLETED: (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+                COURSES_COMPLETED: (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+                POINTS_EARNED: (t) => `REACH_${t}_POINTS`,
+                LOGIN_STREAK: (t) => `LOGIN_STREAK_${t}_DAYS`,
             };
             const criteriaFn = criteriaMap[newType] || ((t) => `${newType}_${t}`);
             updateData.criteria = criteriaFn(newThreshold);
@@ -348,7 +359,9 @@ let GamificationService = class GamificationService {
         };
     }
     async adminDeleteBadge(badgeId) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         const awardedCount = await this.prisma.userBadge.count({
@@ -367,8 +380,12 @@ let GamificationService = class GamificationService {
             this.prisma.enrollment.count(),
             this.prisma.badge.count(),
         ]);
-        const totalStudents = await this.prisma.user.count({ where: { role: 'STUDENT' } });
-        const totalInstructors = await this.prisma.user.count({ where: { role: 'INSTRUCTOR' } });
+        const totalStudents = await this.prisma.user.count({
+            where: { role: 'STUDENT' },
+        });
+        const totalInstructors = await this.prisma.user.count({
+            where: { role: 'INSTRUCTOR' },
+        });
         return {
             totalUsers,
             totalCourses,

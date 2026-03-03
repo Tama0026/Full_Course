@@ -9,22 +9,22 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-    imports: [
-        PassportModule.register({ defaultStrategy: 'jwt' }),
-        JwtModule.registerAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                secret: configService.get<string>('JWT_SECRET'),
-                signOptions: {
-                    expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
-                        '15m') as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-                },
-            }),
-        }),
-        GamificationModule,
-    ],
-    providers: [AuthService, AuthResolver, UserRepository, JwtStrategy],
-    exports: [AuthService, UserRepository],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+            '15m') as any,
+        },
+      }),
+    }),
+    GamificationModule,
+  ],
+  providers: [AuthService, AuthResolver, UserRepository, JwtStrategy],
+  exports: [AuthService, UserRepository],
 })
-export class AuthModule { }
+export class AuthModule {}

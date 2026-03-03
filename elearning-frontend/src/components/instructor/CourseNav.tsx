@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Settings, Users, BookOpen } from "lucide-react";
+import { ArrowLeft, Settings, Users, BookOpen, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,11 @@ export default function CourseNav({ courseId, courseTitle }: CourseNavProps) {
             name: "Học viên",
             href: `/instructor/courses/${courseId}/students`,
             icon: Users,
+        },
+        {
+            name: "Duyệt đăng ký",
+            href: `/instructor/courses/${courseId}/approvals`,
+            icon: ClipboardCheck,
         },
         {
             name: "Cài đặt",

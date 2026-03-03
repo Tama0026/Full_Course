@@ -71,6 +71,9 @@ let EnrollmentGuard = class EnrollmentGuard {
         if (!enrollment) {
             throw new common_1.ForbiddenException('Bạn cần phải mua khóa học này để có thể xem bài học. Nếu bạn vừa mua, vui lòng tải lại trang.');
         }
+        if (enrollment.status !== 'APPROVED') {
+            throw new common_1.ForbiddenException('Khóa học này yêu cầu sự phê duyệt từ giảng viên. Vui lòng chờ phê duyệt để xem nội dung.');
+        }
         return true;
     }
 };

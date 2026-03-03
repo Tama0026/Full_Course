@@ -3,7 +3,7 @@ import { NotesService } from './notes.service';
 import { NotesResolver } from './notes.resolver';
 
 @Module({
-    providers: [NotesService, NotesResolver],
-    exports: [NotesService],
+  providers: [NotesService, NotesResolver],
+  exports: [NotesService],
 })
-export class NotesModule { }
+export class NotesModule {}

@@ -2,57 +2,57 @@ import { ObjectType, Field, ID, Int, Float } from '@nestjs/graphql';
 
 @ObjectType()
 export class AdminCourseInstructor {
-    @Field()
-    id: string;
+  @Field()
+  id: string;
 
-    @Field({ nullable: true })
-    name?: string;
+  @Field({ nullable: true })
+  name?: string;
 
-    @Field()
-    email: string;
+  @Field()
+  email: string;
 }
 
 @ObjectType()
 export class AdminCourse {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    title: string;
+  @Field()
+  title: string;
 
-    @Field()
-    description: string;
+  @Field()
+  description: string;
 
-    @Field(() => Float)
-    price: number;
+  @Field(() => Float)
+  price: number;
 
-    @Field({ nullable: true })
-    thumbnail?: string;
+  @Field({ nullable: true })
+  thumbnail?: string;
 
-    @Field({ nullable: true })
-    category?: string;
+  @Field({ nullable: true })
+  category?: string;
 
-    @Field()
-    published: boolean;
+  @Field()
+  published: boolean;
 
-    @Field()
-    isActive: boolean;
+  @Field()
+  isActive: boolean;
 
-    @Field()
-    instructorId: string;
+  @Field()
+  instructorId: string;
 
-    @Field(() => AdminCourseInstructor)
-    instructor: AdminCourseInstructor;
+  @Field(() => AdminCourseInstructor)
+  instructor: AdminCourseInstructor;
 
-    @Field(() => Int)
-    enrollmentCount: number;
+  @Field(() => Int)
+  enrollmentCount: number;
 
-    @Field(() => Int)
-    sectionCount: number;
+  @Field(() => Int)
+  sectionCount: number;
 
-    @Field()
-    createdAt: Date;
+  @Field()
+  createdAt: Date;
 
-    @Field()
-    updatedAt: Date;
+  @Field()
+  updatedAt: Date;
 }

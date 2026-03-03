@@ -13,6 +13,8 @@ export declare class Course {
     totalDuration: number;
     published: boolean;
     isActive: boolean;
+    maxStudents?: number;
+    isApprovalRequired: boolean;
     instructorId: string;
     instructor?: User;
     sections?: Section[];
@@ -33,4 +35,6 @@ export declare class CourseStudent {
     lastActive?: Date;
     progressTimeline: CourseStudentProgress[];
     lastRemindedAt?: Date;
+    enrolledAt?: Date;
+    status?: string;
 }

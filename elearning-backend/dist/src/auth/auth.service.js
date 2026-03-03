@@ -88,7 +88,9 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const tokens = this.generateTokens(user);
-        this.gamificationService.recordLoginActivity(user.id).catch(err => console.error('[Auth] Streak tracking error:', err.message));
+        this.gamificationService
+            .recordLoginActivity(user.id)
+            .catch((err) => console.error('[Auth] Streak tracking error:', err.message));
         return {
             ...tokens,
             user,

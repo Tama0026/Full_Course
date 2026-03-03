@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     User, LogOut,
-    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award, BookOpen,
+    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award, BookOpen, ClipboardList
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { href: "/instructor", icon: LayoutDashboard, label: "Instructor Dashboard", exact: true },
     { href: "/instructor/courses", icon: BookOpen, label: "Quản lý khóa học", exact: true },
+    { href: "/instructor/assessments", icon: ClipboardList, label: "Kỳ thi độc lập", exact: false },
     { href: "/instructor/badges", icon: Award, label: "Quản lý Badge", exact: false },
 ];
 

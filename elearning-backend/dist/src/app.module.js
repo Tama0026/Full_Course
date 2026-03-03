@@ -23,6 +23,7 @@ const notes_module_1 = require("./notes/notes.module");
 const ai_module_1 = require("./ai/ai.module");
 const quiz_module_1 = require("./quiz/quiz.module");
 const gamification_module_1 = require("./gamification/gamification.module");
+const assessments_module_1 = require("./assessments/assessments.module");
 const email_module_1 = require("./email/email.module");
 const interview_module_1 = require("./interview/interview.module");
 const categories_module_1 = require("./categories/categories.module");
@@ -54,6 +55,7 @@ exports.AppModule = AppModule = __decorate([
             ai_module_1.AiModule,
             quiz_module_1.QuizModule,
             gamification_module_1.GamificationModule,
+            assessments_module_1.AssessmentsModule,
             interview_module_1.InterviewModule,
             categories_module_1.CategoriesModule,
         ],

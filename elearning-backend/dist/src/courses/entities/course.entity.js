@@ -26,6 +26,8 @@ let Course = class Course {
     totalDuration;
     published;
     isActive;
+    maxStudents;
+    isApprovalRequired;
     instructorId;
     instructor;
     sections;
@@ -82,6 +84,14 @@ __decorate([
     __metadata("design:type", Boolean)
 ], Course.prototype, "isActive", void 0);
 __decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float, { nullable: true }),
+    __metadata("design:type", Number)
+], Course.prototype, "maxStudents", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], Course.prototype, "isApprovalRequired", void 0);
+__decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], Course.prototype, "instructorId", void 0);
@@ -134,6 +144,8 @@ let CourseStudent = class CourseStudent {
     lastActive;
     progressTimeline;
     lastRemindedAt;
+    enrolledAt;
+    status;
 };
 exports.CourseStudent = CourseStudent;
 __decorate([
@@ -168,6 +180,14 @@ __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", Date)
 ], CourseStudent.prototype, "lastRemindedAt", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], CourseStudent.prototype, "enrolledAt", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], CourseStudent.prototype, "status", void 0);
 exports.CourseStudent = CourseStudent = __decorate([
     (0, graphql_1.ObjectType)()
 ], CourseStudent);

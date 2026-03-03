@@ -18,11 +18,15 @@ let CommentsService = class CommentsService {
         this.prisma = prisma;
     }
     async create(input, userId) {
-        const lesson = await this.prisma.lesson.findUnique({ where: { id: input.lessonId } });
+        const lesson = await this.prisma.lesson.findUnique({
+            where: { id: input.lessonId },
+        });
         if (!lesson)
             throw new common_1.NotFoundException(`Lesson "${input.lessonId}" not found`);
         if (input.parentId) {
-            const parent = await this.prisma.comment.findUnique({ where: { id: input.parentId } });
+            const parent = await this.prisma.comment.findUnique({
+                where: { id: input.parentId },
+            });
             if (!parent)
                 throw new common_1.NotFoundException(`Parent comment "${input.parentId}" not found`);
         }

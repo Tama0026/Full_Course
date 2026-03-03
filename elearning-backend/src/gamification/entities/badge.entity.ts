@@ -2,36 +2,36 @@ import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 
 @ObjectType()
 export class BadgeType {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    name: string;
+  @Field()
+  name: string;
 
-    @Field()
-    description: string;
+  @Field()
+  description: string;
 
-    @Field()
-    icon: string;
+  @Field()
+  icon: string;
 
-    @Field()
-    criteria: string;
+  @Field()
+  criteria: string;
 
-    @Field()
-    criteriaType: string;
+  @Field()
+  criteriaType: string;
 
-    @Field(() => Int)
-    threshold: number;
+  @Field(() => Int)
+  threshold: number;
 
-    @Field({ nullable: true })
-    courseId?: string;
+  @Field({ nullable: true })
+  courseId?: string;
 
-    @Field({ nullable: true })
-    courseName?: string;
+  @Field({ nullable: true })
+  courseName?: string;
 
-    @Field()
-    creatorId: string;
+  @Field()
+  creatorId: string;
 
-    @Field({ nullable: true })
-    awardedAt?: Date;
+  @Field({ nullable: true })
+  awardedAt?: Date;
 }
