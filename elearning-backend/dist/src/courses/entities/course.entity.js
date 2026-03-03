@@ -18,6 +18,12 @@ let Course = class Course {
     title;
     description;
     price;
+    thumbnail;
+    category;
+    learningOutcomes;
+    averageRating;
+    reviewCount;
+    totalDuration;
     published;
     isActive;
     instructorId;
@@ -43,6 +49,30 @@ __decorate([
     (0, graphql_1.Field)(() => graphql_1.Float),
     __metadata("design:type", Number)
 ], Course.prototype, "price", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Course.prototype, "thumbnail", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Course.prototype, "category", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true }),
+    __metadata("design:type", Array)
+], Course.prototype, "learningOutcomes", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], Course.prototype, "averageRating", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], Course.prototype, "reviewCount", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], Course.prototype, "totalDuration", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)

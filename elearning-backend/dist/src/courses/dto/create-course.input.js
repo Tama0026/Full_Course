@@ -17,6 +17,9 @@ let CreateCourseInput = class CreateCourseInput {
     description;
     price;
     published;
+    thumbnail;
+    category;
+    learningOutcomes;
 };
 exports.CreateCourseInput = CreateCourseInput;
 __decorate([
@@ -40,6 +43,23 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Boolean)
 ], CreateCourseInput.prototype, "published", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCourseInput.prototype, "thumbnail", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateCourseInput.prototype, "category", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String], { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], CreateCourseInput.prototype, "learningOutcomes", void 0);
 exports.CreateCourseInput = CreateCourseInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreateCourseInput);

@@ -13,6 +13,10 @@ import { CommentsModule } from './comments/comments.module';
 import { NotesModule } from './notes/notes.module';
 import { AiModule } from './ai/ai.module';
 import { QuizModule } from './quiz/quiz.module';
+import { GamificationModule } from './gamification/gamification.module';
+import { EmailModule } from './email/email.module';
+import { InterviewModule } from './interview/interview.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -33,6 +37,7 @@ import { QuizModule } from './quiz/quiz.module';
     // Core modules
     PrismaModule,
     CloudinaryModule,
+    EmailModule,
 
     // Feature modules
     AuthModule,
@@ -43,6 +48,9 @@ import { QuizModule } from './quiz/quiz.module';
     NotesModule,
     AiModule,
     QuizModule,
+    GamificationModule,
+    InterviewModule,
+    CategoriesModule,
   ],
 })
 export class AppModule { }

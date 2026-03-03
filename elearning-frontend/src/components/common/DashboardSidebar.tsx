@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     BookOpen, Award, User, LogOut,
-    GraduationCap, ChevronRight, Home,
+    GraduationCap, ChevronRight, Home, Bot,
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { href: "/student", icon: BookOpen, label: "Khóa học của tôi" },
+    { href: "/student/achievements", icon: Award, label: "Thành tựu" },
     { href: "/certificates", icon: Award, label: "Chứng chỉ" },
+    { href: "/interview", icon: Bot, label: "AI Phỏng vấn" },
     { href: "/profile", icon: User, label: "Hồ sơ" },
 ];
 
@@ -37,23 +39,13 @@ export default function DashboardSidebar() {
                 </div>
             </Link>
 
-            {/* Nút về trang chủ */}
-            <div className="px-3 pt-3">
-                <Link
-                    href="/"
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all duration-200 group"
-                >
-                    <Home className="w-4 h-4 text-slate-400 group-hover:text-blue-500" />
-                    Về trang chủ
-                </Link>
-            </div>
-
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-2 space-y-0.5">
+            <nav className="flex-1 px-3 py-6 space-y-0.5">
                 {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-                    const isActive =
-                        pathname === href ||
-                        (href !== "/dashboard" && pathname.startsWith(href));
+                    // Exact match for /student, otherwise startswith for subpages (if added later)
+                    const isActive = href === "/student"
+                        ? pathname === href
+                        : pathname.startsWith(href) && href !== "/dashboard";
                     return (
                         <Link
                             key={href}

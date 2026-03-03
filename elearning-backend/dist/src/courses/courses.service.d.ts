@@ -39,10 +39,10 @@ export declare class CoursesService {
         sections: ({
             lessons: {
                 id: string;
+                order: number;
                 createdAt: Date;
                 updatedAt: Date;
                 title: string;
-                order: number;
                 type: string;
                 videoUrl: string | null;
                 body: string | null;
@@ -53,19 +53,25 @@ export declare class CoursesService {
             }[];
         } & {
             id: string;
+            order: number;
             createdAt: Date;
             updatedAt: Date;
             title: string;
-            order: number;
             courseId: string;
         })[];
     } & {
         id: string;
         createdAt: Date;
+        category: string | null;
         updatedAt: Date;
         title: string;
         description: string;
         price: number;
+        thumbnail: string | null;
+        learningOutcomes: string;
+        averageRating: number;
+        reviewCount: number;
+        totalDuration: number;
         published: boolean;
         isActive: boolean;
         instructorId: string;

@@ -8,6 +8,12 @@ export const GET_COURSES = gql`
       description
       price
       published
+      thumbnail
+      category
+      learningOutcomes
+      averageRating
+      reviewCount
+      totalDuration
       instructorId
       instructor { id email }
       sections {
@@ -27,6 +33,12 @@ export const GET_COURSE_DETAIL = gql`
       description
       price
       published
+      thumbnail
+      category
+      learningOutcomes
+      averageRating
+      reviewCount
+      totalDuration
       instructorId
       instructor { id email }
       sections {
@@ -48,6 +60,12 @@ export const GET_MY_COURSES = gql`
       price
       published
       isActive
+      thumbnail
+      category
+      learningOutcomes
+      averageRating
+      reviewCount
+      totalDuration
       instructorId
       sections {
         id title order
@@ -61,7 +79,7 @@ export const GET_MY_COURSES = gql`
 export const CREATE_COURSE = gql`
   mutation CreateCourse($input: CreateCourseInput!) {
     createCourse(input: $input) {
-      id title description price published isActive
+      id title description price published isActive thumbnail category learningOutcomes
     }
   }
 `;
@@ -69,7 +87,7 @@ export const CREATE_COURSE = gql`
 export const UPDATE_COURSE = gql`
   mutation UpdateCourse($id: String!, $input: UpdateCourseInput!) {
     updateCourse(id: $id, input: $input) {
-      id title description price published isActive
+      id title description price published isActive thumbnail category learningOutcomes
     }
   }
 `;
@@ -158,5 +176,10 @@ export const GET_UPLOAD_SIGNATURE = gql`
       folder
       type
     }
+  }
+`;
+export const SUGGEST_LEARNING_OUTCOMES = gql`
+  mutation SuggestLearningOutcomes($title: String!, $description: String!) {
+    suggestLearningOutcomes(title: $title, description: $description)
   }
 `;

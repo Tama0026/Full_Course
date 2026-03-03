@@ -75,6 +75,13 @@ export interface Course {
     description: string;
     price: number;
     published: boolean;
+    isActive?: boolean;
+    thumbnail?: string;
+    category?: string;
+    learningOutcomes?: string[];
+    averageRating: number;
+    reviewCount: number;
+    totalDuration: number;
     instructorId: string;
     instructor?: User;
     sections?: Section[];

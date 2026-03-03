@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { GamificationService } from '../gamification/gamification.service';
 import { SubmitQuizResponse } from './dto/submit-quiz.response';
 import { QuizAnswerInput } from './dto/submit-quiz.input';
 import { UpdateQuizInput } from './dto/update-quiz.input';
@@ -11,6 +12,7 @@ export class QuizService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly aiService: AiService,
+        private readonly gamificationService: GamificationService,
     ) { }
 
     /**
@@ -143,6 +145,9 @@ export class QuizService {
         const isPassed = (score / totalQuestions) >= 0.8;
 
         if (isPassed) {
+            // Gamification: award points based on quiz score
+            await this.gamificationService.addPoints(userId, score * 10);
+
             // Find enrollment to update progress logic
             const lesson = await this.prisma.lesson.findUnique({
                 where: { id: lessonId },

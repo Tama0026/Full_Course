@@ -6,14 +6,11 @@ import { CourseCard } from "@/features/courses/CourseCard";
 import { cn } from "@/lib/utils";
 import { Course } from "@/lib/graphql/types";
 
-const CATEGORIES = [
-    { value: "all", label: "Tất cả" },
-    { value: "web", label: "Lập trình Web" },
-    { value: "mobile", label: "Mobile" },
-    { value: "data", label: "Data & AI" },
-    { value: "design", label: "Thiết kế" },
-    { value: "devops", label: "DevOps" },
-];
+interface CategoryItem {
+    id: string;
+    name: string;
+    slug: string;
+}
 
 const PRICE_RANGES = [
     { value: "all", label: "Tất cả mức giá" },
@@ -22,23 +19,37 @@ const PRICE_RANGES = [
     { value: "1m-plus", label: "Trên 1.000.000 ₫" },
 ];
 
-export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) {
+export function CoursesClient({
+    initialCourses,
+    categories,
+}: {
+    initialCourses: Course[];
+    categories: CategoryItem[];
+}) {
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("all");
     const [priceRange, setPriceRange] = useState("all");
     const [showMobileFilter, setShowMobileFilter] = useState(false);
 
+    // Build category filter list from dynamic data
+    const CATEGORIES = [
+        { value: "all", label: "Tất cả" },
+        ...categories.map((c) => ({ value: c.name, label: c.name })),
+    ];
+
     // Transform logic specific to GraphQL Course
-    const adaptedCourses = initialCourses.map(c => ({
+    const adaptedCourses = initialCourses.map((c: any) => ({
         id: c.id,
         title: c.title,
         description: c.description,
         price: c.price,
         instructor: c.instructor?.email,
-        lessonCount: c.sections?.reduce((acc, s) => acc + (s.lessons?.length || 0), 0) || 0,
-        duration: "18 giờ", // Mocked duration since we don't have it in schema
-        rating: 5, // Mocked rating
-        category: "web", // Everything goes to web for now because we didn't add category to schema
+        lessonCount: c.sections?.reduce((acc: number, s: any) => acc + (s.lessons?.length || 0), 0) || 0,
+        duration: c.totalDuration > 0 ? `${Math.round(c.totalDuration / 3600)} giờ` : undefined,
+        rating: c.averageRating || 0,
+        reviewCount: c.reviewCount || 0,
+        category: c.category || "Khác",
+        image: c.thumbnail,
     }));
 
     // Filter logic

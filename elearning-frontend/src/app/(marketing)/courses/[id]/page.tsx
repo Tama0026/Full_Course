@@ -1,7 +1,10 @@
 import { getServerClient } from "@/lib/apollo-server";
 import { GET_COURSE_DETAIL } from "@/lib/graphql/course";
 import { IS_ENROLLED } from "@/lib/graphql/learning";
+import { GET_COURSE_BADGES } from "@/lib/graphql/gamification";
 import { Course } from "@/lib/graphql/types";
+import BadgeGallery from "@/components/gamification/BadgeGallery";
+import LearningOutcomesSection from "./LearningOutcomesSection";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import {
@@ -13,6 +16,8 @@ import {
     LayoutList,
     PlayCircle,
     User,
+    Star,
+    Clock,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
@@ -61,6 +66,18 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
         isEnrolled = false;
     }
 
+    // Fetch badges for this course (public, no auth needed)
+    let courseBadges: any[] = [];
+    try {
+        const { data: badgesData } = await client.query<any>({
+            query: GET_COURSE_BADGES,
+            variables: { courseId: params.id },
+        });
+        courseBadges = badgesData?.courseBadges || [];
+    } catch {
+        courseBadges = [];
+    }
+
     const lessonCount = course.sections?.reduce(
         (sum, section) => sum + (section.lessons?.length || 0), 0
     ) || 0;
@@ -89,7 +106,16 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                         {course.description}
                     </p>
 
-                    <div className="mt-6 flex flex-wrap items-center gap-6 text-sm text-slate-300">
+                    <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-slate-300">
+                        {course.category && (
+                            <span className="rounded-full bg-primary-500/20 px-3 py-1 font-medium text-primary-200 border border-primary-500/30">
+                                {course.category}
+                            </span>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                            <span><span className="text-white font-medium">{course.averageRating > 0 ? course.averageRating.toFixed(1) : "Hiện chưa có"}</span> đánh giá {course.reviewCount > 0 && `(${course.reviewCount})`}</span>
+                        </div>
                         <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-primary-400" />
                             <span>Giảng viên: <span className="text-white font-medium">{course.instructor?.email || "Chưa cập nhật"}</span></span>
@@ -102,6 +128,12 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                             <BookOpen className="h-4 w-4 text-primary-400" />
                             <span>{lessonCount} bài học</span>
                         </div>
+                        {course.totalDuration > 0 && (
+                            <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-primary-400" />
+                                <span>{Math.round(course.totalDuration / 3600)} giờ học</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -112,28 +144,7 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
 
                     {/* LEFT COLUMN: Overview & curriculum */}
                     <div className="flex-1 space-y-8">
-                        {/* What you'll learn */}
-                        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <GraduationCap className="h-6 w-6 text-primary-600" />
-                                Bạn sẽ học được gì?
-                            </h2>
-                            <div className="grid gap-3 sm:grid-cols-2 text-sm text-slate-600">
-                                {[
-                                    "Nắm vững kiến thức nền tảng và nâng cao",
-                                    "Thực hành với các dự án thực tế",
-                                    "Hiểu rõ quy trình triển khai ứng dụng",
-                                    "Tối ưu hóa hiệu năng phần mềm",
-                                    "Kỹ năng giải quyết vấn đề độc lập",
-                                    "Sẵn sàng ứng tuyển vị trí tương đương"
-                                ].map((item, i) => (
-                                    <div key={i} className="flex items-start gap-2.5">
-                                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-500" />
-                                        <span>{item}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <LearningOutcomesSection outcomes={(course as any).learningOutcomes || []} />
 
                         {/* Curriculum */}
                         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -180,15 +191,24 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                                 )}
                             </div>
                         </div>
+
+                        {/* Badge Gallery */}
+                        <BadgeGallery badges={courseBadges} />
                     </div>
 
                     {/* RIGHT COLUMN: Action card */}
                     <div className="w-full lg:w-80 shrink-0">
                         <div className="sticky top-6 rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
                             {/* Thumbnail */}
-                            <div className="aspect-video w-full bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center text-white">
-                                <BookOpen className="h-12 w-12 opacity-50" />
-                            </div>
+                            {course.thumbnail ? (
+                                <div className="aspect-video w-full overflow-hidden relative border-b border-slate-200">
+                                    <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                                </div>
+                            ) : (
+                                <div className="aspect-video w-full bg-gradient-to-br from-primary-600 to-primary-900 flex items-center justify-center text-white border-b border-slate-200">
+                                    <BookOpen className="h-12 w-12 opacity-50" />
+                                </div>
+                            )}
 
                             <div className="p-6">
                                 <div className="text-3xl font-bold text-slate-900 mb-6 flex items-baseline gap-2">

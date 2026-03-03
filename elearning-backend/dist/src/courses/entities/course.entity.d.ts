@@ -5,6 +5,12 @@ export declare class Course {
     title: string;
     description: string;
     price: number;
+    thumbnail?: string;
+    category?: string;
+    learningOutcomes?: string[];
+    averageRating: number;
+    reviewCount: number;
+    totalDuration: number;
     published: boolean;
     isActive: boolean;
     instructorId: string;

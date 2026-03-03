@@ -2,6 +2,8 @@ import { EnrollmentRepository } from './enrollment.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { Enrollment as PrismaEnrollment, Progress as PrismaProgress, Certificate as PrismaCertificate, VideoProgress as PrismaVideoProgress } from '@prisma/client';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { GamificationService } from '../gamification/gamification.service';
+import { EmailService } from '../email/email.service';
 export interface CourseProgressData {
     enrollment: PrismaEnrollment;
     progressPercentage: number;
@@ -13,7 +15,9 @@ export declare class LearningService {
     private readonly enrollmentRepository;
     private readonly prisma;
     private readonly cloudinaryService;
-    constructor(enrollmentRepository: EnrollmentRepository, prisma: PrismaService, cloudinaryService: CloudinaryService);
+    private readonly gamificationService;
+    private readonly emailService;
+    constructor(enrollmentRepository: EnrollmentRepository, prisma: PrismaService, cloudinaryService: CloudinaryService, gamificationService: GamificationService, emailService: EmailService);
     markLessonComplete(userId: string, lessonId: string): Promise<PrismaProgress>;
     getProgress(userId: string, courseId: string): Promise<CourseProgressData>;
     getMyEnrollments(userId: string): Promise<PrismaEnrollment[]>;

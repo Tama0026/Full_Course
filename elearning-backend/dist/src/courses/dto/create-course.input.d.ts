@@ -3,4 +3,7 @@ export declare class CreateCourseInput {
     description: string;
     price: number;
     published?: boolean;
+    thumbnail?: string;
+    category?: string;
+    learningOutcomes?: string[];
 }

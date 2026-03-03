@@ -11,7 +11,9 @@ interface CourseCardProps {
     lessonCount?: number;
     duration?: string;
     rating?: number;
+    reviewCount?: number;
     image?: string;
+    category?: string;
     published?: boolean;
     className?: string;
 }
@@ -28,7 +30,9 @@ export function CourseCard({
     lessonCount = 0,
     duration,
     rating,
+    reviewCount = 0,
     image,
+    category,
     className,
 }: CourseCardProps) {
     return (
@@ -68,10 +72,17 @@ export function CourseCard({
                     {description}
                 </p>
 
-                {/* Instructor */}
-                <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
-                    <User className="h-3.5 w-3.5" />
-                    <span>{instructor}</span>
+                {/* Instructor & Category */}
+                <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                        <User className="h-3.5 w-3.5" />
+                        <span>{instructor}</span>
+                    </div>
+                    {category && (
+                        <span className="rounded-md bg-primary-50 px-2 py-0.5 font-medium text-primary-600">
+                            {category}
+                        </span>
+                    )}
                 </div>
 
                 {/* Meta row */}
@@ -88,10 +99,11 @@ export function CourseCard({
                             {duration}
                         </span>
                     )}
-                    {rating && (
+                    {rating !== undefined && (
                         <span className="flex items-center gap-1 text-amber-500">
                             <Star className="h-3.5 w-3.5 fill-current" />
-                            {rating.toFixed(1)}
+                            {rating > 0 ? rating.toFixed(1) : "Mới"}
+                            {reviewCount > 0 && <span className="text-slate-400 font-normal">({reviewCount})</span>}
                         </span>
                     )}
                 </div>

@@ -14,15 +14,21 @@ const common_1 = require("@nestjs/common");
 const enrollment_repository_1 = require("./enrollment.repository");
 const prisma_service_1 = require("../prisma/prisma.service");
 const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
+const gamification_service_1 = require("../gamification/gamification.service");
+const email_service_1 = require("../email/email.service");
 const uuid_1 = require("uuid");
 let LearningService = class LearningService {
     enrollmentRepository;
     prisma;
     cloudinaryService;
-    constructor(enrollmentRepository, prisma, cloudinaryService) {
+    gamificationService;
+    emailService;
+    constructor(enrollmentRepository, prisma, cloudinaryService, gamificationService, emailService) {
         this.enrollmentRepository = enrollmentRepository;
         this.prisma = prisma;
         this.cloudinaryService = cloudinaryService;
+        this.gamificationService = gamificationService;
+        this.emailService = emailService;
     }
     async markLessonComplete(userId, lessonId) {
         const lesson = await this.prisma.lesson.findUnique({
@@ -80,13 +86,15 @@ let LearningService = class LearningService {
         if (existingProgress) {
             throw new common_1.ConflictException('Lesson already marked as complete');
         }
-        return this.prisma.progress.create({
+        const progress = await this.prisma.progress.create({
             data: {
                 enrollmentId: enrollment.id,
                 lessonId,
             },
             include: { lesson: true },
         });
+        await this.gamificationService.addPoints(userId, 5);
+        return progress;
     }
     async getProgress(userId, courseId) {
         const enrollment = await this.enrollmentRepository.findByUserAndCourse(userId, courseId);
@@ -176,6 +184,8 @@ let LearningService = class LearningService {
                 issueDate: issueDateObj,
             }
         });
+        const userEmail = enrollment.user.email;
+        this.emailService.sendCertificateEmail(userEmail, studentName, courseName, certificateUrl).catch(err => console.error('[LearningService] Email send failed:', err.message));
         return certificate;
     }
     async getMyCertificates(userId) {
@@ -202,6 +212,8 @@ exports.LearningService = LearningService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [enrollment_repository_1.EnrollmentRepository,
         prisma_service_1.PrismaService,
-        cloudinary_service_1.CloudinaryService])
+        cloudinary_service_1.CloudinaryService,
+        gamification_service_1.GamificationService,
+        email_service_1.EmailService])
 ], LearningService);
 //# sourceMappingURL=learning.service.js.map

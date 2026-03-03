@@ -22,6 +22,10 @@ const comments_module_1 = require("./comments/comments.module");
 const notes_module_1 = require("./notes/notes.module");
 const ai_module_1 = require("./ai/ai.module");
 const quiz_module_1 = require("./quiz/quiz.module");
+const gamification_module_1 = require("./gamification/gamification.module");
+const email_module_1 = require("./email/email.module");
+const interview_module_1 = require("./interview/interview.module");
+const categories_module_1 = require("./categories/categories.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,6 +44,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             prisma_module_1.PrismaModule,
             cloudinary_module_1.CloudinaryModule,
+            email_module_1.EmailModule,
             auth_module_1.AuthModule,
             courses_module_1.CoursesModule,
             orders_module_1.OrdersModule,
@@ -48,6 +53,9 @@ exports.AppModule = AppModule = __decorate([
             notes_module_1.NotesModule,
             ai_module_1.AiModule,
             quiz_module_1.QuizModule,
+            gamification_module_1.GamificationModule,
+            interview_module_1.InterviewModule,
+            categories_module_1.CategoriesModule,
         ],
     })
 ], AppModule);
