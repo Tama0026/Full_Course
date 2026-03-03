@@ -9,31 +9,31 @@ import { CloudinarySignature } from './dto/cloudinary-signature.type';
 
 @Resolver(() => CloudinarySignature)
 export class CloudinaryResolver {
-    @Query(() => CloudinarySignature, { name: 'uploadSignature' })
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    getUploadSignature(): CloudinarySignature {
-        const timestamp = Math.round(new Date().getTime() / 1000);
-        // Upload as 'upload' (public delivery).
-        // Security is enforced at the application level: only enrolled users get the URL.
-        const paramsToSign = {
-            timestamp,
-            folder: 'elearning/courses',
-            type: 'upload',
-        };
+  @Query(() => CloudinarySignature, { name: 'uploadSignature' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  getUploadSignature(): CloudinarySignature {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    // Upload as 'upload' (public delivery).
+    // Security is enforced at the application level: only enrolled users get the URL.
+    const paramsToSign = {
+      timestamp,
+      folder: 'elearning/courses',
+      type: 'upload',
+    };
 
-        const signature = cloudinary.utils.api_sign_request(
-            paramsToSign,
-            process.env.CLOUDINARY_API_SECRET || '',
-        );
+    const signature = cloudinary.utils.api_sign_request(
+      paramsToSign,
+      process.env.CLOUDINARY_API_SECRET || '',
+    );
 
-        return {
-            timestamp,
-            signature,
-            apiKey: process.env.CLOUDINARY_API_KEY || '',
-            cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-            folder: 'elearning/courses',
-            type: 'upload'
-        };
-    }
+    return {
+      timestamp,
+      signature,
+      apiKey: process.env.CLOUDINARY_API_KEY || '',
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+      folder: 'elearning/courses',
+      type: 'upload',
+    };
+  }
 }

@@ -3,24 +3,24 @@ import { Lesson } from './lesson.entity';
 
 @ObjectType()
 export class Section {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    title: string;
+  @Field()
+  title: string;
 
-    @Field(() => Int)
-    order: number;
+  @Field(() => Int)
+  order: number;
 
-    @Field()
-    courseId: string;
+  @Field()
+  courseId: string;
 
-    @Field(() => [Lesson], { nullable: true })
-    lessons?: Lesson[];
+  @Field(() => [Lesson], { nullable: true })
+  lessons?: Lesson[];
 
-    @Field()
-    createdAt: Date;
+  @Field()
+  createdAt: Date;
 
-    @Field()
-    updatedAt: Date;
+  @Field()
+  updatedAt: Date;
 }

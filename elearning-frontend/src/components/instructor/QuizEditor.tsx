@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { Loader2, Plus, Save, Trash2, Sparkles } from "lucide-react";
 import { GET_INSTRUCTOR_QUIZ, GENERATE_QUIZ_WITH_AI, UPDATE_QUIZ } from "@/lib/graphql/quiz";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface QuestionInput {
     id?: string;
@@ -25,6 +26,7 @@ export default function QuizEditor({ lessonId, lessonBody, onRefetchReady }: { l
 
     const [questions, setQuestions] = useState<QuestionInput[]>([]);
     const [questionCount, setQuestionCount] = useState<number>(5);
+    const [showAiConfirm, setShowAiConfirm] = useState(false);
 
     useEffect(() => {
         if (quizData?.getQuiz?.questions) {
@@ -53,7 +55,11 @@ export default function QuizEditor({ lessonId, lessonBody, onRefetchReady }: { l
             toast.warning("Bài học chưa có Nội dung Markdown. Vui lòng cập nhật Nội dung (và Lưu) trước khi tạo Quiz AI.");
             return;
         }
-        if (!confirm(`Hệ thống sẽ dựa vào Nội dung Markdown để tạo ${questionCount} câu hỏi trắc nghiệm. Bất kỳ Quiz cũ nào cũng sẽ bị ghi đè.\nLƯU Ý: Tiến trình sinh có thể mất 15-30 giây.`)) return;
+        setShowAiConfirm(true);
+    };
+
+    const executeGenerateAI = async () => {
+        setShowAiConfirm(false);
 
         try {
             const result = await generateAi({ variables: { lessonId, count: questionCount } });
@@ -72,7 +78,7 @@ export default function QuizEditor({ lessonId, lessonBody, onRefetchReady }: { l
 
     const handleSave = async () => {
         if (questions.length === 0) {
-            alert("Quiz cần ít nhất 1 câu hỏi.");
+            toast.warning("Quiz cần ít nhất 1 câu hỏi.");
             return;
         }
 
@@ -281,6 +287,15 @@ export default function QuizEditor({ lessonId, lessonBody, onRefetchReady }: { l
             >
                 <Plus className="h-5 w-5" /> Thêm câu hỏi thủ công
             </button>
+
+            <ConfirmDialog
+                open={showAiConfirm}
+                title="Tạo Quiz bằng AI"
+                description={`Hệ thống sẽ dựa vào Nội dung Markdown để tạo ${questionCount} câu hỏi trắc nghiệm. Bất kỳ Quiz cũ nào cũng sẽ bị ghi đè.\nLƯU Ý: Tiến trình sinh có thể mất 15-30 giây.`}
+                confirmText="Tạo Quiz AI"
+                onConfirm={executeGenerateAI}
+                onCancel={() => setShowAiConfirm(false)}
+            />
         </div>
     );
 }

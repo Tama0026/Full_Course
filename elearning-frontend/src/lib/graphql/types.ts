@@ -101,7 +101,8 @@ export interface Enrollment {
     id: string;
     courseId: string;
     userId: string;
-    enrolledAt: string;
+    requestedAt: string;
+    enrolledAt?: string;
     course?: Course;
     user?: User;
 }

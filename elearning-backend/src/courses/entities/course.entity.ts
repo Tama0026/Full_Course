@@ -4,54 +4,105 @@ import { Section } from './section.entity';
 
 @ObjectType()
 export class Course {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    title: string;
+  @Field()
+  title: string;
 
-    @Field()
-    description: string;
+  @Field()
+  description: string;
 
-    @Field(() => Float)
-    price: number;
+  @Field(() => Float)
+  price: number;
 
-    @Field({ nullable: true })
-    thumbnail?: string;
+  @Field({ nullable: true })
+  thumbnail?: string;
 
-    @Field({ nullable: true })
-    category?: string;
+  @Field({ nullable: true })
+  category?: string;
 
-    @Field(() => [String], { nullable: true })
-    learningOutcomes?: string[];
+  @Field(() => [String], { nullable: true })
+  learningOutcomes?: string[];
 
-    @Field(() => Float)
-    averageRating: number;
+  @Field(() => Float)
+  averageRating: number;
 
-    @Field(() => Float)
-    reviewCount: number;
+  @Field(() => Float)
+  reviewCount: number;
 
-    @Field(() => Float)
-    totalDuration: number;
+  @Field(() => Float)
+  totalDuration: number;
 
-    @Field()
-    published: boolean;
+  @Field()
+  published: boolean;
 
-    @Field()
-    isActive: boolean;
+  @Field()
+  isActive: boolean;
 
-    @Field()
-    instructorId: string;
+  @Field(() => Float, { nullable: true })
+  maxStudents?: number;
 
-    @Field(() => User, { nullable: true })
-    instructor?: User;
+  @Field()
+  isApprovalRequired: boolean;
 
-    @Field(() => [Section], { nullable: true })
-    sections?: Section[];
+  @Field()
+  instructorId: string;
 
-    @Field()
-    createdAt: Date;
+  @Field(() => User, { nullable: true })
+  instructor?: User;
 
-    @Field()
-    updatedAt: Date;
+  @Field(() => [Section], { nullable: true })
+  sections?: Section[];
+
+  @Field()
+  createdAt: Date;
+
+  @Field()
+  updatedAt: Date;
+}
+
+@ObjectType()
+export class CourseStudentProgress {
+  @Field()
+  lessonTitle: string;
+
+  @Field()
+  chapterTitle: string;
+
+  @Field()
+  completedAt: Date;
+}
+
+@ObjectType()
+export class CourseStudent {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  name: string;
+
+  @Field()
+  email: string;
+
+  @Field({ nullable: true })
+  avatar?: string;
+
+  @Field(() => Float)
+  progressPercent: number;
+
+  @Field({ nullable: true })
+  lastActive?: Date;
+
+  @Field(() => [CourseStudentProgress])
+  progressTimeline: CourseStudentProgress[];
+
+  @Field({ nullable: true })
+  lastRemindedAt?: Date;
+
+  @Field({ nullable: true })
+  enrolledAt?: Date;
+
+  @Field({ nullable: true })
+  status?: string;
 }

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
+import { toast } from "sonner";
 
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_COURSE_DETAIL } from "@/lib/graphql/course";
@@ -72,11 +73,17 @@ export default function CheckoutPage() {
                     input: { courseId: course.id },
                 },
             });
+            if (course.isApprovalRequired) {
+                toast.success("Đã gửi yêu cầu phê duyệt");
+            }
             setSuccess(true);
         } catch (err: any) {
             const message = err?.message || "Có lỗi xảy ra khi thanh toán";
             if (message.includes("already enrolled")) {
                 setCheckoutError("Bạn đã mua khóa học này rồi. Vui lòng vào Dashboard để học.");
+            } else if (message.includes("Khóa học này đã đủ số lượng học viên tối đa")) {
+                toast.error("Khóa học đã đầy");
+                setCheckoutError("Khóa học này đã đủ số lượng học viên tối đa. Vui lòng quay lại sau.");
             } else {
                 setCheckoutError(message);
             }
@@ -109,13 +116,22 @@ export default function CheckoutPage() {
                         Đơn hàng đã được xác nhận. Bạn có thể bắt đầu học ngay bây giờ.
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                        <a
-                            href={lessonUrl}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-primary-700 transition-colors"
-                        >
-                            Vào học ngay
-                            <ArrowRight className="h-5 w-5" />
-                        </a>
+                        {course.isApprovalRequired ? (
+                            <button
+                                disabled
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-300 px-8 py-3 text-base font-semibold text-white shadow-none cursor-not-allowed"
+                            >
+                                Đang chờ duyệt
+                            </button>
+                        ) : (
+                            <a
+                                href={lessonUrl}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-8 py-3 text-base font-semibold text-white shadow-lg hover:bg-primary-700 transition-colors"
+                            >
+                                Vào học ngay
+                                <ArrowRight className="h-5 w-5" />
+                            </a>
+                        )}
                         <a
                             href="/student"
                             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-8 py-3 text-base font-semibold text-slate-700 hover:bg-slate-50 transition-colors"

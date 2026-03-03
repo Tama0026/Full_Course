@@ -5,23 +5,23 @@ export declare class CategoriesService {
     findAll(): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         order: number;
-        createdAt: Date;
     }[]>;
     create(name: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         order: number;
-        createdAt: Date;
     }>;
     delete(id: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         slug: string;
         order: number;
-        createdAt: Date;
     }>;
     private generateSlug;
 }

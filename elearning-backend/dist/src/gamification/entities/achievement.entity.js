@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BadgeWithStatus = exports.AchievementStats = void 0;
+exports.LoginStreakType = exports.BadgeWithStatus = exports.AchievementStats = void 0;
 const graphql_1 = require("@nestjs/graphql");
 let AchievementStats = class AchievementStats {
     totalPoints;
@@ -58,6 +58,9 @@ let BadgeWithStatus = class BadgeWithStatus {
     description;
     icon;
     criteria;
+    criteriaType;
+    threshold;
+    currentProgress;
     courseId;
     courseName;
     earned;
@@ -85,6 +88,18 @@ __decorate([
     __metadata("design:type", String)
 ], BadgeWithStatus.prototype, "criteria", void 0);
 __decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], BadgeWithStatus.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], BadgeWithStatus.prototype, "threshold", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], BadgeWithStatus.prototype, "currentProgress", void 0);
+__decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)
 ], BadgeWithStatus.prototype, "courseId", void 0);
@@ -103,4 +118,25 @@ __decorate([
 exports.BadgeWithStatus = BadgeWithStatus = __decorate([
     (0, graphql_1.ObjectType)()
 ], BadgeWithStatus);
+let LoginStreakType = class LoginStreakType {
+    currentStreak;
+    longestStreak;
+    lastLoginDate;
+};
+exports.LoginStreakType = LoginStreakType;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], LoginStreakType.prototype, "currentStreak", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], LoginStreakType.prototype, "longestStreak", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], LoginStreakType.prototype, "lastLoginDate", void 0);
+exports.LoginStreakType = LoginStreakType = __decorate([
+    (0, graphql_1.ObjectType)()
+], LoginStreakType);
 //# sourceMappingURL=achievement.entity.js.map

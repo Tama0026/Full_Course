@@ -39,6 +39,8 @@ export const GET_COURSE_DETAIL = gql`
       averageRating
       reviewCount
       totalDuration
+      maxStudents
+      isApprovalRequired
       instructorId
       instructor { id email }
       sections {
@@ -66,6 +68,8 @@ export const GET_MY_COURSES = gql`
       averageRating
       reviewCount
       totalDuration
+      maxStudents
+      isApprovalRequired
       instructorId
       sections {
         id title order
@@ -79,7 +83,7 @@ export const GET_MY_COURSES = gql`
 export const CREATE_COURSE = gql`
   mutation CreateCourse($input: CreateCourseInput!) {
     createCourse(input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes
+      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;
@@ -87,7 +91,7 @@ export const CREATE_COURSE = gql`
 export const UPDATE_COURSE = gql`
   mutation UpdateCourse($id: String!, $input: UpdateCourseInput!) {
     updateCourse(id: $id, input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes
+      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;
@@ -155,8 +159,8 @@ export const SUGGEST_COURSES = gql`
 `;
 
 export const GENERATE_LESSON_CONTENT = gql`
-  mutation GenerateLessonContent($title: String!, $nonce: Float) {
-    generateLessonContent(title: $title, nonce: $nonce)
+  mutation GenerateLessonContent($title: String!, $courseTitle: String!, $nonce: Float) {
+    generateLessonContent(title: $title, courseTitle: $courseTitle, nonce: $nonce)
   }
 `;
 
@@ -181,5 +185,45 @@ export const GET_UPLOAD_SIGNATURE = gql`
 export const SUGGEST_LEARNING_OUTCOMES = gql`
   mutation SuggestLearningOutcomes($title: String!, $description: String!) {
     suggestLearningOutcomes(title: $title, description: $description)
+  }
+`;
+
+export const GET_COURSE_STUDENTS = gql`
+  query GetCourseStudents($courseId: String!) {
+    getCourseStudents(courseId: $courseId) {
+      id
+      name
+      email
+      avatar
+      progressPercent
+      lastActive
+      lastRemindedAt
+      requestedAt
+      enrolledAt
+      status
+      progressTimeline {
+        lessonTitle
+        chapterTitle
+        completedAt
+      }
+    }
+  }
+`;
+
+export const SEND_LEARNING_REMINDER = gql`
+  mutation SendLearningReminder($studentId: String!, $courseId: String!) {
+    sendLearningReminder(studentId: $studentId, courseId: $courseId)
+  }
+`;
+
+export const APPROVE_ENROLLMENT = gql`
+  mutation ApproveEnrollment($studentId: String!, $courseId: String!) {
+    approveEnrollment(studentId: $studentId, courseId: $courseId)
+  }
+`;
+
+export const REJECT_ENROLLMENT = gql`
+  mutation RejectEnrollment($studentId: String!, $courseId: String!) {
+    rejectEnrollment(studentId: $studentId, courseId: $courseId)
   }
 `;

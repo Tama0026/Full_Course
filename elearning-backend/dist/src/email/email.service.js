@@ -110,7 +110,8 @@ let EmailService = class EmailService {
         `;
         if (this.transporter) {
             try {
-                const fromEmail = this.configService.get('SMTP_FROM') || this.configService.get('SMTP_USER');
+                const fromEmail = this.configService.get('SMTP_FROM') ||
+                    this.configService.get('SMTP_USER');
                 await this.transporter.sendMail({
                     from: `"E-Learning Platform" <${fromEmail}>`,
                     to,

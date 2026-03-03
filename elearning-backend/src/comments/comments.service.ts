@@ -5,64 +5,75 @@ import { Comment as PrismaComment } from '@prisma/client';
 
 @Injectable()
 export class CommentsService {
-    constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-    /**
-     * Create a new comment (or reply).
-     */
-    async create(input: CreateCommentInput, userId: string): Promise<PrismaComment> {
-        // Verify lesson exists
-        const lesson = await this.prisma.lesson.findUnique({ where: { id: input.lessonId } });
-        if (!lesson) throw new NotFoundException(`Lesson "${input.lessonId}" not found`);
+  /**
+   * Create a new comment (or reply).
+   */
+  async create(
+    input: CreateCommentInput,
+    userId: string,
+  ): Promise<PrismaComment> {
+    // Verify lesson exists
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: input.lessonId },
+    });
+    if (!lesson)
+      throw new NotFoundException(`Lesson "${input.lessonId}" not found`);
 
-        // If replying, verify parent exists
-        if (input.parentId) {
-            const parent = await this.prisma.comment.findUnique({ where: { id: input.parentId } });
-            if (!parent) throw new NotFoundException(`Parent comment "${input.parentId}" not found`);
-        }
-
-        return this.prisma.comment.create({
-            data: {
-                content: input.content,
-                userId,
-                lessonId: input.lessonId,
-                parentId: input.parentId || null,
-            },
-            include: {
-                user: true,
-                replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
-            },
-        });
+    // If replying, verify parent exists
+    if (input.parentId) {
+      const parent = await this.prisma.comment.findUnique({
+        where: { id: input.parentId },
+      });
+      if (!parent)
+        throw new NotFoundException(
+          `Parent comment "${input.parentId}" not found`,
+        );
     }
 
-    /**
-     * Get all top-level comments for a lesson (with nested replies).
-     */
-    async findByLesson(lessonId: string): Promise<PrismaComment[]> {
-        return this.prisma.comment.findMany({
-            where: { lessonId, parentId: null },
-            include: {
-                user: true,
-                replies: {
-                    include: {
-                        user: true,
-                        replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
-                    },
-                    orderBy: { createdAt: 'asc' },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
+    return this.prisma.comment.create({
+      data: {
+        content: input.content,
+        userId,
+        lessonId: input.lessonId,
+        parentId: input.parentId || null,
+      },
+      include: {
+        user: true,
+        replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+      },
+    });
+  }
 
-    /**
-     * Delete a comment (only owner).
-     */
-    async delete(id: string, userId: string): Promise<PrismaComment> {
-        const comment = await this.prisma.comment.findUnique({ where: { id } });
-        if (!comment) throw new NotFoundException(`Comment "${id}" not found`);
-        if (comment.userId !== userId) throw new NotFoundException('Unauthorized');
+  /**
+   * Get all top-level comments for a lesson (with nested replies).
+   */
+  async findByLesson(lessonId: string): Promise<PrismaComment[]> {
+    return this.prisma.comment.findMany({
+      where: { lessonId, parentId: null },
+      include: {
+        user: true,
+        replies: {
+          include: {
+            user: true,
+            replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 
-        return this.prisma.comment.delete({ where: { id } });
-    }
+  /**
+   * Delete a comment (only owner).
+   */
+  async delete(id: string, userId: string): Promise<PrismaComment> {
+    const comment = await this.prisma.comment.findUnique({ where: { id } });
+    if (!comment) throw new NotFoundException(`Comment "${id}" not found`);
+    if (comment.userId !== userId) throw new NotFoundException('Unauthorized');
+
+    return this.prisma.comment.delete({ where: { id } });
+  }
 }

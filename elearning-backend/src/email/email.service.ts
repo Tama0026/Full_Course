@@ -4,39 +4,41 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-    private transporter: nodemailer.Transporter | null = null;
+  private transporter: nodemailer.Transporter | null = null;
 
-    constructor(private readonly configService: ConfigService) {
-        const host = this.configService.get<string>('SMTP_HOST');
-        const port = this.configService.get<number>('SMTP_PORT');
-        const user = this.configService.get<string>('SMTP_USER');
-        const pass = this.configService.get<string>('SMTP_PASS');
+  constructor(private readonly configService: ConfigService) {
+    const host = this.configService.get<string>('SMTP_HOST');
+    const port = this.configService.get<number>('SMTP_PORT');
+    const user = this.configService.get<string>('SMTP_USER');
+    const pass = this.configService.get<string>('SMTP_PASS');
 
-        if (host && user && pass) {
-            this.transporter = nodemailer.createTransport({
-                host,
-                port: port || 587,
-                secure: port === 465,
-                auth: { user, pass },
-            });
-            console.log(`[EmailService] ✅ SMTP configured: ${host}:${port || 587}`);
-        } else {
-            console.warn('[EmailService] ⚠️ SMTP credentials not configured. Emails will be logged to console instead.');
-        }
+    if (host && user && pass) {
+      this.transporter = nodemailer.createTransport({
+        host,
+        port: port || 587,
+        secure: port === 465,
+        auth: { user, pass },
+      });
+      console.log(`[EmailService] ✅ SMTP configured: ${host}:${port || 587}`);
+    } else {
+      console.warn(
+        '[EmailService] ⚠️ SMTP credentials not configured. Emails will be logged to console instead.',
+      );
     }
+  }
 
-    /**
-     * Send a congratulatory email with certificate image attached.
-     */
-    async sendCertificateEmail(
-        to: string,
-        studentName: string,
-        courseName: string,
-        certificateUrl: string,
-    ): Promise<void> {
-        const subject = `🎉 Chúc mừng ${studentName} đã hoàn thành khóa học "${courseName}"!`;
+  /**
+   * Send a congratulatory email with certificate image attached.
+   */
+  async sendCertificateEmail(
+    to: string,
+    studentName: string,
+    courseName: string,
+    certificateUrl: string,
+  ): Promise<void> {
+    const subject = `🎉 Chúc mừng ${studentName} đã hoàn thành khóa học "${courseName}"!`;
 
-        const html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -75,24 +77,31 @@ export class EmailService {
 </html>
         `;
 
-        if (this.transporter) {
-            try {
-                const fromEmail = this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-                await this.transporter.sendMail({
-                    from: `"E-Learning Platform" <${fromEmail}>`,
-                    to,
-                    subject,
-                    html,
-                });
-                console.log(`[EmailService] ✅ Certificate email sent to ${to}`);
-            } catch (error: any) {
-                console.error(`[EmailService] ❌ Failed to send email to ${to}:`, error.message);
-            }
-        } else {
-            // Fallback: log to console
-            console.log(`[EmailService] 📧 (MOCK) Certificate email would be sent to: ${to}`);
-            console.log(`[EmailService] 📧 Subject: ${subject}`);
-            console.log(`[EmailService] 📧 Certificate URL: ${certificateUrl}`);
-        }
+    if (this.transporter) {
+      try {
+        const fromEmail =
+          this.configService.get<string>('SMTP_FROM') ||
+          this.configService.get<string>('SMTP_USER');
+        await this.transporter.sendMail({
+          from: `"E-Learning Platform" <${fromEmail}>`,
+          to,
+          subject,
+          html,
+        });
+        console.log(`[EmailService] ✅ Certificate email sent to ${to}`);
+      } catch (error: any) {
+        console.error(
+          `[EmailService] ❌ Failed to send email to ${to}:`,
+          error.message,
+        );
+      }
+    } else {
+      // Fallback: log to console
+      console.log(
+        `[EmailService] 📧 (MOCK) Certificate email would be sent to: ${to}`,
+      );
+      console.log(`[EmailService] 📧 Subject: ${subject}`);
+      console.log(`[EmailService] 📧 Certificate URL: ${certificateUrl}`);
     }
+  }
 }

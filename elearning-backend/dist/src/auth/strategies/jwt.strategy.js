@@ -25,8 +25,8 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
                 (req) => {
-                    const cookie = req?.cookies?.access_token
-                        || req?.headers?.cookie
+                    const cookie = req?.cookies?.access_token ||
+                        req?.headers?.cookie
                             ?.split(';')
                             .find((c) => c.trim().startsWith('access_token='))
                             ?.split('=')[1];

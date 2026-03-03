@@ -10,4 +10,4 @@ import { GamificationModule } from '../gamification/gamification.module';
   providers: [QuizResolver, QuizService],
   exports: [QuizService],
 })
-export class QuizModule { }
+export class QuizModule {}

@@ -12,9 +12,9 @@ async function bootstrap() {
   // Enable global validation pipe (class-validator integration)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,            // Strip non-whitelisted properties
+      whitelist: true, // Strip non-whitelisted properties
       forbidNonWhitelisted: true, // Throw error on extra properties
-      transform: true,            // Auto-transform payloads to DTO instances
+      transform: true, // Auto-transform payloads to DTO instances
     }),
   );
 

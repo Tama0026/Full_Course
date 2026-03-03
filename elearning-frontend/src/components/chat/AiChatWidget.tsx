@@ -16,15 +16,16 @@ interface Message {
 const SUGGESTIONS = [
     "Tôi muốn học lập trình web",
     "Có khóa học React không?",
-    "Khóa học Python cho người mới",
-    "Học thiết kế UI/UX ở đâu?",
+    "Tôi nên học theo lộ trình nào cho FE?",
+    "Tôi nên học theo lộ trình nào cho BE?",
+    "Lộ trình Full-Stack như thế nào?",
 ];
 
 export default function AiChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [query, setQuery] = useState("");
     const [messages, setMessages] = useState<Message[]>([
-        { role: "ai", content: "Chào bạn! 👋 Tôi là trợ lý AI của nền tảng. Hãy hỏi tôi về bất kỳ khóa học nào bạn muốn tìm hiểu!" }
+        { role: "ai", content: "Chào bạn! Tôi là trợ lý AI của nền tảng. Hãy hỏi tôi về bất kỳ khóa học nào bạn muốn tìm hiểu!" }
     ]);
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -78,8 +79,8 @@ export default function AiChatWidget() {
             setMessages((prev) => [...prev, {
                 role: "ai",
                 content: isRateLimit
-                    ? "⚠️ AI đang bị giới hạn tần suất. Vui lòng chờ vài giây rồi thử lại."
-                    : "❌ Có lỗi xảy ra khi gọi AI. Vui lòng thử lại sau.",
+                    ? "AI đang bị giới hạn tần suất. Vui lòng chờ vài giây rồi thử lại."
+                    : "Có lỗi xảy ra khi gọi AI. Vui lòng thử lại sau.",
                 isError: true,
             }]);
         } finally {
@@ -88,7 +89,7 @@ export default function AiChatWidget() {
     }
 
     function handleReset() {
-        setMessages([{ role: "ai", content: "Chào bạn! 👋 Tôi là trợ lý AI của nền tảng. Hãy hỏi tôi về bất kỳ khóa học nào bạn muốn tìm hiểu!" }]);
+        setMessages([{ role: "ai", content: "Chào bạn! Tôi là trợ lý AI của nền tảng. Hãy hỏi tôi về bất kỳ khóa học nào bạn muốn tìm hiểu!" }]);
         setQuery("");
     }
 

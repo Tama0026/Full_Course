@@ -7,8 +7,10 @@ export declare class Enrollment {
     courseId: string;
     user?: User;
     course?: Course;
-    enrolledAt: Date;
+    requestedAt: Date;
+    enrolledAt?: Date;
     progresses?: Progress[];
     completedLessons: string;
     isFinished: boolean;
+    status: string;
 }

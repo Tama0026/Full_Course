@@ -41,6 +41,17 @@ let OrdersService = class OrdersService {
         if (existingEnrollment) {
             throw new common_1.ConflictException('You are already enrolled in this course');
         }
+        const currentEnrollments = await this.prisma.enrollment.count({
+            where: {
+                courseId: input.courseId,
+                status: { not: 'REJECTED' },
+            },
+        });
+        if (course.maxStudents !== null &&
+            currentEnrollments >= course.maxStudents) {
+            throw new common_1.ConflictException('Khóa học này đã đủ số lượng học viên tối đa');
+        }
+        const enrollmentStatus = course.isApprovalRequired ? 'PENDING' : 'APPROVED';
         const order = await this.prisma.$transaction(async (tx) => {
             const newOrder = await tx.order.create({
                 data: {
@@ -54,6 +65,8 @@ let OrdersService = class OrdersService {
                 data: {
                     userId,
                     courseId: input.courseId,
+                    status: enrollmentStatus,
+                    enrolledAt: enrollmentStatus === 'APPROVED' ? new Date() : undefined,
                 },
             });
             return newOrder;

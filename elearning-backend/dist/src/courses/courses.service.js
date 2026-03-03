@@ -27,22 +27,24 @@ let CoursesService = class CoursesService {
                 sections: {
                     include: {
                         lessons: {
-                            include: { quiz: true }
-                        }
-                    }
-                }
-            }
+                            include: { quiz: true },
+                        },
+                    },
+                },
+            },
         });
         if (!course) {
             throw new common_1.NotFoundException(`Course with ID "${courseId}" not found`);
         }
-        const allLessons = course.sections.flatMap(s => s.lessons);
+        const allLessons = course.sections.flatMap((s) => s.lessons);
         if (allLessons.length === 0) {
             throw new common_1.BadRequestException('Không thể công khai khóa học. Khóa học chưa có bài học nào.');
         }
-        const invalidLessons = allLessons.filter(lesson => !lesson.body || lesson.body.trim() === '' || !lesson.quiz);
+        const invalidLessons = allLessons.filter((lesson) => !lesson.body || lesson.body.trim() === '' || !lesson.quiz);
         if (invalidLessons.length > 0) {
-            const errorDetails = invalidLessons.map(l => `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`).join(' ');
+            const errorDetails = invalidLessons
+                .map((l) => `Bài học "${l.title}" thiếu nội dung văn bản (body) hoặc chưa có bài trắc nghiệm (quiz).`)
+                .join(' ');
             throw new common_1.BadRequestException(`Không thể công khai khóa học vì có bài học chưa hoàn thiện nội dung. ${errorDetails}`);
         }
     }
@@ -52,7 +54,9 @@ let CoursesService = class CoursesService {
         }
         return this.courseRepository.create({
             ...input,
-            learningOutcomes: input.learningOutcomes ? JSON.stringify(input.learningOutcomes) : '[]',
+            learningOutcomes: input.learningOutcomes
+                ? JSON.stringify(input.learningOutcomes)
+                : '[]',
             instructorId,
         });
     }
@@ -79,6 +83,15 @@ let CoursesService = class CoursesService {
     }
     async getPublishedCourses() {
         return this.courseRepository.findPublished();
+    }
+    async getAllCoursesForAdmin() {
+        return this.prisma.course.findMany({
+            include: {
+                instructor: { select: { id: true, name: true, email: true } },
+                _count: { select: { enrollments: true, sections: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
     }
     async getCourseById(id) {
         const course = await this.courseRepository.findByIdWithRelations(id);
@@ -159,7 +172,13 @@ let CoursesService = class CoursesService {
         const totalCourses = courses.length;
         const courseIds = courses.map((c) => c.id);
         if (courseIds.length === 0) {
-            return { totalCourses, totalStudents: 0, totalRevenue: 0, avgCompletionRate: 0, courseBreakdown: [] };
+            return {
+                totalCourses,
+                totalStudents: 0,
+                totalRevenue: 0,
+                avgCompletionRate: 0,
+                courseBreakdown: [],
+            };
         }
         const enrollments = await this.prisma.enrollment.findMany({
             where: { courseId: { in: courseIds } },
@@ -192,7 +211,9 @@ let CoursesService = class CoursesService {
                 where: { enrollmentId: { in: courseEnrollmentIds } },
             });
             const maxPoss = courseLessons * Math.max(studentCount, 1);
-            const completionRate = maxPoss > 0 ? Math.round((courseCompletedLessons / maxPoss) * 100) : 0;
+            const completionRate = maxPoss > 0
+                ? Math.round((courseCompletedLessons / maxPoss) * 100)
+                : 0;
             let avgQuizScore = 0;
             try {
                 const submissions = await this.prisma.quizSubmission.findMany({
@@ -200,14 +221,28 @@ let CoursesService = class CoursesService {
                     select: { score: true, totalQuestions: true },
                 });
                 if (submissions.length > 0) {
-                    const totalScore = submissions.reduce((sum, s) => sum + (s.totalQuestions > 0 ? (s.score / s.totalQuestions) * 100 : 0), 0);
+                    const totalScore = submissions.reduce((sum, s) => sum +
+                        (s.totalQuestions > 0 ? (s.score / s.totalQuestions) * 100 : 0), 0);
                     avgQuizScore = Math.round(totalScore / submissions.length);
                 }
             }
-            catch { }
-            return { courseId: course.id, title: course.title, studentCount, completionRate, avgQuizScore };
+            catch {
+            }
+            return {
+                courseId: course.id,
+                title: course.title,
+                studentCount,
+                completionRate,
+                avgQuizScore,
+            };
         }));
-        return { totalCourses, totalStudents, totalRevenue, avgCompletionRate, courseBreakdown };
+        return {
+            totalCourses,
+            totalStudents,
+            totalRevenue,
+            avgCompletionRate,
+            courseBreakdown,
+        };
     }
     async updateCurriculum(courseId, input) {
         return this.prisma.$transaction(async (tx) => {
@@ -215,7 +250,9 @@ let CoursesService = class CoursesService {
                 where: { courseId },
                 include: { lessons: true },
             });
-            const incomingSectionIds = input.sections.map((s) => s.id).filter(Boolean);
+            const incomingSectionIds = input.sections
+                .map((s) => s.id)
+                .filter(Boolean);
             const sectionsToDelete = existingSections.filter((es) => !incomingSectionIds.includes(es.id));
             if (sectionsToDelete.length > 0) {
                 await tx.section.deleteMany({
@@ -225,7 +262,7 @@ let CoursesService = class CoursesService {
             for (let i = 0; i < input.sections.length; i++) {
                 const sData = input.sections[i];
                 let sectionId = sData.id;
-                if (sectionId && existingSections.some(es => es.id === sectionId)) {
+                if (sectionId && existingSections.some((es) => es.id === sectionId)) {
                     await tx.section.update({
                         where: { id: sectionId },
                         data: { title: sData.title, order: i },
@@ -242,7 +279,9 @@ let CoursesService = class CoursesService {
                     sectionId = newSection.id;
                 }
                 const existingLessons = existingSections.find((es) => es.id === sectionId)?.lessons || [];
-                const incomingLessonIds = sData.lessons.map((l) => l.id).filter(Boolean);
+                const incomingLessonIds = sData.lessons
+                    .map((l) => l.id)
+                    .filter(Boolean);
                 const lessonsToDelete = existingLessons.filter((el) => !incomingLessonIds.includes(el.id));
                 if (lessonsToDelete.length > 0) {
                     await tx.lesson.deleteMany({
@@ -251,7 +290,7 @@ let CoursesService = class CoursesService {
                 }
                 for (let j = 0; j < sData.lessons.length; j++) {
                     const lData = sData.lessons[j];
-                    if (lData.id && existingLessons.some(el => el.id === lData.id)) {
+                    if (lData.id && existingLessons.some((el) => el.id === lData.id)) {
                         await tx.lesson.update({
                             where: { id: lData.id },
                             data: {
@@ -305,6 +344,136 @@ let CoursesService = class CoursesService {
                 },
             });
         });
+    }
+    async getCourseStudents(courseId, instructorId) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+        });
+        if (!course)
+            throw new common_1.NotFoundException('Course not found');
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Bạn không phải giảng viên của khóa học này');
+        }
+        const enrollments = await this.prisma.enrollment.findMany({
+            where: { courseId },
+            include: {
+                user: true,
+                progresses: {
+                    include: {
+                        lesson: {
+                            include: { section: true },
+                        },
+                    },
+                    orderBy: { completedAt: 'desc' },
+                },
+            },
+        });
+        const totalLessons = await this.prisma.lesson.count({
+            where: { section: { courseId } },
+        });
+        return enrollments.map((en) => {
+            const progressPercent = totalLessons === 0
+                ? 0
+                : Math.min(100, Math.round((en.progresses.length / totalLessons) * 100));
+            const progressTimeline = en.progresses.map((p) => ({
+                lessonTitle: p.lesson.title,
+                chapterTitle: p.lesson.section.title,
+                completedAt: p.completedAt,
+            }));
+            const lastActive = en.progresses.length > 0 ? en.progresses[0].completedAt : undefined;
+            return {
+                id: en.user.id,
+                name: en.user.name || 'Học viên ẩn danh',
+                email: en.user.email,
+                avatar: en.user.avatar,
+                progressPercent,
+                lastActive,
+                progressTimeline,
+                lastRemindedAt: en.lastRemindedAt,
+                requestedAt: en.requestedAt,
+                enrolledAt: en.enrolledAt,
+                status: en.status,
+            };
+        });
+    }
+    async approveEnrollment(studentId, courseId, instructorId) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            include: { instructor: true },
+        });
+        if (!course)
+            throw new common_1.NotFoundException('Khóa học không tồn tại');
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Bạn không có quyền duyệt học viên khóa học này');
+        }
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: studentId, courseId } },
+            include: { user: true },
+        });
+        if (!enrollment)
+            throw new common_1.NotFoundException('Học viên chưa đăng ký khóa học này');
+        if (enrollment.status === 'APPROVED')
+            return true;
+        await this.prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { status: 'APPROVED', enrolledAt: new Date() },
+        });
+        console.log(`[NOTIFICATION OUTBOX] Gửi tới: ${enrollment.user.email}`);
+        console.log(`[NOTIFICATION CONTENT] Chúc mừng! Đơn đăng ký khóa học "${course.title}" của bạn đã được phê duyệt. Hãy bắt đầu học ngay nhé!`);
+        return true;
+    }
+    async rejectEnrollment(studentId, courseId, instructorId) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+        });
+        if (!course)
+            throw new common_1.NotFoundException('Khóa học không tồn tại');
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Bạn không có quyền từ chối học viên khóa học này');
+        }
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: studentId, courseId } },
+        });
+        if (!enrollment)
+            throw new common_1.NotFoundException('Học viên chưa đăng ký khóa học này');
+        await this.prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { status: 'REJECTED' },
+        });
+        return true;
+    }
+    async sendLearningReminder(studentId, courseId, instructorId) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            include: { instructor: true },
+        });
+        if (!course)
+            throw new common_1.NotFoundException('Khóa học không tồn tại');
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new common_1.ForbiddenException('Bạn không có quyền gửi nhắc nhở cho khóa học này');
+        }
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: studentId, courseId } },
+            include: { user: true },
+        });
+        if (!enrollment)
+            throw new common_1.NotFoundException('Học viên chưa đăng ký khóa học này');
+        if (enrollment.lastRemindedAt) {
+            const timeSinceLastReminder = new Date().getTime() - enrollment.lastRemindedAt.getTime();
+            const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
+            if (hoursSince < 24) {
+                throw new common_1.BadRequestException('Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.');
+            }
+        }
+        await this.prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { lastRemindedAt: new Date() },
+        });
+        const studentName = enrollment.user.name || 'Bạn';
+        const instName = course.instructor.name || 'Giảng viên';
+        console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
+        console.log(`[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`);
+        return true;
     }
 };
 exports.CoursesService = CoursesService;

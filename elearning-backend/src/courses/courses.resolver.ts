@@ -1,11 +1,20 @@
-import { Resolver, Query, Mutation, Args, ResolveField, Parent, Context } from '@nestjs/graphql';
+import {
+    Resolver,
+    Query,
+    Mutation,
+    Args,
+    ResolveField,
+    Parent,
+    Context,
+} from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from './courses.service';
-import { Course } from './entities/course.entity';
+import { Course, CourseStudent } from './entities/course.entity';
 import { Section } from './entities/section.entity';
 import { Lesson } from './entities/lesson.entity';
 import { InstructorStats } from './entities/instructor-stats.entity';
+import { AdminCourse } from './entities/admin-course.entity';
 import { CreateCourseInput } from './dto/create-course.input';
 import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
@@ -28,7 +37,10 @@ export class LessonResolver {
         private readonly prisma: PrismaService,
     ) { }
 
-    private async checkLessonAuthorization(lesson: Lesson, context: any): Promise<boolean> {
+    private async checkLessonAuthorization(
+        lesson: Lesson,
+        context: any,
+    ): Promise<boolean> {
         // 1. Preview lessons → public
         if ((lesson as any).isPreview) return true;
 
@@ -74,7 +86,7 @@ export class LessonResolver {
             const enrollment = await this.prisma.enrollment.findUnique({
                 where: { userId_courseId: { userId: user.id, courseId } },
             });
-            if (enrollment) isAuthorized = true;
+            if (enrollment && enrollment.status === 'APPROVED') isAuthorized = true;
         }
 
         // Cache for this request
@@ -83,7 +95,10 @@ export class LessonResolver {
         return isAuthorized;
     }
 
-    private async checkLessonLockStatus(lesson: Lesson, context: any): Promise<boolean> {
+    private async checkLessonLockStatus(
+        lesson: Lesson,
+        context: any,
+    ): Promise<boolean> {
         if ((lesson as any).isPreview) return false;
 
         const req = context.req;
@@ -105,7 +120,7 @@ export class LessonResolver {
             where: { userId_courseId: { userId: user.id, courseId } },
         });
 
-        if (!enrollment) return true;
+        if (!enrollment || enrollment.status !== 'APPROVED') return true;
 
         const sections = await this.prisma.section.findMany({
             where: { courseId },
@@ -126,7 +141,7 @@ export class LessonResolver {
             const prevLesson = allLessons[currentIndex - 1];
             // Only require completion if the previous lesson had a Quiz
             const prevQuiz = await this.prisma.quiz.findUnique({
-                where: { lessonId: prevLesson.id }
+                where: { lessonId: prevLesson.id },
             });
 
             if (prevQuiz) {
@@ -229,9 +244,7 @@ export class CoursesResolver {
     @Query(() => [Course], { name: 'myCourses' })
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    async getMyCourses(
-        @CurrentUser() user: { id: string },
-    ): Promise<Course[]> {
+    async getMyCourses(@CurrentUser() user: { id: string }): Promise<Course[]> {
         return this.coursesService.getMyCourses(user.id) as unknown as Course[];
     }
 
@@ -321,9 +334,7 @@ export class CoursesResolver {
     @Mutation(() => Lesson)
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    async createLesson(
-        @Args('input') input: CreateLessonInput,
-    ): Promise<Lesson> {
+    async createLesson(@Args('input') input: CreateLessonInput): Promise<Lesson> {
         return this.coursesService.createLesson(input) as unknown as Lesson;
     }
 
@@ -356,9 +367,7 @@ export class CoursesResolver {
     @Mutation(() => Course)
     @UseGuards(JwtAuthGuard, RolesGuard, ResourceOwnerGuard)
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    async toggleCourseStatus(
-        @Args('id') id: string,
-    ): Promise<Course> {
+    async toggleCourseStatus(@Args('id') id: string): Promise<Course> {
         return this.coursesService.toggleCourseStatus(id) as unknown as Course;
     }
 
@@ -374,5 +383,79 @@ export class CoursesResolver {
         @CurrentUser() user: { id: string },
     ): Promise<InstructorStats> {
         return this.coursesService.getInstructorStats(user.id);
+    }
+
+    // ==================== ADMIN QUERIES ====================
+
+    @Query(() => [AdminCourse], { name: 'adminAllCourses' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async getAdminAllCourses(): Promise<AdminCourse[]> {
+        const courses = await this.coursesService.getAllCoursesForAdmin();
+        return courses.map((c: any) => ({
+            ...c,
+            enrollmentCount: c._count?.enrollments || 0,
+            sectionCount: c._count?.sections || 0,
+        })) as unknown as AdminCourse[];
+    }
+
+    // ==================== INSTRUCTOR STUDENT TRACKING ====================
+
+    @Query(() => [CourseStudent], { name: 'getCourseStudents' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async getCourseStudents(
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.getCourseStudents(
+            courseId,
+            user.role === 'ADMIN' ? 'ADMIN' : user.id,
+        );
+    }
+
+    @Mutation(() => Boolean, { name: 'sendLearningReminder' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async sendLearningReminder(
+        @Args('studentId', { type: () => String }) studentId: string,
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.sendLearningReminder(
+            studentId,
+            courseId,
+            user.role === 'ADMIN' ? 'ADMIN' : user.id,
+        );
+    }
+
+    @Mutation(() => Boolean, { name: 'approveEnrollment' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async approveEnrollment(
+        @Args('studentId', { type: () => String }) studentId: string,
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.approveEnrollment(
+            studentId,
+            courseId,
+            user.role === 'ADMIN' ? 'ADMIN' : user.id,
+        );
+    }
+
+    @Mutation(() => Boolean, { name: 'rejectEnrollment' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async rejectEnrollment(
+        @Args('studentId', { type: () => String }) studentId: string,
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.rejectEnrollment(
+            studentId,
+            courseId,
+            user.role === 'ADMIN' ? 'ADMIN' : user.id,
+        );
     }
 }

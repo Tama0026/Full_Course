@@ -46,8 +46,8 @@ let EnrollmentRepository = class EnrollmentRepository extends base_repository_1.
                     include: {
                         instructor: true,
                         sections: {
-                            include: { lessons: true }
-                        }
+                            include: { lessons: true },
+                        },
                     },
                 },
                 progresses: true,

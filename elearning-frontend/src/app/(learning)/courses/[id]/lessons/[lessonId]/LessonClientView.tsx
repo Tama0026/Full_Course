@@ -23,6 +23,7 @@ import {
 import { useMutation, useQuery } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
 import { triggerRainConfetti } from "@/lib/confetti";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Course, Lesson, Progress, Section } from "@/lib/graphql/types";
 import { MARK_LESSON_COMPLETE, CLAIM_CERTIFICATE, UPDATE_VIDEO_PROGRESS, GET_VIDEO_PROGRESS } from "@/lib/graphql/learning";
@@ -85,7 +86,7 @@ function SidebarSectionItem({
                                 <button
                                     onClick={() => {
                                         if (lesson.isLocked) {
-                                            alert("🔒 Bài học này đã bị khóa. Vui lòng hoàn thành bài học trước bằng cách làm Quiz để mở khóa bài học này.");
+                                            toast.info("🔒 Bài học này đã bị khóa. Vui lòng hoàn thành bài học trước bằng cách làm Quiz để mở khóa bài học này.");
                                             return;
                                         }
                                         onSelect(lesson.id);
@@ -290,7 +291,7 @@ export function LessonClientView({
                 setCertModalOpen(true);
             }
         } catch (err: any) {
-            alert("Lỗi nhận chứng chỉ: " + err.message);
+            toast.error("Lỗi nhận chứng chỉ: " + err.message);
         } finally {
             setClaimingCert(false);
         }
@@ -507,7 +508,7 @@ export function LessonClientView({
                             onClick={() => {
                                 if (prevLesson) {
                                     if (prevLesson.isLocked) {
-                                        alert("🔒 Bài học này đã bị khóa.");
+                                        toast.info("🔒 Bài học này đã bị khóa.");
                                         return;
                                     }
                                     navigateToLesson(prevLesson.id);
@@ -522,7 +523,7 @@ export function LessonClientView({
                             <button
                                 onClick={() => {
                                     if (nextLesson.isLocked) {
-                                        alert("🔒 Bài học này đã bị khóa. Vui lòng hoàn thành bài học hiện tại (hoặc Quiz) trước khi qua bài này.");
+                                        toast.info("🔒 Bài học này đã bị khóa. Vui lòng hoàn thành bài học hiện tại (hoặc Quiz) trước khi qua bài này.");
                                         return;
                                     }
                                     navigateToLesson(nextLesson.id);

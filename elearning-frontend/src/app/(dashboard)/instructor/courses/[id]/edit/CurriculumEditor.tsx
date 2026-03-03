@@ -57,9 +57,11 @@ type CurriculumFormValues = {
 
 export default function CurriculumEditor({
     courseId,
+    courseTitle,
     initialSections,
 }: {
     courseId: string;
+    courseTitle: string;
     initialSections: any[];
 }) {
     const apolloClient = useApolloClient();
@@ -129,7 +131,7 @@ export default function CurriculumEditor({
         try {
             const result = await apolloClient.mutate({
                 mutation: GENERATE_LESSON_CONTENT_WITH_QUIZ,
-                variables: { title: currentTitle, lessonId, quizCount: aiQuizCount },
+                variables: { title: currentTitle, courseTitle, lessonId, quizCount: aiQuizCount },
                 fetchPolicy: "no-cache",
             });
 

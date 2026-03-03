@@ -4,6 +4,7 @@ import { Course } from './entities/course.entity';
 import { Section } from './entities/section.entity';
 import { Lesson } from './entities/lesson.entity';
 import { InstructorStats } from './entities/instructor-stats.entity';
+import { AdminCourse } from './entities/admin-course.entity';
 import { CreateCourseInput } from './dto/create-course.input';
 import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
@@ -44,4 +45,25 @@ export declare class CoursesResolver {
     getInstructorStats(user: {
         id: string;
     }): Promise<InstructorStats>;
+    getAdminAllCourses(): Promise<AdminCourse[]>;
+    getCourseStudents(courseId: string, user: any): Promise<{
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+        progressPercent: number;
+        lastActive: Date | undefined;
+        progressTimeline: {
+            lessonTitle: string;
+            chapterTitle: string;
+            completedAt: Date;
+        }[];
+        lastRemindedAt: Date | null;
+        requestedAt: Date;
+        enrolledAt: Date | null;
+        status: string;
+    }[]>;
+    sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;
+    approveEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
+    rejectEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
 }

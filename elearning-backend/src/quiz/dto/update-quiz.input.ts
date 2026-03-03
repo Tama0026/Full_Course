@@ -1,25 +1,43 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
+import {
+  IsString,
+  IsArray,
+  ValidateNested,
+  IsInt,
+  IsOptional,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 @InputType()
 export class QuestionInput {
-    @Field({ nullable: true })
-    id?: string;
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  id?: string;
 
-    @Field()
-    content: string;
+  @Field()
+  @IsString()
+  content: string;
 
-    @Field(() => [String])
-    options: string[];
+  @Field(() => [String])
+  @IsArray()
+  @IsString({ each: true })
+  options: string[];
 
-    @Field(() => Int)
-    correctAnswer: number;
+  @Field(() => Int)
+  @IsInt()
+  correctAnswer: number;
 }
 
 @InputType()
 export class UpdateQuizInput {
-    @Field()
-    lessonId: string;
+  @Field()
+  @IsString()
+  lessonId: string;
 
-    @Field(() => [QuestionInput])
-    questions: QuestionInput[];
+  @Field(() => [QuestionInput])
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuestionInput)
+  questions: QuestionInput[];
 }

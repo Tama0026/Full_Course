@@ -21,6 +21,7 @@ const course_entity_1 = require("./entities/course.entity");
 const section_entity_1 = require("./entities/section.entity");
 const lesson_entity_1 = require("./entities/lesson.entity");
 const instructor_stats_entity_1 = require("./entities/instructor-stats.entity");
+const admin_course_entity_1 = require("./entities/admin-course.entity");
 const create_course_input_1 = require("./dto/create-course.input");
 const update_course_input_1 = require("./dto/update-course.input");
 const create_section_input_1 = require("./dto/create-section.input");
@@ -79,7 +80,7 @@ let LessonResolver = class LessonResolver {
             const enrollment = await this.prisma.enrollment.findUnique({
                 where: { userId_courseId: { userId: user.id, courseId } },
             });
-            if (enrollment)
+            if (enrollment && enrollment.status === 'APPROVED')
                 isAuthorized = true;
         }
         req.authorizedCourses[courseId] = isAuthorized;
@@ -105,7 +106,7 @@ let LessonResolver = class LessonResolver {
         const enrollment = await this.prisma.enrollment.findUnique({
             where: { userId_courseId: { userId: user.id, courseId } },
         });
-        if (!enrollment)
+        if (!enrollment || enrollment.status !== 'APPROVED')
             return true;
         const sections = await this.prisma.section.findMany({
             where: { courseId },
@@ -123,7 +124,7 @@ let LessonResolver = class LessonResolver {
         if (currentIndex > 0) {
             const prevLesson = allLessons[currentIndex - 1];
             const prevQuiz = await this.prisma.quiz.findUnique({
-                where: { lessonId: prevLesson.id }
+                where: { lessonId: prevLesson.id },
             });
             if (prevQuiz) {
                 let completedLessons = [];
@@ -249,6 +250,26 @@ let CoursesResolver = class CoursesResolver {
     }
     async getInstructorStats(user) {
         return this.coursesService.getInstructorStats(user.id);
+    }
+    async getAdminAllCourses() {
+        const courses = await this.coursesService.getAllCoursesForAdmin();
+        return courses.map((c) => ({
+            ...c,
+            enrollmentCount: c._count?.enrollments || 0,
+            sectionCount: c._count?.sections || 0,
+        }));
+    }
+    async getCourseStudents(courseId, user) {
+        return this.coursesService.getCourseStudents(courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
+    }
+    async sendLearningReminder(studentId, courseId, user) {
+        return this.coursesService.sendLearningReminder(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
+    }
+    async approveEnrollment(studentId, courseId, user) {
+        return this.coursesService.approveEnrollment(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
+    }
+    async rejectEnrollment(studentId, courseId, user) {
+        return this.coursesService.rejectEnrollment(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
     }
 };
 exports.CoursesResolver = CoursesResolver;
@@ -384,6 +405,57 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "getInstructorStats", null);
+__decorate([
+    (0, graphql_1.Query)(() => [admin_course_entity_1.AdminCourse], { name: 'adminAllCourses' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "getAdminAllCourses", null);
+__decorate([
+    (0, graphql_1.Query)(() => [course_entity_1.CourseStudent], { name: 'getCourseStudents' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('courseId', { type: () => String })),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "getCourseStudents", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean, { name: 'sendLearningReminder' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('studentId', { type: () => String })),
+    __param(1, (0, graphql_1.Args)('courseId', { type: () => String })),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "sendLearningReminder", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean, { name: 'approveEnrollment' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('studentId', { type: () => String })),
+    __param(1, (0, graphql_1.Args)('courseId', { type: () => String })),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "approveEnrollment", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean, { name: 'rejectEnrollment' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('studentId', { type: () => String })),
+    __param(1, (0, graphql_1.Args)('courseId', { type: () => String })),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "rejectEnrollment", null);
 exports.CoursesResolver = CoursesResolver = __decorate([
     (0, graphql_1.Resolver)(() => course_entity_1.Course),
     __metadata("design:paramtypes", [courses_service_1.CoursesService])

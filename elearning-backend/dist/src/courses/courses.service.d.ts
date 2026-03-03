@@ -14,6 +14,35 @@ export declare class CoursesService {
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
     deleteCourse(id: string): Promise<PrismaCourse>;
     getPublishedCourses(): Promise<PrismaCourse[]>;
+    getAllCoursesForAdmin(): Promise<({
+        _count: {
+            enrollments: number;
+            sections: number;
+        };
+        instructor: {
+            id: string;
+            name: string | null;
+            email: string;
+        };
+    } & {
+        id: string;
+        description: string;
+        createdAt: Date;
+        category: string | null;
+        updatedAt: Date;
+        title: string;
+        price: number;
+        thumbnail: string | null;
+        learningOutcomes: string;
+        averageRating: number;
+        reviewCount: number;
+        totalDuration: number;
+        published: boolean;
+        isActive: boolean;
+        maxStudents: number | null;
+        isApprovalRequired: boolean;
+        instructorId: string;
+    })[]>;
     getCourseById(id: string): Promise<PrismaCourse>;
     getMyCourses(instructorId: string): Promise<PrismaCourse[]>;
     createSection(input: CreateSectionInput): Promise<Section>;
@@ -39,8 +68,8 @@ export declare class CoursesService {
         sections: ({
             lessons: {
                 id: string;
-                order: number;
                 createdAt: Date;
+                order: number;
                 updatedAt: Date;
                 title: string;
                 type: string;
@@ -53,19 +82,19 @@ export declare class CoursesService {
             }[];
         } & {
             id: string;
-            order: number;
+            courseId: string;
             createdAt: Date;
+            order: number;
             updatedAt: Date;
             title: string;
-            courseId: string;
         })[];
     } & {
         id: string;
+        description: string;
         createdAt: Date;
         category: string | null;
         updatedAt: Date;
         title: string;
-        description: string;
         price: number;
         thumbnail: string | null;
         learningOutcomes: string;
@@ -74,6 +103,28 @@ export declare class CoursesService {
         totalDuration: number;
         published: boolean;
         isActive: boolean;
+        maxStudents: number | null;
+        isApprovalRequired: boolean;
         instructorId: string;
     }) | null>;
+    getCourseStudents(courseId: string, instructorId: string): Promise<{
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+        progressPercent: number;
+        lastActive: Date | undefined;
+        progressTimeline: {
+            lessonTitle: string;
+            chapterTitle: string;
+            completedAt: Date;
+        }[];
+        lastRemindedAt: Date | null;
+        requestedAt: Date;
+        enrolledAt: Date | null;
+        status: string;
+    }[]>;
+    approveEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
+    rejectEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
+    sendLearningReminder(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
 }

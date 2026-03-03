@@ -5,18 +5,18 @@ import { Order as PrismaOrder } from '@prisma/client';
 
 @Injectable()
 export class OrderRepository extends BaseRepository<PrismaOrder> {
-    constructor(prisma: PrismaService) {
-        super(prisma, 'order');
-    }
+  constructor(prisma: PrismaService) {
+    super(prisma, 'order');
+  }
 
-    /**
-     * Find all orders for a specific user.
-     */
-    async findByUserId(userId: string): Promise<PrismaOrder[]> {
-        return this.model.findMany({
-            where: { userId },
-            include: { course: true },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
+  /**
+   * Find all orders for a specific user.
+   */
+  async findByUserId(userId: string): Promise<PrismaOrder[]> {
+    return this.model.findMany({
+      where: { userId },
+      include: { course: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

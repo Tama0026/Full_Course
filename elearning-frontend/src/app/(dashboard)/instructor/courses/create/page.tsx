@@ -23,6 +23,7 @@ import { CREATE_COURSE, CREATE_SECTION, CREATE_LESSON, GET_MY_COURSES, GENERATE_
 import { GET_CATEGORIES } from "@/lib/graphql/category";
 import { useApolloClient } from "@apollo/client/react";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
+import { toast } from "sonner";
 
 /* ── Types ── */
 interface LessonDraft {
@@ -62,6 +63,8 @@ export default function CreateCoursePage() {
     const [category, setCategory] = useState("");
     const [thumbnail, setThumbnail] = useState("");
     const [learningOutcomes, setLearningOutcomes] = useState<string[]>([""]);
+    const [maxStudents, setMaxStudents] = useState<number | "">("");
+    const [isApprovalRequired, setIsApprovalRequired] = useState(false);
     const [suggestingAi, setSuggestingAi] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -110,7 +113,7 @@ export default function CreateCoursePage() {
         try {
             const result = await apolloClient.mutate({
                 mutation: GENERATE_LESSON_CONTENT,
-                variables: { title: lessonTitle, nonce }, // nonce giúp bypass cache
+                variables: { title: lessonTitle, courseTitle: title || "Khóa học chưa đặt tên", nonce }, // nonce giúp bypass cache
                 fetchPolicy: "no-cache",
             });
 
@@ -129,9 +132,9 @@ export default function CreateCoursePage() {
             // Phân biệt lỗi Rate Limit 429 và lỗi khác
             const errMsg: string = err?.message || err?.graphQLErrors?.[0]?.message || "";
             if (errMsg.includes("RATE_LIMIT") || errMsg.includes("429")) {
-                alert("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
+                toast.warning("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
             } else {
-                alert(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
+                toast.error(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
             }
         } finally {
             setGeneratingAi(false); // [Nhiệm vụ 1] Luôn reset isLoading về false
@@ -236,6 +239,8 @@ export default function CreateCoursePage() {
                         category,
                         thumbnail: thumbnail || null,
                         learningOutcomes: learningOutcomes.filter(o => o.trim() !== ""),
+                        maxStudents: maxStudents === "" || maxStudents <= 0 ? null : Number(maxStudents),
+                        isApprovalRequired,
                     },
                 },
             });
@@ -383,7 +388,37 @@ export default function CreateCoursePage() {
                                 </div>
                             </div>
 
-                            <div>
+                            <div className="grid gap-4 sm:grid-cols-2 mt-4">
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Giới hạn học viên</label>
+                                    <input
+                                        type="number"
+                                        value={maxStudents}
+                                        onChange={(e) => setMaxStudents(e.target.value ? Number(e.target.value) : "")}
+                                        placeholder="Để trống nếu không giới hạn"
+                                        min="0"
+                                        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white"
+                                    />
+                                    <p className="mt-1.5 text-xs text-slate-500">Bỏ trống hoặc nhập 0 để không giới hạn sĩ số.</p>
+                                </div>
+                                <div>
+                                    <label className="mb-1.5 block text-sm font-semibold text-slate-700">Kiểm duyệt đăng ký</label>
+                                    <div className="flex items-center gap-3 bg-white border border-slate-300 rounded-lg px-4 py-3 h-[46px]">
+                                        <input
+                                            type="checkbox"
+                                            id="approvalRequired"
+                                            checked={isApprovalRequired}
+                                            onChange={(e) => setIsApprovalRequired(e.target.checked)}
+                                            className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+                                        />
+                                        <label htmlFor="approvalRequired" className="text-sm font-semibold text-slate-700 cursor-pointer select-none">
+                                            Cần phê duyệt học viên mới
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
                                 <label className="mb-1.5 block text-sm font-semibold text-slate-700">Ảnh bìa khóa học</label>
                                 <CloudinaryUploader
                                     resourceType="auto"

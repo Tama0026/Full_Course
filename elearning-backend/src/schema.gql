@@ -12,6 +12,101 @@ type AchievementStats {
   userName: String
 }
 
+type AdminBadgeType {
+  awardedCount: Int!
+  courseId: String
+  courseName: String
+  createdAt: DateTime!
+  creatorId: String!
+  criteria: String!
+  criteriaType: String!
+  description: String!
+  icon: String!
+  id: ID!
+  name: String!
+  threshold: Int!
+}
+
+type AdminCourse {
+  category: String
+  createdAt: DateTime!
+  description: String!
+  enrollmentCount: Int!
+  id: ID!
+  instructor: AdminCourseInstructor!
+  instructorId: String!
+  isActive: Boolean!
+  price: Float!
+  published: Boolean!
+  sectionCount: Int!
+  thumbnail: String
+  title: String!
+  updatedAt: DateTime!
+}
+
+type AdminCourseInstructor {
+  email: String!
+  id: String!
+  name: String
+}
+
+input AdminCreateBadgeInput {
+  courseId: String
+  criteriaType: String! = "LESSONS_COMPLETED"
+  description: String!
+  icon: String! = "🏅"
+  name: String!
+  threshold: Int! = 1
+}
+
+type AdminStats {
+  totalBadges: Int!
+  totalCourses: Int!
+  totalEnrollments: Int!
+  totalInstructors: Int!
+  totalStudents: Int!
+  totalUsers: Int!
+}
+
+input AnswerInput {
+  answer: String!
+  questionId: String!
+}
+
+type Assessment {
+  createdAt: DateTime!
+  creatorId: String!
+  description: String!
+  id: ID!
+  isActive: Boolean!
+  passingScore: Float!
+  questions: [AssessmentQuestion]
+  timeLimit: Int!
+  title: String!
+  updatedAt: DateTime!
+}
+
+type AssessmentAttempt {
+  assessmentId: String!
+  completedAt: DateTime
+  id: ID!
+  isInvalid: Boolean!
+  passed: Boolean
+  score: Float
+  startedAt: DateTime!
+  userId: String!
+}
+
+type AssessmentQuestion {
+  assessmentId: String!
+  correctAnswer: String!
+  explanation: String!
+  id: ID!
+  options: [String!]!
+  order: Int!
+  prompt: String!
+}
+
 type AuthResponse {
   accessToken: String!
   refreshToken: String!
@@ -24,10 +119,12 @@ type BadgeType {
   courseName: String
   creatorId: String!
   criteria: String!
+  criteriaType: String!
   description: String!
   icon: String!
   id: ID!
   name: String!
+  threshold: Int!
 }
 
 type BadgeWithStatus {
@@ -35,11 +132,14 @@ type BadgeWithStatus {
   courseId: String
   courseName: String
   criteria: String!
+  criteriaType: String!
+  currentProgress: Int!
   description: String!
   earned: Boolean!
   icon: String!
   id: String!
   name: String!
+  threshold: Int!
 }
 
 type Category {
@@ -98,7 +198,9 @@ type Course {
   instructor: User
   instructorId: String!
   isActive: Boolean!
+  isApprovalRequired: Boolean!
   learningOutcomes: [String!]!
+  maxStudents: Float
   price: Float!
   published: Boolean!
   reviewCount: Float!
@@ -125,6 +227,33 @@ type CourseStats {
   title: String!
 }
 
+type CourseStudent {
+  avatar: String
+  email: String!
+  enrolledAt: DateTime
+  id: ID!
+  lastActive: DateTime
+  lastRemindedAt: DateTime
+  name: String!
+  progressPercent: Float!
+  progressTimeline: [CourseStudentProgress!]!
+  status: String
+}
+
+type CourseStudentProgress {
+  chapterTitle: String!
+  completedAt: DateTime!
+  lessonTitle: String!
+}
+
+input CreateAssessmentInput {
+  description: String!
+  isActive: Boolean!
+  passingScore: Float!
+  timeLimit: Int!
+  title: String!
+}
+
 input CreateBadgeInput {
   courseId: String!
   criteria: String!
@@ -146,7 +275,9 @@ input CreateCommentInput {
 input CreateCourseInput {
   category: String
   description: String!
+  isApprovalRequired: Boolean = false
   learningOutcomes: [String!]
+  maxStudents: Int
   price: Float!
   published: Boolean = false
   thumbnail: String
@@ -175,6 +306,14 @@ input CreateOrderInput {
   courseId: String!
 }
 
+input CreateQuestionInput {
+  correctAnswer: String!
+  explanation: String!
+  options: [String!]!
+  order: Int!
+  prompt: String!
+}
+
 input CreateSectionInput {
   courseId: String!
   order: Int!
@@ -190,10 +329,12 @@ type Enrollment {
   completedLessons: String!
   course: Course
   courseId: String!
-  enrolledAt: DateTime!
+  enrolledAt: DateTime
   id: ID!
   isFinished: Boolean!
   progresses: [Progress!]
+  requestedAt: DateTime!
+  status: String!
   user: User
   userId: String!
 }
@@ -255,11 +396,23 @@ input LoginInput {
   password: String!
 }
 
+type LoginStreakType {
+  currentStreak: Int!
+  lastLoginDate: String
+  longestStreak: Int!
+}
+
 type Mutation {
+  adminCreateBadge(input: AdminCreateBadgeInput!): AdminBadgeType!
+  adminDeleteBadge(badgeId: String!): Boolean!
+  adminUpdateBadge(badgeId: String!, input: UpdateBadgeInput!): AdminBadgeType!
+  approveEnrollment(courseId: String!, studentId: String!): Boolean!
   askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
   chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
   claimCertificate(courseId: String!): Certificate!
+  createAssessment(input: CreateAssessmentInput!): Assessment!
+  createAssessmentQuestion(assessmentId: String!, input: CreateQuestionInput!): AssessmentQuestion!
   createCategory(input: CreateCategoryInput!): Category!
   createComment(input: CreateCommentInput!): Comment!
   createCourse(input: CreateCourseInput!): Course!
@@ -268,6 +421,8 @@ type Mutation {
   createNote(input: CreateNoteInput!): Note!
   createOrder(input: CreateOrderInput!): Order!
   createSection(input: CreateSectionInput!): Section!
+  deleteAssessment(id: String!): Assessment!
+  deleteAssessmentQuestion(id: String!): AssessmentQuestion!
   deleteCategory(id: String!): Category!
   deleteComment(id: String!): Comment!
   deleteCourse(id: String!): Course!
@@ -275,13 +430,17 @@ type Mutation {
   deleteLesson(id: String!): Lesson!
   deleteNote(id: String!): Note!
   deleteSection(id: String!): Section!
-  generateLessonContent(nonce: Float, title: String!): String!
-  generateLessonContentWithQuiz(lessonId: String!, quizCount: Int! = 5, title: String!): String!
+  generateLessonContent(courseTitle: String!, nonce: Float, title: String!): String!
+  generateLessonContentWithQuiz(courseTitle: String!, lessonId: String!, quizCount: Int! = 5, title: String!): String!
   generateQuizWithAI(count: Int! = 5, lessonId: String!): Quiz!
   login(input: LoginInput!): AuthResponse!
   markLessonComplete(lessonId: String!): Progress!
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
+  rejectEnrollment(courseId: String!, studentId: String!): Boolean!
+  sendLearningReminder(courseId: String!, studentId: String!): Boolean!
+  startAssessmentAttempt(assessmentId: String!): AssessmentAttempt!
+  submitAssessmentAttempt(answers: [AnswerInput!]!, attemptId: String!): AssessmentAttempt!
   submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
   suggestLearningOutcomes(description: String!, title: String!): [String!]!
   toggleCourseStatus(id: String!): Course!
@@ -332,14 +491,20 @@ type Progress {
 }
 
 type Query {
+  adminAllBadges: [AdminBadgeType!]!
+  adminAllCourses: [AdminCourse!]!
+  adminStats: AdminStats!
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
+  assessment(id: String!): Assessment!
+  assessments: [Assessment!]!
   categories: [Category!]!
   certificateByCode(code: String!): Certificate
   course(id: String!): Course!
   courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
   courses: [Course!]!
+  getCourseStudents(courseId: String!): [CourseStudent!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!
   isEnrolled(courseId: String!): Boolean!
@@ -354,6 +519,7 @@ type Query {
   myCourses: [Course!]!
   myCreatedBadges: [BadgeType!]!
   myEnrollments: [Enrollment!]!
+  myLoginStreak: LoginStreakType!
   myOrders: [Order!]!
   myPoints: Int!
   order(id: String!): Order!
@@ -432,16 +598,20 @@ type SubmitQuizResponse {
 
 input UpdateBadgeInput {
   criteria: String
+  criteriaType: String
   description: String
   icon: String
   name: String
+  threshold: Int
 }
 
 input UpdateCourseInput {
   category: String
   description: String
   isActive: Boolean
+  isApprovalRequired: Boolean
   learningOutcomes: [String!]
+  maxStudents: Int
   price: Float
   published: Boolean
   thumbnail: String

@@ -6,8 +6,8 @@ export declare class AiService {
     constructor(prisma: PrismaService);
     private generateWithFallback;
     searchCourses(query: string): Promise<string>;
-    generateLessonContent(title: string): Promise<string>;
-    generateLessonContentWithQuiz(title: string, quizCount?: number): Promise<{
+    generateLessonContent(title: string, courseTitle: string): Promise<string>;
+    generateLessonContentWithQuiz(title: string, courseTitle: string, quizCount?: number): Promise<{
         body: string;
         quiz: {
             content: string;

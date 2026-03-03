@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     User, LogOut,
-    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award,
+    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award, BookOpen, ClipboardList
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { href: "/instructor", icon: LayoutDashboard, label: "Instructor Dashboard", exact: true },
+    { href: "/instructor/courses", icon: BookOpen, label: "Quản lý khóa học", exact: true },
+    { href: "/instructor/assessments", icon: ClipboardList, label: "Kỳ thi độc lập", exact: false },
     { href: "/instructor/badges", icon: Award, label: "Quản lý Badge", exact: false },
 ];
 
@@ -21,7 +23,7 @@ export default function InstructorSidebar() {
     }
 
     return (
-        <aside className="flex flex-col w-64 min-h-screen bg-gradient-to-b from-violet-950 to-indigo-900 shadow-2xl">
+        <aside className="flex flex-col w-64 h-screen sticky top-0 bg-gradient-to-b from-violet-950 to-indigo-900 shadow-2xl shrink-0">
             {/* Logo */}
             <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10 group">
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 shadow-md group-hover:bg-white/25 transition-colors">
@@ -34,7 +36,7 @@ export default function InstructorSidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-2 space-y-0.5">
+            <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
                 {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
                     const isActive = exact ? pathname === href : pathname.startsWith(href);
                     return (

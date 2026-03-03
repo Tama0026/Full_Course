@@ -10,35 +10,35 @@ import { Role } from '../common/enums/role.enum';
 
 @Resolver(() => Category)
 export class CategoriesResolver {
-    constructor(private readonly categoriesService: CategoriesService) { }
+  constructor(private readonly categoriesService: CategoriesService) {}
 
-    /**
-     * Get all categories (public — no auth required).
-     */
-    @Query(() => [Category], { name: 'categories' })
-    async getCategories(): Promise<Category[]> {
-        return this.categoriesService.findAll() as unknown as Category[];
-    }
+  /**
+   * Get all categories (public — no auth required).
+   */
+  @Query(() => [Category], { name: 'categories' })
+  async getCategories(): Promise<Category[]> {
+    return this.categoriesService.findAll() as unknown as Category[];
+  }
 
-    /**
-     * Create a new category (Instructor or Admin).
-     */
-    @Mutation(() => Category)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.INSTRUCTOR, Role.ADMIN)
-    async createCategory(
-        @Args('input') input: CreateCategoryInput,
-    ): Promise<Category> {
-        return this.categoriesService.create(input.name) as unknown as Category;
-    }
+  /**
+   * Create a new category (Instructor or Admin).
+   */
+  @Mutation(() => Category)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async createCategory(
+    @Args('input') input: CreateCategoryInput,
+  ): Promise<Category> {
+    return this.categoriesService.create(input.name) as unknown as Category;
+  }
 
-    /**
-     * Delete a category (Admin only).
-     */
-    @Mutation(() => Category)
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.ADMIN)
-    async deleteCategory(@Args('id') id: string): Promise<Category> {
-        return this.categoriesService.delete(id) as unknown as Category;
-    }
+  /**
+   * Delete a category (Admin only).
+   */
+  @Mutation(() => Category)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  async deleteCategory(@Args('id') id: string): Promise<Category> {
+    return this.categoriesService.delete(id) as unknown as Category;
+  }
 }

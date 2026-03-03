@@ -60,7 +60,7 @@ let LearningService = class LearningService {
             if (currentIndex > 0) {
                 const prevLesson = allLessons[currentIndex - 1];
                 const prevQuiz = await this.prisma.quiz.findUnique({
-                    where: { lessonId: prevLesson.id }
+                    where: { lessonId: prevLesson.id },
                 });
                 if (prevQuiz) {
                     let completedLessons = [];
@@ -164,7 +164,7 @@ let LearningService = class LearningService {
             });
         }
         let certificate = await this.prisma.certificate.findUnique({
-            where: { userId_courseId: { userId, courseId } }
+            where: { userId_courseId: { userId, courseId } },
         });
         if (certificate) {
             return certificate;
@@ -182,10 +182,12 @@ let LearningService = class LearningService {
                 courseNameAtIssue: courseName,
                 certificateUrl,
                 issueDate: issueDateObj,
-            }
+            },
         });
         const userEmail = enrollment.user.email;
-        this.emailService.sendCertificateEmail(userEmail, studentName, courseName, certificateUrl).catch(err => console.error('[LearningService] Email send failed:', err.message));
+        this.emailService
+            .sendCertificateEmail(userEmail, studentName, courseName, certificateUrl)
+            .catch((err) => console.error('[LearningService] Email send failed:', err.message));
         return certificate;
     }
     async getMyCertificates(userId) {

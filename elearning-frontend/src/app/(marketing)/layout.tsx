@@ -54,6 +54,12 @@ export default async function MarketingLayout({
                         >
                             Khóa học
                         </a>
+                        <a
+                            href="/exams"
+                            className="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors"
+                        >
+                            Kỳ thi
+                        </a>
                         {user ? (
                             <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-200">
                                 <span className="text-sm font-medium text-slate-600">

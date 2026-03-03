@@ -28,7 +28,9 @@ let AiService = class AiService {
         if (!apiKey) {
             console.warn('GEMINI_API_KEY is missing in environment variables. AI features will not work.');
         }
-        this.ai = new genai_1.GoogleGenAI({ apiKey: apiKey || 'dummy-key-to-prevent-crash' });
+        this.ai = new genai_1.GoogleGenAI({
+            apiKey: apiKey || 'dummy-key-to-prevent-crash',
+        });
     }
     async generateWithFallback(prompt) {
         let lastError;
@@ -44,7 +46,14 @@ let AiService = class AiService {
                 return response.text || '';
             }
             catch (err) {
-                const status = err?.status || (err?.message?.includes('429') ? 429 : err?.message?.includes('503') ? 503 : err?.message?.includes('500') ? 500 : 0);
+                const status = err?.status ||
+                    (err?.message?.includes('429')
+                        ? 429
+                        : err?.message?.includes('503')
+                            ? 503
+                            : err?.message?.includes('500')
+                                ? 500
+                                : 0);
                 lastError = err;
                 if (status === 429 || status === 503 || status === 500) {
                     console.warn(`[AiService] ⚠️ Model ${model} failed with status ${status}, trying next...`);
@@ -57,12 +66,12 @@ let AiService = class AiService {
     }
     async searchCourses(query) {
         if (!process.env.GEMINI_API_KEY) {
-            return "Tính năng AI đang tạm thời bị vô hiệu hóa vì không tìm thấy API Key hợp lệ trong hệ thống.";
+            return 'Tính năng AI đang tạm thời bị vô hiệu hóa vì không tìm thấy API Key hợp lệ trong hệ thống.';
         }
         try {
             const courses = await this.prisma.course.findMany({
                 where: { published: true, isActive: true },
-                select: { id: true, title: true, description: true, price: true }
+                select: { id: true, title: true, description: true, price: true },
             });
             const catalogText = JSON.stringify(courses);
             const prompt = `
@@ -80,24 +89,26 @@ Don't invent details. If no course matches well, polite tell them so.
             console.log(`[AiService] Calling Gemini for course search — query: "${query}"`);
             const text = await this.generateWithFallback(prompt);
             console.log(`[AiService] Gemini search done — ${text.length} chars`);
-            return text || "Xin lỗi, hiện không có môn học nào phù hợp.";
+            return text || 'Xin lỗi, hiện không có môn học nào phù hợp.';
         }
         catch (error) {
             const status = error?.status || error?.code;
             const msg = error?.message || '';
             console.error(`[AiService] searchCourses error — status: ${status}`, msg.slice(0, 200));
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+            if (status === 429 ||
+                msg.includes('429') ||
+                msg.includes('RESOURCE_EXHAUSTED')) {
                 throw new common_1.InternalServerErrorException('RATE_LIMIT: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.');
             }
             throw new common_1.InternalServerErrorException('AI suggestion failed');
         }
     }
-    async generateLessonContent(title) {
+    async generateLessonContent(title, courseTitle) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env');
         }
         const prompt = `
-You are an expert instructor. Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
 
 Requirements:
 - Use Markdown formatting.
@@ -109,7 +120,7 @@ Requirements:
         try {
             console.log(`[AiService] Generating lesson content — title: "${title}" @ ${new Date().toISOString()}`);
             const text = await this.generateWithFallback(prompt);
-            const result = text || "Nội dung đang được cập nhật.";
+            const result = text || 'Nội dung đang được cập nhật.';
             console.log(`[AiService] Lesson content done — ${result.length} chars, finished @ ${new Date().toISOString()}`);
             return result;
         }
@@ -117,18 +128,20 @@ Requirements:
             const status = error?.status || error?.code;
             const msg = error?.message || '';
             console.error(`[AiService] generateLessonContent error — status: ${status}`, msg.slice(0, 200));
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+            if (status === 429 ||
+                msg.includes('429') ||
+                msg.includes('RESOURCE_EXHAUSTED')) {
                 throw new common_1.InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn. Vui lòng chờ vài phút rồi thử lại.');
             }
             throw new common_1.InternalServerErrorException(`Content generation failed: ${msg.slice(0, 100) || 'unknown'}`);
         }
     }
-    async generateLessonContentWithQuiz(title, quizCount = 5) {
+    async generateLessonContentWithQuiz(title, courseTitle, quizCount = 5) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại trong hệ thống.');
         }
         const prompt = `
-You are an expert instructor. Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
 
 PART 1 — LESSON CONTENT:
 - Write in Vietnamese.
@@ -160,7 +173,10 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
         try {
             console.log(`[AiService] Generating lesson content + quiz — title: "${title}", quizCount: ${quizCount}`);
             const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+            const cleaned = text
+                .replace(/```json\n?/gi, '')
+                .replace(/```\n?/g, '')
+                .trim();
             const result = JSON.parse(cleaned);
             if (!result.body || !Array.isArray(result.quiz)) {
                 throw new Error('AI response missing required fields (body or quiz)');
@@ -172,10 +188,14 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
             const status = error?.status || error?.code;
             const msg = error?.message || '';
             console.error(`[AiService] generateLessonContentWithQuiz error — status: ${status}`, msg.slice(0, 200));
-            if (status === 429 || msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+            if (status === 429 ||
+                msg.includes('429') ||
+                msg.includes('RESOURCE_EXHAUSTED')) {
                 throw new common_1.InternalServerErrorException('RATE_LIMIT_429: Tất cả AI model đều đang bị giới hạn hoặc quá tải. Vui lòng chờ vài phút rồi thử lại.');
             }
-            if (status === 503 || msg.includes('503') || msg.includes('high demand')) {
+            if (status === 503 ||
+                msg.includes('503') ||
+                msg.includes('high demand')) {
                 throw new common_1.InternalServerErrorException('SERVICE_UNAVAILABLE_503: Hệ thống AI đang bị quá tải (High Demand). Vui lòng thử lại sau một lát.');
             }
             throw new common_1.InternalServerErrorException(`Content+Quiz generation failed: ${msg.slice(0, 100) || 'unknown'}`);
@@ -183,7 +203,7 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
     }
     async assessSkill(userId) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
         }
         const enrollments = await this.prisma.enrollment.findMany({
             where: { userId },
@@ -197,7 +217,13 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
                                 title: true,
                                 order: true,
                                 lessons: {
-                                    select: { id: true, title: true, type: true, body: true, order: true },
+                                    select: {
+                                        id: true,
+                                        title: true,
+                                        type: true,
+                                        body: true,
+                                        order: true,
+                                    },
                                     orderBy: { order: 'asc' },
                                 },
                             },
@@ -214,7 +240,7 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
         for (const enrollment of enrollments) {
             const course = enrollment.course;
             const totalLessons = course.sections.reduce((sum, s) => sum + s.lessons.length, 0);
-            const completedLessonIds = new Set(enrollment.progresses.map(p => p.lessonId));
+            const completedLessonIds = new Set(enrollment.progresses.map((p) => p.lessonId));
             const numCompleted = completedLessonIds.size;
             totalCompletedLessons += numCompleted;
             if (numCompleted === 0)
@@ -224,7 +250,7 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
                 completedCourses.push(course.title);
             let curriculum = `\n📘 Khóa học: "${course.title}" (${isFullyCompleted ? 'ĐÃ HOÀN THÀNH' : `${numCompleted}/${totalLessons} bài đã học`})\n`;
             for (const section of course.sections) {
-                const completedInSection = section.lessons.filter(l => completedLessonIds.has(l.id));
+                const completedInSection = section.lessons.filter((l) => completedLessonIds.has(l.id));
                 if (completedInSection.length === 0)
                     continue;
                 curriculum += `   📂 Chương: ${section.title}\n`;
@@ -246,15 +272,18 @@ IMPORTANT: The "body" field must contain valid Markdown. Escape any special JSON
             const noDataResult = JSON.stringify({
                 overallScore: 0,
                 skills: [],
-                level: "Chưa có dữ liệu",
-                summary: "Học viên chưa hoàn thành bài học nào. Hãy bắt đầu học và hoàn thành ít nhất một bài học để nhận đánh giá kỹ năng chính xác.",
+                level: 'Chưa có dữ liệu',
+                summary: 'Học viên chưa hoàn thành bài học nào. Hãy bắt đầu học và hoàn thành ít nhất một bài học để nhận đánh giá kỹ năng chính xác.',
                 recommendations: [
-                    "Hãy đăng ký một khóa học phù hợp với mục tiêu nghề nghiệp của bạn.",
-                    "Hoàn thành ít nhất vài bài học đầu tiên để AI có thể đánh giá điểm mạnh và điểm yếu của bạn.",
+                    'Hãy đăng ký một khóa học phù hợp với mục tiêu nghề nghiệp của bạn.',
+                    'Hoàn thành ít nhất vài bài học đầu tiên để AI có thể đánh giá điểm mạnh và điểm yếu của bạn.',
                     "Sau khi học xong, nhấn nút 'Hoàn thành' ở cuối mỗi bài để hệ thống ghi nhận tiến độ.",
                 ],
             });
-            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: noDataResult } });
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { aiRank: noDataResult },
+            });
             return noDataResult;
         }
         const prompt = `
@@ -290,9 +319,15 @@ Rules:
             console.log(`[AiService] Assessing skills for user ${userId} — ${totalCompletedLessons} lessons completed across ${courseDetails.length} courses`);
             const text = await this.generateWithFallback(prompt);
             console.log(`[AiService] Assessment done — ${text.length} chars`);
-            let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const cleaned = text
+                .replace(/```json\n?/g, '')
+                .replace(/```\n?/g, '')
+                .trim();
             JSON.parse(cleaned);
-            await this.prisma.user.update({ where: { id: userId }, data: { aiRank: cleaned } });
+            await this.prisma.user.update({
+                where: { id: userId },
+                data: { aiRank: cleaned },
+            });
             return cleaned;
         }
         catch (error) {
@@ -306,7 +341,7 @@ Rules:
     }
     async generateQuiz(lessonContent, count = 5) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
         }
         const prompt = `
 You are an expert instructor. Based on the following lesson content, generate exactly ${count} multiple-choice questions to test the student's knowledge.
@@ -327,7 +362,10 @@ Note: 'correctAnswer' is the 0-based index of the correct option in the 'options
         try {
             console.log(`[AiService] Generating quiz...`);
             const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+            const cleaned = text
+                .replace(/```json\n?/gi, '')
+                .replace(/```\n?/g, '')
+                .trim();
             const questions = JSON.parse(cleaned);
             console.log(`[AiService] Quiz generation done, got ${questions.length} questions`);
             return questions;
@@ -343,7 +381,7 @@ Note: 'correctAnswer' is the 0-based index of the correct option in the 'options
     }
     async askTutor(question, lessonId) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
         }
         const lesson = await this.prisma.lesson.findUnique({
             where: { id: lessonId },
@@ -387,7 +425,7 @@ Hướng dẫn:
     }
     async conductInterview(courseContext, courseName, userMessage, history) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
         }
         let conversationHistory = '';
         if (history.length > 0) {
@@ -438,13 +476,16 @@ Hướng dẫn phỏng vấn:
     }
     async suggestLearningOutcomes(title, description) {
         if (!process.env.GEMINI_API_KEY) {
-            throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
+            throw new common_1.InternalServerErrorException('GEMINI_API_KEY không tồn tại trong hệ thống.');
         }
         const prompt = `Bạn là chuyên gia thiết kế khóa học. Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5-8 mục tiêu học tập (string). Mỗi mục bắt đầu bằng động từ hành động. Chỉ trả về JSON, không giải thích.`;
         try {
             console.log(`[AiService] Suggesting learning outcomes — title: "${title}"`);
             const text = await this.generateWithFallback(prompt);
-            let cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+            const cleaned = text
+                .replace(/```json\n?/gi, '')
+                .replace(/```\n?/g, '')
+                .trim();
             const outcomes = JSON.parse(cleaned);
             if (!Array.isArray(outcomes)) {
                 throw new Error('AI response is not an array');

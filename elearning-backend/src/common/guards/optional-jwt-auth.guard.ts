@@ -10,20 +10,20 @@ import { GqlExecutionContext } from '@nestjs/graphql';
  */
 @Injectable()
 export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
-    getRequest(context: ExecutionContext) {
-        if (context.getType<any>() === 'graphql') {
-            const ctx = GqlExecutionContext.create(context);
-            return ctx.getContext().req;
-        }
-        return context.switchToHttp().getRequest();
+  getRequest(context: ExecutionContext) {
+    if (context.getType<any>() === 'graphql') {
+      const ctx = GqlExecutionContext.create(context);
+      return ctx.getContext().req;
     }
+    return context.switchToHttp().getRequest();
+  }
 
-    handleRequest(err: any, user: any, info: any) {
-        // You can throw an exception based on either "info" or "err" arguments
-        if (err) {
-            console.error('OptionalJwtAuthGuard error:', err);
-        }
-        // return the user if found, otherwise return null (do not throw Unauthorized)
-        return user || null;
+  handleRequest(err: any, user: any, info: any) {
+    // You can throw an exception based on either "info" or "err" arguments
+    if (err) {
+      console.error('OptionalJwtAuthGuard error:', err);
     }
+    // return the user if found, otherwise return null (do not throw Unauthorized)
+    return user || null;
+  }
 }

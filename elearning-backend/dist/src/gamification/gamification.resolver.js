@@ -19,8 +19,12 @@ const gamification_service_1 = require("./gamification.service");
 const leaderboard_entry_entity_1 = require("./entities/leaderboard-entry.entity");
 const badge_entity_1 = require("./entities/badge.entity");
 const achievement_entity_1 = require("./entities/achievement.entity");
+const admin_entity_1 = require("./entities/admin.entity");
 const badge_input_1 = require("./dto/badge.input");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
+const roles_guard_1 = require("../common/guards/roles.guard");
+const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const role_enum_1 = require("../common/enums/role.enum");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 let GamificationResolver = class GamificationResolver {
     gamificationService;
@@ -65,6 +69,27 @@ let GamificationResolver = class GamificationResolver {
     }
     async deleteCourseBadge(badgeId, user) {
         return this.gamificationService.deleteCourseBadge(badgeId, user.id);
+    }
+    async getAdminStats() {
+        return this.gamificationService.getAdminStats();
+    }
+    async getAdminAllBadges() {
+        return this.gamificationService.getAllBadgesForAdmin();
+    }
+    async adminCreateBadge(input, user) {
+        return this.gamificationService.adminCreateBadge({
+            ...input,
+            creatorId: user.id,
+        });
+    }
+    async adminUpdateBadge(badgeId, input) {
+        return this.gamificationService.adminUpdateBadge(badgeId, input);
+    }
+    async adminDeleteBadge(badgeId) {
+        return this.gamificationService.adminDeleteBadge(badgeId);
+    }
+    async getMyLoginStreak(user) {
+        return this.gamificationService.getLoginStreak(user.id);
     }
 };
 exports.GamificationResolver = GamificationResolver;
@@ -150,6 +175,59 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], GamificationResolver.prototype, "deleteCourseBadge", null);
+__decorate([
+    (0, graphql_1.Query)(() => admin_entity_1.AdminStats, { name: 'adminStats' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "getAdminStats", null);
+__decorate([
+    (0, graphql_1.Query)(() => [admin_entity_1.AdminBadgeType], { name: 'adminAllBadges' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "getAdminAllBadges", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => admin_entity_1.AdminBadgeType, { name: 'adminCreateBadge' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('input')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [badge_input_1.AdminCreateBadgeInput, Object]),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "adminCreateBadge", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => admin_entity_1.AdminBadgeType, { name: 'adminUpdateBadge' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('badgeId')),
+    __param(1, (0, graphql_1.Args)('input')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, badge_input_1.UpdateBadgeInput]),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "adminUpdateBadge", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean, { name: 'adminDeleteBadge' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('badgeId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "adminDeleteBadge", null);
+__decorate([
+    (0, graphql_1.Query)(() => achievement_entity_1.LoginStreakType, { name: 'myLoginStreak' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "getMyLoginStreak", null);
 exports.GamificationResolver = GamificationResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [gamification_service_1.GamificationService])

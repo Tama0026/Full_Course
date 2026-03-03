@@ -4,7 +4,12 @@ import { CoursesResolver, LessonResolver } from './courses.resolver';
 import { CourseRepository } from './course.repository';
 
 @Module({
-    providers: [CoursesService, CoursesResolver, LessonResolver, CourseRepository],
-    exports: [CoursesService, CourseRepository],
+  providers: [
+    CoursesService,
+    CoursesResolver,
+    LessonResolver,
+    CourseRepository,
+  ],
+  exports: [CoursesService, CourseRepository],
 })
-export class CoursesModule { }
+export class CoursesModule {}

@@ -59,8 +59,8 @@ let GamificationService = class GamificationService {
                 : undefined,
         });
         for (const badge of allBadges) {
-            const existing = await this.prisma.userBadge.findUnique({
-                where: { userId_badgeId: { userId, badgeId: badge.id } },
+            const existing = await this.prisma.userBadge.findFirst({
+                where: { userId, badgeId: badge.id },
             });
             if (existing)
                 continue;
@@ -74,45 +74,35 @@ let GamificationService = class GamificationService {
         }
     }
     async evaluateBadgeCriteria(userId, badge) {
-        const criteria = badge.criteria;
-        const courseId = badge.courseId;
-        const progressWhere = { enrollment: { userId } };
-        if (courseId) {
-            progressWhere.enrollment.course = { id: courseId };
+        const currentValue = await this.getUserCurrentValue(userId, badge.criteriaType, badge.courseId);
+        return currentValue >= badge.threshold;
+    }
+    async getUserCurrentValue(userId, criteriaType, courseId) {
+        switch (criteriaType) {
+            case 'LESSONS_COMPLETED': {
+                const where = { enrollment: { userId } };
+                if (courseId)
+                    where.enrollment.course = { id: courseId };
+                return this.prisma.progress.count({ where });
+            }
+            case 'COURSES_COMPLETED': {
+                const where = { userId, isFinished: true };
+                if (courseId)
+                    where.courseId = courseId;
+                return this.prisma.enrollment.count({ where });
+            }
+            case 'POINTS_EARNED': {
+                return this.getUserPoints(userId);
+            }
+            case 'LOGIN_STREAK': {
+                const streak = await this.prisma.loginStreak.findUnique({
+                    where: { userId },
+                });
+                return streak?.currentStreak || 0;
+            }
+            default:
+                return 0;
         }
-        const enrollmentWhere = { userId, isFinished: true };
-        if (courseId) {
-            enrollmentWhere.courseId = courseId;
-        }
-        if (criteria.startsWith('COMPLETE_') && criteria.endsWith('_LESSON')) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_LESSON', ''), 10);
-            if (isNaN(target))
-                return false;
-            const count = await this.prisma.progress.count({ where: progressWhere });
-            return count >= target;
-        }
-        if (criteria.startsWith('COMPLETE_') && criteria.endsWith('_LESSONS')) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_LESSONS', ''), 10);
-            if (isNaN(target))
-                return false;
-            const count = await this.prisma.progress.count({ where: progressWhere });
-            return count >= target;
-        }
-        if (criteria.startsWith('COMPLETE_') && (criteria.endsWith('_COURSE') || criteria.endsWith('_COURSES'))) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_COURSES', '').replace('_COURSE', ''), 10);
-            if (isNaN(target))
-                return false;
-            const count = await this.prisma.enrollment.count({ where: enrollmentWhere });
-            return count >= target;
-        }
-        if (criteria.startsWith('REACH_') && criteria.endsWith('_POINTS')) {
-            const target = parseInt(criteria.replace('REACH_', '').replace('_POINTS', ''), 10);
-            if (isNaN(target))
-                return false;
-            const userPoints = await this.getUserPoints(userId);
-            return userPoints >= target;
-        }
-        return false;
     }
     async getUserBadges(userId) {
         const userBadges = await this.prisma.userBadge.findMany({
@@ -180,14 +170,26 @@ let GamificationService = class GamificationService {
             include: { course: { select: { title: true } } },
             orderBy: [{ courseId: 'asc' }, { name: 'asc' }],
         });
+        const valueCache = new Map();
+        const uniqueTypes = [
+            ...new Set(allBadges.map((b) => b.criteriaType)),
+        ];
+        for (const type of uniqueTypes) {
+            const value = await this.getUserCurrentValue(userId, type, null);
+            valueCache.set(type, value);
+        }
         return allBadges.map((badge) => {
             const earned = earnedBadgeIds.has(badge.id);
+            const currentProgress = valueCache.get(badge.criteriaType) || 0;
             return {
                 id: badge.id,
                 name: badge.name,
                 description: badge.description,
                 icon: badge.icon,
                 criteria: badge.criteria,
+                criteriaType: badge.criteriaType,
+                threshold: badge.threshold,
+                currentProgress: Math.min(currentProgress, badge.threshold),
                 courseId: badge.courseId,
                 courseName: badge.course?.title || null,
                 earned,
@@ -213,7 +215,9 @@ let GamificationService = class GamificationService {
         };
     }
     async updateCourseBadge(badgeId, creatorId, data) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         if (badge.creatorId !== creatorId)
@@ -225,7 +229,9 @@ let GamificationService = class GamificationService {
         });
     }
     async deleteCourseBadge(badgeId, creatorId) {
-        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
         if (!badge)
             throw new Error('Badge not found');
         if (badge.creatorId !== creatorId)
@@ -271,42 +277,173 @@ let GamificationService = class GamificationService {
             awardedCount: b._count?.userBadges || 0,
         }));
     }
-    async seedBadges() {
-        let admin = await this.prisma.user.findUnique({
-            where: { email: 'admin@elearning.com' },
+    async getAllBadgesForAdmin() {
+        const badges = await this.prisma.badge.findMany({
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+            orderBy: [{ courseId: 'asc' }, { createdAt: 'desc' }],
         });
-        if (!admin) {
-            const bcrypt = await import('bcrypt');
-            const hashedPassword = await bcrypt.hash('Admin@123', 10);
-            admin = await this.prisma.user.create({
+        return badges.map((b) => ({
+            ...b,
+            courseName: b.course?.title || null,
+            awardedCount: b._count?.userBadges || 0,
+        }));
+    }
+    async adminCreateBadge(input) {
+        const criteriaMap = {
+            LESSONS_COMPLETED: (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+            COURSES_COMPLETED: (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+            POINTS_EARNED: (t) => `REACH_${t}_POINTS`,
+            LOGIN_STREAK: (t) => `LOGIN_STREAK_${t}_DAYS`,
+        };
+        const criteriaFn = criteriaMap[input.criteriaType] ||
+            ((t) => `${input.criteriaType}_${t}`);
+        const criteria = criteriaFn(input.threshold);
+        const badge = await this.prisma.badge.create({
+            data: {
+                name: input.name,
+                description: input.description,
+                icon: input.icon,
+                criteria,
+                criteriaType: input.criteriaType,
+                threshold: input.threshold,
+                courseId: input.courseId || null,
+                creatorId: input.creatorId,
+            },
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+        });
+        return {
+            ...badge,
+            courseName: badge.course?.title || null,
+            awardedCount: badge._count?.userBadges || 0,
+        };
+    }
+    async adminUpdateBadge(badgeId, data) {
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
+        if (!badge)
+            throw new Error('Badge not found');
+        const updateData = { ...data };
+        const newType = data.criteriaType || badge.criteriaType;
+        const newThreshold = data.threshold ?? badge.threshold;
+        if (data.criteriaType || data.threshold !== undefined) {
+            const criteriaMap = {
+                LESSONS_COMPLETED: (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+                COURSES_COMPLETED: (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+                POINTS_EARNED: (t) => `REACH_${t}_POINTS`,
+                LOGIN_STREAK: (t) => `LOGIN_STREAK_${t}_DAYS`,
+            };
+            const criteriaFn = criteriaMap[newType] || ((t) => `${newType}_${t}`);
+            updateData.criteria = criteriaFn(newThreshold);
+            updateData.criteriaType = newType;
+            updateData.threshold = newThreshold;
+        }
+        const updated = await this.prisma.badge.update({
+            where: { id: badgeId },
+            data: updateData,
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+        });
+        return {
+            ...updated,
+            courseName: updated.course?.title || null,
+            awardedCount: updated._count?.userBadges || 0,
+        };
+    }
+    async adminDeleteBadge(badgeId) {
+        const badge = await this.prisma.badge.findUnique({
+            where: { id: badgeId },
+        });
+        if (!badge)
+            throw new Error('Badge not found');
+        const awardedCount = await this.prisma.userBadge.count({
+            where: { badgeId },
+        });
+        if (awardedCount > 0) {
+            throw new Error(`Không thể xóa Badge này vì đã có ${awardedCount} học viên sở hữu`);
+        }
+        await this.prisma.badge.delete({ where: { id: badgeId } });
+        return true;
+    }
+    async getAdminStats() {
+        const [totalUsers, totalCourses, totalEnrollments, totalBadges] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.course.count(),
+            this.prisma.enrollment.count(),
+            this.prisma.badge.count(),
+        ]);
+        const totalStudents = await this.prisma.user.count({
+            where: { role: 'STUDENT' },
+        });
+        const totalInstructors = await this.prisma.user.count({
+            where: { role: 'INSTRUCTOR' },
+        });
+        return {
+            totalUsers,
+            totalCourses,
+            totalEnrollments,
+            totalBadges,
+            totalStudents,
+            totalInstructors,
+        };
+    }
+    async recordLoginActivity(userId) {
+        const today = new Date().toISOString().split('T')[0];
+        const existing = await this.prisma.loginStreak.findUnique({
+            where: { userId },
+        });
+        if (!existing) {
+            await this.prisma.loginStreak.create({
                 data: {
-                    email: 'admin@elearning.com',
-                    password: hashedPassword,
-                    name: 'System Admin',
-                    role: 'ADMIN',
+                    userId,
+                    currentStreak: 1,
+                    longestStreak: 1,
+                    lastLoginDate: today,
                 },
             });
-            console.log('[Gamification] 👤 Admin user created: admin@elearning.com / Admin@123');
+            console.log(`[Streak] 🔥 First login recorded for user ${userId}`);
         }
-        const defaultBadges = [
-            { name: 'COMPLETE_1_LESSON', description: 'Hoàn thành bài học đầu tiên', icon: '🌟', criteria: 'COMPLETE_1_LESSON' },
-            { name: 'COMPLETE_5_LESSONS', description: 'Hoàn thành 5 bài học', icon: '📚', criteria: 'COMPLETE_5_LESSONS' },
-            { name: 'COMPLETE_10_LESSONS', description: 'Hoàn thành 10 bài học', icon: '🎯', criteria: 'COMPLETE_10_LESSONS' },
-            { name: 'COMPLETE_25_LESSONS', description: 'Hoàn thành 25 bài học', icon: '🏆', criteria: 'COMPLETE_25_LESSONS' },
-            { name: 'COMPLETE_1_COURSE', description: 'Hoàn thành khóa học đầu tiên', icon: '🎓', criteria: 'COMPLETE_1_COURSE' },
-            { name: 'COMPLETE_3_COURSES', description: 'Hoàn thành 3 khóa học', icon: '💎', criteria: 'COMPLETE_3_COURSES' },
-            { name: 'REACH_100_POINTS', description: 'Đạt 100 điểm', icon: '⭐', criteria: 'REACH_100_POINTS' },
-            { name: 'REACH_500_POINTS', description: 'Đạt 500 điểm', icon: '🔥', criteria: 'REACH_500_POINTS' },
-            { name: 'REACH_1000_POINTS', description: 'Đạt 1000 điểm', icon: '👑', criteria: 'REACH_1000_POINTS' },
-        ];
-        for (const badge of defaultBadges) {
-            await this.prisma.badge.upsert({
-                where: { name: badge.name },
-                update: {},
-                create: { ...badge, courseId: null, creatorId: admin.id },
+        else if (existing.lastLoginDate === today) {
+            return;
+        }
+        else {
+            const lastDate = new Date(existing.lastLoginDate);
+            const todayDate = new Date(today);
+            const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+            let newStreak = 1;
+            if (diffDays === 1) {
+                newStreak = existing.currentStreak + 1;
+            }
+            const longestStreak = Math.max(existing.longestStreak, newStreak);
+            await this.prisma.loginStreak.update({
+                where: { userId },
+                data: {
+                    currentStreak: newStreak,
+                    longestStreak,
+                    lastLoginDate: today,
+                },
             });
+            console.log(`[Streak] 🔥 User ${userId}: streak = ${newStreak} (longest: ${longestStreak})`);
         }
-        console.log('[Gamification] ✅ Default global badges seeded (owned by Admin).');
+        await this.checkAndAwardBadges(userId);
+    }
+    async getLoginStreak(userId) {
+        const streak = await this.prisma.loginStreak.findUnique({
+            where: { userId },
+        });
+        return {
+            currentStreak: streak?.currentStreak || 0,
+            longestStreak: streak?.longestStreak || 0,
+            lastLoginDate: streak?.lastLoginDate || null,
+        };
     }
 };
 exports.GamificationService = GamificationService;

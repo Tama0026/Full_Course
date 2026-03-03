@@ -5,30 +5,36 @@ import { Progress } from './progress.entity';
 
 @ObjectType()
 export class Enrollment {
-    @Field(() => ID)
-    id: string;
+  @Field(() => ID)
+  id: string;
 
-    @Field()
-    userId: string;
+  @Field()
+  userId: string;
 
-    @Field()
-    courseId: string;
+  @Field()
+  courseId: string;
 
-    @Field(() => User, { nullable: true })
-    user?: User;
+  @Field(() => User, { nullable: true })
+  user?: User;
 
-    @Field(() => Course, { nullable: true })
-    course?: Course;
+  @Field(() => Course, { nullable: true })
+  course?: Course;
 
-    @Field()
-    enrolledAt: Date;
+  @Field()
+  requestedAt: Date;
 
-    @Field(() => [Progress], { nullable: true })
-    progresses?: Progress[];
+  @Field({ nullable: true })
+  enrolledAt?: Date;
 
-    @Field()
-    completedLessons: string;
+  @Field(() => [Progress], { nullable: true })
+  progresses?: Progress[];
 
-    @Field()
-    isFinished: boolean;
+  @Field()
+  completedLessons: string;
+
+  @Field()
+  isFinished: boolean;
+
+  @Field()
+  status: string;
 }

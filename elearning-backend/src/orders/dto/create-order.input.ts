@@ -3,7 +3,7 @@ import { IsNotEmpty } from 'class-validator';
 
 @InputType()
 export class CreateOrderInput {
-    @Field()
-    @IsNotEmpty({ message: 'Course ID is required' })
-    courseId: string;
+  @Field()
+  @IsNotEmpty({ message: 'Course ID is required' })
+  courseId: string;
 }

@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateBadgeInput = exports.CreateBadgeInput = void 0;
+exports.AdminCreateBadgeInput = exports.UpdateBadgeInput = exports.CreateBadgeInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const class_validator_1 = require("class-validator");
 let CreateBadgeInput = class CreateBadgeInput {
@@ -58,6 +58,8 @@ let UpdateBadgeInput = class UpdateBadgeInput {
     description;
     icon;
     criteria;
+    criteriaType;
+    threshold;
 };
 exports.UpdateBadgeInput = UpdateBadgeInput;
 __decorate([
@@ -84,7 +86,65 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateBadgeInput.prototype, "criteria", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateBadgeInput.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateBadgeInput.prototype, "threshold", void 0);
 exports.UpdateBadgeInput = UpdateBadgeInput = __decorate([
     (0, graphql_1.InputType)()
 ], UpdateBadgeInput);
+let AdminCreateBadgeInput = class AdminCreateBadgeInput {
+    name;
+    description;
+    icon;
+    criteriaType;
+    threshold;
+    courseId;
+};
+exports.AdminCreateBadgeInput = AdminCreateBadgeInput;
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "name", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "description", void 0);
+__decorate([
+    (0, graphql_1.Field)({ defaultValue: '🏅' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "icon", void 0);
+__decorate([
+    (0, graphql_1.Field)({ defaultValue: 'LESSONS_COMPLETED' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 1 }),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], AdminCreateBadgeInput.prototype, "threshold", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "courseId", void 0);
+exports.AdminCreateBadgeInput = AdminCreateBadgeInput = __decorate([
+    (0, graphql_1.InputType)()
+], AdminCreateBadgeInput);
 //# sourceMappingURL=badge.input.js.map

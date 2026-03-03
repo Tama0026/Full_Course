@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { GET_MY_ACHIEVEMENT_STATS, GET_ALL_BADGES_WITH_STATUS } from "@/lib/graphql/gamification";
-import { Loader2, Trophy, Medal, Star, Target, Info, Download, Share2, Award } from "lucide-react";
+import { GET_MY_ACHIEVEMENT_STATS, GET_ALL_BADGES_WITH_STATUS, GET_MY_LOGIN_STREAK } from "@/lib/graphql/gamification";
+import { Loader2, Trophy, Medal, Star, Target, Info, Download, Share2, Award, Flame } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as htmlToImage from "html-to-image";
 import Image from "next/image";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 /* ── Animation Variants ── */
 const containerVariants: Variants = {
@@ -24,19 +26,20 @@ const badgeVariants: Variants = {
     visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 200, damping: 15 } },
 };
 
-/* ── Criteria Label Map ── */
-const CRITERIA_LABELS: Record<string, string> = {
-    COMPLETE_1_LESSON: "Hoàn thành 1 bài học",
-    COMPLETE_3_LESSONS: "Hoàn thành 3 bài học",
-    COMPLETE_5_LESSONS: "Hoàn thành 5 bài học",
-    COMPLETE_10_LESSONS: "Hoàn thành 10 bài học",
-    COMPLETE_25_LESSONS: "Hoàn thành 25 bài học",
-    COMPLETE_1_COURSE: "Hoàn thành toàn bộ một khóa học",
-    COMPLETE_3_COURSES: "Hoàn thành 3 khóa học",
-    REACH_100_POINTS: "Đạt 100 điểm tích lũy",
-    REACH_500_POINTS: "Đạt 500 điểm tích lũy",
-    REACH_1000_POINTS: "Đạt 1000 điểm tích lũy",
+/* ── Dynamic Criteria Label Generator ── */
+const CRITERIA_TYPE_LABELS: Record<string, string> = {
+    LESSONS_COMPLETED: "bài học",
+    COURSES_COMPLETED: "khóa học",
+    POINTS_EARNED: "điểm tích lũy",
+    LOGIN_STREAK: "ngày đăng nhập liên tiếp",
 };
+
+function getDynamicLabel(badge: any): string {
+    const unit = CRITERIA_TYPE_LABELS[badge.criteriaType] || "";
+    if (badge.criteriaType === "POINTS_EARNED") return `Đạt ${badge.threshold} ${unit}`;
+    if (badge.criteriaType === "LOGIN_STREAK") return `Đăng nhập ${badge.threshold} ${unit}`;
+    return `Hoàn thành ${badge.threshold} ${unit}`;
+}
 
 export default function AchievementsPage() {
     const galleryRef = useRef<HTMLDivElement>(null);
@@ -53,8 +56,31 @@ export default function AchievementsPage() {
         fetchPolicy: "cache-and-network"
     });
 
+    // Fetch Login Streak
+    const { data: streakData } = useQuery<any>(GET_MY_LOGIN_STREAK, {
+        fetchPolicy: "cache-and-network"
+    });
+
     const stats = statsData?.myAchievementStats;
     const allBadges = badgesData?.allBadgesWithStatus || [];
+    const streak = streakData?.myLoginStreak;
+
+    // 🎉 Confetti celebration for newly earned badges
+    const [celebratedIds, setCelebratedIds] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        const earnedBadges = allBadges.filter((b: any) => b.earned);
+        const newOnes = earnedBadges.filter((b: any) => !celebratedIds.has(b.id));
+        if (newOnes.length > 0 && celebratedIds.size > 0) {
+            // Only celebrate if this isn't the first load
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+            newOnes.forEach((b: any) => {
+                toast.success(`✨ Chúc mừng! Bạn đã nhận huy hiệu: ${b.name}`, { duration: 5000 });
+            });
+        }
+        if (earnedBadges.length > 0) {
+            setCelebratedIds(new Set(earnedBadges.map((b: any) => b.id)));
+        }
+    }, [allBadges]);
 
     // Filter Badges
     const globalBadges = allBadges.filter((b: any) => !b.courseId);
@@ -88,7 +114,7 @@ export default function AchievementsPage() {
             link.click();
         } catch (error) {
             console.error("Lỗi khi tải ảnh:", error);
-            alert("Không thể tải ảnh, vui lòng thử lại.");
+            toast.error("Không thể tải ảnh, vui lòng thử lại.");
         } finally {
             setDownloading(false);
         }
@@ -205,6 +231,28 @@ export default function AchievementsPage() {
                 </motion.div>
             </motion.div>
 
+            {/* ═══ Streak Card ═══ */}
+            {streak && streak.currentStreak > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-10 rounded-2xl border border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 p-5 shadow-sm"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 text-white shadow-lg">
+                            <Flame className="h-7 w-7" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Chuỗi đăng nhập: {streak.currentStreak} ngày 🔥</h3>
+                            <p className="text-sm text-slate-500">
+                                Kỷ lục: {streak.longestStreak} ngày
+                                {streak.lastLoginDate && ` • Lần cuối: ${new Date(streak.lastLoginDate).toLocaleDateString('vi-VN')}`}
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* ═══ Global Badges ═══ */}
             <div className="mb-10">
                 <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -307,8 +355,22 @@ function BadgeGrid({ badges, hoveredBadgeId, setHoveredBadgeId, downloading }: {
                             <div className="relative z-10 space-y-1.5">
                                 <p className="font-semibold text-amber-400">Điều kiện nhận:</p>
                                 <p className="text-slate-300 leading-relaxed">
-                                    {CRITERIA_LABELS[badge.criteria] || badge.description}
+                                    {getDynamicLabel(badge)}
                                 </p>
+                                {!badge.earned && badge.threshold > 0 && (
+                                    <div className="mt-2">
+                                        <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+                                            <span>{badge.currentProgress || 0}/{badge.threshold}</span>
+                                            <span>{Math.round(((badge.currentProgress || 0) / badge.threshold) * 100)}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.min(100, ((badge.currentProgress || 0) / badge.threshold) * 100)}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                                 {badge.earned && badge.awardedAt && (
                                     <p className="text-[10px] text-slate-400 pt-1.5 mt-1.5 border-t border-slate-700 font-mono">
                                         {new Date(badge.awardedAt).toLocaleDateString('vi-VN')}

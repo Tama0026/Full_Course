@@ -3,7 +3,7 @@ import { CategoriesService } from './categories.service';
 import { CategoriesResolver } from './categories.resolver';
 
 @Module({
-    providers: [CategoriesService, CategoriesResolver],
-    exports: [CategoriesService],
+  providers: [CategoriesService, CategoriesResolver],
+  exports: [CategoriesService],
 })
-export class CategoriesModule { }
+export class CategoriesModule {}

@@ -8,8 +8,8 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-    imports: [CloudinaryModule, GamificationModule],
-    providers: [LearningService, LearningResolver, EnrollmentRepository],
-    exports: [LearningService],
+  imports: [CloudinaryModule, GamificationModule],
+  providers: [LearningService, LearningResolver, EnrollmentRepository],
+  exports: [LearningService],
 })
-export class LearningModule { }
+export class LearningModule {}

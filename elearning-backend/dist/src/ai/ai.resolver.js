@@ -35,15 +35,15 @@ let AiResolver = class AiResolver {
         console.log(`[AiResolver] suggestCourses done — response length: ${result.length} chars`);
         return result;
     }
-    async generateLessonContent(title, nonce) {
-        console.log(`[AiResolver] generateLessonContent — title: "${title}", nonce: ${nonce ?? 'none'}`);
-        const result = await this.aiService.generateLessonContent(title);
+    async generateLessonContent(title, courseTitle, nonce) {
+        console.log(`[AiResolver] generateLessonContent — courseTitle: "${courseTitle}", title: "${title}", nonce: ${nonce ?? 'none'}`);
+        const result = await this.aiService.generateLessonContent(title, courseTitle);
         console.log(`[AiResolver] generateLessonContent done — ${result.length} chars`);
         return result;
     }
-    async generateLessonContentWithQuiz(title, lessonId, quizCount) {
-        console.log(`[AiResolver] generateLessonContentWithQuiz — title: "${title}", lessonId: ${lessonId}, quizCount: ${quizCount}`);
-        const aiResult = await this.aiService.generateLessonContentWithQuiz(title, quizCount);
+    async generateLessonContentWithQuiz(title, courseTitle, lessonId, quizCount) {
+        console.log(`[AiResolver] generateLessonContentWithQuiz — courseTitle: "${courseTitle}", title: "${title}", lessonId: ${lessonId}, quizCount: ${quizCount}`);
+        const aiResult = await this.aiService.generateLessonContentWithQuiz(title, courseTitle, quizCount);
         await this.prisma.$transaction(async (tx) => {
             await tx.lesson.update({
                 where: { id: lessonId },
@@ -99,9 +99,10 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
     __param(0, (0, graphql_1.Args)('title')),
-    __param(1, (0, graphql_1.Args)('nonce', { type: () => graphql_1.Float, nullable: true })),
+    __param(1, (0, graphql_1.Args)('courseTitle')),
+    __param(2, (0, graphql_1.Args)('nonce', { type: () => graphql_1.Float, nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number]),
+    __metadata("design:paramtypes", [String, String, Number]),
     __metadata("design:returntype", Promise)
 ], AiResolver.prototype, "generateLessonContent", null);
 __decorate([
@@ -109,10 +110,11 @@ __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
     __param(0, (0, graphql_1.Args)('title')),
-    __param(1, (0, graphql_1.Args)('lessonId')),
-    __param(2, (0, graphql_1.Args)({ name: 'quizCount', type: () => graphql_1.Int, defaultValue: 5 })),
+    __param(1, (0, graphql_1.Args)('courseTitle')),
+    __param(2, (0, graphql_1.Args)('lessonId')),
+    __param(3, (0, graphql_1.Args)({ name: 'quizCount', type: () => graphql_1.Int, defaultValue: 5 })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Number]),
+    __metadata("design:paramtypes", [String, String, String, Number]),
     __metadata("design:returntype", Promise)
 ], AiResolver.prototype, "generateLessonContentWithQuiz", null);
 __decorate([

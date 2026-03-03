@@ -16,7 +16,12 @@ let CoursesModule = class CoursesModule {
 exports.CoursesModule = CoursesModule;
 exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
-        providers: [courses_service_1.CoursesService, courses_resolver_1.CoursesResolver, courses_resolver_1.LessonResolver, course_repository_1.CourseRepository],
+        providers: [
+            courses_service_1.CoursesService,
+            courses_resolver_1.CoursesResolver,
+            courses_resolver_1.LessonResolver,
+            course_repository_1.CourseRepository,
+        ],
         exports: [courses_service_1.CoursesService, course_repository_1.CourseRepository],
     })
 ], CoursesModule);

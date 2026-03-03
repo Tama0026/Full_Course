@@ -77,10 +77,23 @@ export const GET_ALL_BADGES_WITH_STATUS = gql`
       description
       icon
       criteria
+      criteriaType
+      threshold
+      currentProgress
       courseId
       courseName
       earned
       awardedAt
+    }
+  }
+`;
+
+export const GET_MY_LOGIN_STREAK = gql`
+  query GetMyLoginStreak {
+    myLoginStreak {
+      currentStreak
+      longestStreak
+      lastLoginDate
     }
   }
 `;
