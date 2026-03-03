@@ -460,4 +460,101 @@ export class CoursesService {
             });
         });
     }
+
+    // ==================== INSTRUCTOR STUDENT TRACKING ====================
+
+    async getCourseStudents(courseId: string, instructorId: string) {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId }
+        });
+        if (!course) throw new NotFoundException('Course not found');
+        // Admin also bypasses this in Resolver, but for service let's just make it a soft check
+        // The real check is in Resolver relying on RolesGuard or checking roles manually.
+        // We will pass instructorId = 'ADMIN' if the user is Admin
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new ForbiddenException('Bạn không phải giảng viên của khóa học này');
+        }
+
+        const enrollments = await this.prisma.enrollment.findMany({
+            where: { courseId },
+            include: {
+                user: true,
+                progresses: {
+                    include: {
+                        lesson: {
+                            include: { section: true }
+                        }
+                    },
+                    orderBy: { completedAt: 'desc' }
+                }
+            }
+        });
+
+        const totalLessons = await this.prisma.lesson.count({
+            where: { section: { courseId } }
+        });
+
+        return enrollments.map(en => {
+            const progressPercent = totalLessons === 0 ? 0 : Math.min(100, Math.round((en.progresses.length / totalLessons) * 100));
+
+            const progressTimeline = en.progresses.map(p => ({
+                lessonTitle: p.lesson.title,
+                chapterTitle: p.lesson.section.title,
+                completedAt: p.completedAt
+            }));
+
+            // Calculate last active from newest progress
+            const lastActive = en.progresses.length > 0 ? en.progresses[0].completedAt : undefined;
+
+            return {
+                id: en.user.id,
+                name: en.user.name || 'Học viên ẩn danh',
+                email: en.user.email,
+                avatar: en.user.avatar, // Ensure UI handles nulls
+                progressPercent,
+                lastActive,
+                progressTimeline,
+                lastRemindedAt: en.lastRemindedAt
+            };
+        });
+    }
+
+    async sendLearningReminder(studentId: string, courseId: string, instructorId: string): Promise<boolean> {
+        const course = await this.prisma.course.findUnique({
+            where: { id: courseId },
+            include: { instructor: true }
+        });
+        if (!course) throw new NotFoundException('Khóa học không tồn tại');
+        if (course.instructorId !== instructorId && instructorId !== 'ADMIN') {
+            throw new ForbiddenException('Bạn không có quyền gửi nhắc nhở cho khóa học này');
+        }
+
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId: studentId, courseId } },
+            include: { user: true }
+        });
+
+        if (!enrollment) throw new NotFoundException('Học viên chưa đăng ký khóa học này');
+
+        // Check Rate Limit (24 hours) - Use 24h interval
+        if (enrollment.lastRemindedAt) {
+            const timeSinceLastReminder = new Date().getTime() - enrollment.lastRemindedAt.getTime();
+            const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
+            if (hoursSince < 24) {
+                throw new BadRequestException('Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.');
+            }
+        }
+
+        await this.prisma.enrollment.update({
+            where: { id: enrollment.id },
+            data: { lastRemindedAt: new Date() }
+        });
+
+        const studentName = enrollment.user.name || 'Bạn';
+        const instName = course.instructor.name || 'Giảng viên';
+        console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
+        console.log(`[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`);
+
+        return true;
+    }
 }

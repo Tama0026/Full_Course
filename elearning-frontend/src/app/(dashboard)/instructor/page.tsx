@@ -265,7 +265,13 @@ export default function InstructorDashboard() {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2 shrink-0">
+                                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+                                            <Link
+                                                href={`/instructor/courses/${course.id}/students`}
+                                                className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition-colors"
+                                            >
+                                                <Users className="h-3.5 w-3.5" /> Học viên
+                                            </Link>
                                             <Link
                                                 href={`/instructor/courses/${course.id}/edit`}
                                                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"

@@ -186,6 +186,23 @@ type CourseStats {
   title: String!
 }
 
+type CourseStudent {
+  avatar: String
+  email: String!
+  id: ID!
+  lastActive: DateTime
+  lastRemindedAt: DateTime
+  name: String!
+  progressPercent: Float!
+  progressTimeline: [CourseStudentProgress!]!
+}
+
+type CourseStudentProgress {
+  chapterTitle: String!
+  completedAt: DateTime!
+  lessonTitle: String!
+}
+
 input CreateBadgeInput {
   courseId: String!
   criteria: String!
@@ -352,6 +369,7 @@ type Mutation {
   markLessonComplete(lessonId: String!): Progress!
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
+  sendLearningReminder(courseId: String!, studentId: String!): Boolean!
   submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
   suggestLearningOutcomes(description: String!, title: String!): [String!]!
   toggleCourseStatus(id: String!): Course!
@@ -413,6 +431,7 @@ type Query {
   courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
   courses: [Course!]!
+  getCourseStudents(courseId: String!): [CourseStudent!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!
   isEnrolled(courseId: String!): Boolean!

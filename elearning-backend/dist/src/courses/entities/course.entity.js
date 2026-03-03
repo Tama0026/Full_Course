@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Course = void 0;
+exports.CourseStudent = exports.CourseStudentProgress = exports.Course = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const user_entity_1 = require("../../auth/entities/user.entity");
 const section_entity_1 = require("./section.entity");
@@ -104,4 +104,71 @@ __decorate([
 exports.Course = Course = __decorate([
     (0, graphql_1.ObjectType)()
 ], Course);
+let CourseStudentProgress = class CourseStudentProgress {
+    lessonTitle;
+    chapterTitle;
+    completedAt;
+};
+exports.CourseStudentProgress = CourseStudentProgress;
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], CourseStudentProgress.prototype, "lessonTitle", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], CourseStudentProgress.prototype, "chapterTitle", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Date)
+], CourseStudentProgress.prototype, "completedAt", void 0);
+exports.CourseStudentProgress = CourseStudentProgress = __decorate([
+    (0, graphql_1.ObjectType)()
+], CourseStudentProgress);
+let CourseStudent = class CourseStudent {
+    id;
+    name;
+    email;
+    avatar;
+    progressPercent;
+    lastActive;
+    progressTimeline;
+    lastRemindedAt;
+};
+exports.CourseStudent = CourseStudent;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.ID),
+    __metadata("design:type", String)
+], CourseStudent.prototype, "id", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], CourseStudent.prototype, "name", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], CourseStudent.prototype, "email", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], CourseStudent.prototype, "avatar", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], CourseStudent.prototype, "progressPercent", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], CourseStudent.prototype, "lastActive", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [CourseStudentProgress]),
+    __metadata("design:type", Array)
+], CourseStudent.prototype, "progressTimeline", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], CourseStudent.prototype, "lastRemindedAt", void 0);
+exports.CourseStudent = CourseStudent = __decorate([
+    (0, graphql_1.ObjectType)()
+], CourseStudent);
 //# sourceMappingURL=course.entity.js.map

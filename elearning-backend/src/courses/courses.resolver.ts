@@ -2,7 +2,7 @@ import { Resolver, Query, Mutation, Args, ResolveField, Parent, Context } from '
 import { UseGuards } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CoursesService } from './courses.service';
-import { Course } from './entities/course.entity';
+import { Course, CourseStudent } from './entities/course.entity';
 import { Section } from './entities/section.entity';
 import { Lesson } from './entities/lesson.entity';
 import { InstructorStats } from './entities/instructor-stats.entity';
@@ -389,5 +389,28 @@ export class CoursesResolver {
             enrollmentCount: c._count?.enrollments || 0,
             sectionCount: c._count?.sections || 0,
         })) as unknown as AdminCourse[];
+    }
+
+    // ==================== INSTRUCTOR STUDENT TRACKING ====================
+
+    @Query(() => [CourseStudent], { name: 'getCourseStudents' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async getCourseStudents(
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.getCourseStudents(courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
+    }
+
+    @Mutation(() => Boolean, { name: 'sendLearningReminder' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.INSTRUCTOR, Role.ADMIN)
+    async sendLearningReminder(
+        @Args('studentId', { type: () => String }) studentId: string,
+        @Args('courseId', { type: () => String }) courseId: string,
+        @CurrentUser() user: any,
+    ) {
+        return this.coursesService.sendLearningReminder(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
     }
 }

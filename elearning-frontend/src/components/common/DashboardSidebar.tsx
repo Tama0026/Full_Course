@@ -24,7 +24,7 @@ export default function DashboardSidebar() {
     }
 
     return (
-        <aside className="flex flex-col w-64 min-h-screen bg-white border-r border-slate-100 shadow-sm">
+        <aside className="flex flex-col w-64 h-screen sticky top-0 bg-white border-r border-slate-100 shadow-sm shrink-0">
             {/* Logo — click để về trang chủ */}
             <Link
                 href="/"
@@ -40,7 +40,7 @@ export default function DashboardSidebar() {
             </Link>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-6 space-y-0.5">
+            <nav className="flex-1 px-3 py-6 space-y-0.5 overflow-y-auto">
                 {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
                     // Exact match for /student, otherwise startswith for subpages (if added later)
                     const isActive = href === "/student"

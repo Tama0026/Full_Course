@@ -183,3 +183,28 @@ export const SUGGEST_LEARNING_OUTCOMES = gql`
     suggestLearningOutcomes(title: $title, description: $description)
   }
 `;
+
+export const GET_COURSE_STUDENTS = gql`
+  query GetCourseStudents($courseId: String!) {
+    getCourseStudents(courseId: $courseId) {
+      id
+      name
+      email
+      avatar
+      progressPercent
+      lastActive
+      lastRemindedAt
+      progressTimeline {
+        lessonTitle
+        chapterTitle
+        completedAt
+      }
+    }
+  }
+`;
+
+export const SEND_LEARNING_REMINDER = gql`
+  mutation SendLearningReminder($studentId: String!, $courseId: String!) {
+    sendLearningReminder(studentId: $studentId, courseId: $courseId)
+  }
+`;

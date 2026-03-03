@@ -46,4 +46,19 @@ export declare class CoursesResolver {
         id: string;
     }): Promise<InstructorStats>;
     getAdminAllCourses(): Promise<AdminCourse[]>;
+    getCourseStudents(courseId: string, user: any): Promise<{
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+        progressPercent: number;
+        lastActive: Date | undefined;
+        progressTimeline: {
+            lessonTitle: string;
+            chapterTitle: string;
+            completedAt: Date;
+        }[];
+        lastRemindedAt: Date | null;
+    }[]>;
+    sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;
 }

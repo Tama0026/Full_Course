@@ -162,9 +162,10 @@ model Enrollment {
   id               String   @id @default(uuid())
   userId           String
   courseId         String
-  completedLessons String   @default("[]") // JSON string field to support SQLite
-  isFinished       Boolean  @default(false)
-  enrolledAt       DateTime @default(now())
+  completedLessons String    @default("[]") // JSON string field to support SQLite
+  isFinished       Boolean   @default(false)
+  enrolledAt       DateTime  @default(now())
+  lastRemindedAt   DateTime?
 
   // Relations
   user       User       @relation(fields: [userId], references: [id])

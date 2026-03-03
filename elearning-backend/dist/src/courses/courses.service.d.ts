@@ -15,22 +15,22 @@ export declare class CoursesService {
     deleteCourse(id: string): Promise<PrismaCourse>;
     getPublishedCourses(): Promise<PrismaCourse[]>;
     getAllCoursesForAdmin(): Promise<({
+        _count: {
+            enrollments: number;
+            sections: number;
+        };
         instructor: {
             id: string;
             name: string | null;
             email: string;
         };
-        _count: {
-            enrollments: number;
-            sections: number;
-        };
     } & {
         id: string;
+        description: string;
         createdAt: Date;
         category: string | null;
         updatedAt: Date;
         title: string;
-        description: string;
         price: number;
         thumbnail: string | null;
         learningOutcomes: string;
@@ -66,8 +66,8 @@ export declare class CoursesService {
         sections: ({
             lessons: {
                 id: string;
-                order: number;
                 createdAt: Date;
+                order: number;
                 updatedAt: Date;
                 title: string;
                 type: string;
@@ -80,19 +80,19 @@ export declare class CoursesService {
             }[];
         } & {
             id: string;
-            order: number;
+            courseId: string;
             createdAt: Date;
+            order: number;
             updatedAt: Date;
             title: string;
-            courseId: string;
         })[];
     } & {
         id: string;
+        description: string;
         createdAt: Date;
         category: string | null;
         updatedAt: Date;
         title: string;
-        description: string;
         price: number;
         thumbnail: string | null;
         learningOutcomes: string;
@@ -103,4 +103,19 @@ export declare class CoursesService {
         isActive: boolean;
         instructorId: string;
     }) | null>;
+    getCourseStudents(courseId: string, instructorId: string): Promise<{
+        id: string;
+        name: string;
+        email: string;
+        avatar: string | null;
+        progressPercent: number;
+        lastActive: Date | undefined;
+        progressTimeline: {
+            lessonTitle: string;
+            chapterTitle: string;
+            completedAt: Date;
+        }[];
+        lastRemindedAt: Date | null;
+    }[]>;
+    sendLearningReminder(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
 }

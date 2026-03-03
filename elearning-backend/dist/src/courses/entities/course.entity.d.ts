@@ -19,3 +19,18 @@ export declare class Course {
     createdAt: Date;
     updatedAt: Date;
 }
+export declare class CourseStudentProgress {
+    lessonTitle: string;
+    chapterTitle: string;
+    completedAt: Date;
+}
+export declare class CourseStudent {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+    progressPercent: number;
+    lastActive?: Date;
+    progressTimeline: CourseStudentProgress[];
+    lastRemindedAt?: Date;
+}

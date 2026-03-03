@@ -21,7 +21,7 @@ export default function InstructorSidebar() {
     }
 
     return (
-        <aside className="flex flex-col w-64 min-h-screen bg-gradient-to-b from-violet-950 to-indigo-900 shadow-2xl">
+        <aside className="flex flex-col w-64 h-screen sticky top-0 bg-gradient-to-b from-violet-950 to-indigo-900 shadow-2xl shrink-0">
             {/* Logo */}
             <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10 group">
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/15 shadow-md group-hover:bg-white/25 transition-colors">
@@ -34,7 +34,7 @@ export default function InstructorSidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-2 space-y-0.5">
+            <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
                 {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
                     const isActive = exact ? pathname === href : pathname.startsWith(href);
                     return (

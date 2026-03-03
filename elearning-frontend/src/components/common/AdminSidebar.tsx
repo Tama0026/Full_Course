@@ -23,7 +23,7 @@ export default function AdminSidebar() {
     }
 
     return (
-        <aside className="flex flex-col w-64 min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl">
+        <aside className="flex flex-col w-64 h-screen sticky top-0 bg-gradient-to-b from-slate-900 to-slate-800 shadow-2xl shrink-0">
             {/* Logo */}
             <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10 group">
                 <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/20 shadow-md group-hover:bg-emerald-500/30 transition-colors">
@@ -36,7 +36,7 @@ export default function AdminSidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-4 space-y-0.5">
+            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
                 {NAV_ITEMS.map(({ href, icon: Icon, label, exact }) => {
                     const isActive = exact ? pathname === href : pathname.startsWith(href);
                     return (
@@ -58,13 +58,6 @@ export default function AdminSidebar() {
 
             {/* Logout */}
             <div className="px-3 py-4 space-y-1 border-t border-white/10">
-                <Link
-                    href="/"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 hover:text-white transition-all duration-200 group"
-                >
-                    <GraduationCap className="w-4 h-4 text-slate-500 group-hover:text-slate-300" />
-                    Về trang chủ
-                </Link>
                 <button
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200 group"

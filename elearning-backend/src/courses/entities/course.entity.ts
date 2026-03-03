@@ -55,3 +55,42 @@ export class Course {
     @Field()
     updatedAt: Date;
 }
+
+@ObjectType()
+export class CourseStudentProgress {
+    @Field()
+    lessonTitle: string;
+
+    @Field()
+    chapterTitle: string;
+
+    @Field()
+    completedAt: Date;
+}
+
+@ObjectType()
+export class CourseStudent {
+    @Field(() => ID)
+    id: string;
+
+    @Field()
+    name: string;
+
+    @Field()
+    email: string;
+
+    @Field({ nullable: true })
+    avatar?: string;
+
+    @Field(() => Float)
+    progressPercent: number;
+
+    @Field({ nullable: true })
+    lastActive?: Date;
+
+    @Field(() => [CourseStudentProgress])
+    progressTimeline: CourseStudentProgress[];
+
+    @Field({ nullable: true })
+    lastRemindedAt?: Date;
+}
