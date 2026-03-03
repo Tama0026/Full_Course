@@ -5,6 +5,8 @@ import { GET_CATEGORIES, CREATE_CATEGORY, DELETE_CATEGORY } from "@/lib/graphql/
 import { useState } from "react";
 import { Loader2, Plus, Trash2, FolderTree, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Category {
     id: string;
@@ -21,6 +23,7 @@ export default function AdminCategoriesPage() {
     const [newName, setNewName] = useState("");
     const [adding, setAdding] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; cat: Category | null }>({ open: false, cat: null });
 
     const categories: Category[] = data?.categories || [];
 
@@ -33,6 +36,7 @@ export default function AdminCategoriesPage() {
             await createCategory({ variables: { input: { name: newName.trim() } } });
             setNewName("");
             await refetch();
+            toast.success("Tạo danh mục thành công ✅");
         } catch (err: any) {
             setError(err.message || "Có lỗi xảy ra");
         } finally {
@@ -41,12 +45,16 @@ export default function AdminCategoriesPage() {
     }
 
     async function handleDelete(cat: Category) {
-        if (!confirm(`Xóa danh mục "${cat.name}"?`)) return;
+        setConfirmState({ open: true, cat });
+    }
+
+    async function executeDelete(cat: Category) {
         try {
             await deleteCategory({ variables: { id: cat.id } });
             await refetch();
+            toast.success(`Đã xóa danh mục "${cat.name}" 🗑️`);
         } catch (err: any) {
-            alert(err.message || "Không thể xóa danh mục");
+            toast.error(err.message || "Không thể xóa danh mục");
         }
     }
 
@@ -131,6 +139,16 @@ export default function AdminCategoriesPage() {
                     <p>Chưa có danh mục nào.</p>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={confirmState.open}
+                title="Xóa danh mục"
+                description={`Bạn có chắc muốn xóa danh mục "${confirmState.cat?.name}"?`}
+                confirmText="Xóa"
+                danger
+                onConfirm={() => confirmState.cat && executeDelete(confirmState.cat)}
+                onCancel={() => setConfirmState({ open: false, cat: null })}
+            />
         </div>
     );
 }

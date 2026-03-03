@@ -5,6 +5,7 @@ import { GET_ADMIN_ALL_COURSES } from "@/lib/graphql/admin";
 import { useState } from "react";
 import { Loader2, BookOpen, Search, ToggleLeft, ToggleRight, Users, Layers, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import Link from "next/link";
 
 interface AdminCourse {
@@ -46,7 +47,7 @@ export default function AdminCoursesPage() {
             });
             await refetch();
         } catch (err: any) {
-            alert(err.message || "Không thể đổi trạng thái");
+            toast.error(err.message || "Không thể đổi trạng thái");
         } finally {
             setToggling(null);
         }

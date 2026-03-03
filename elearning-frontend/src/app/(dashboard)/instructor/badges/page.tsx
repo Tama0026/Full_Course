@@ -7,6 +7,7 @@ import {
     Sparkles, Shield, BookOpen, X, Check, AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { toast } from "sonner";
 import { GET_MY_COURSES } from "@/lib/graphql/course";
 import {
     GET_MY_CREATED_BADGES,
@@ -142,7 +143,7 @@ export default function InstructorBadgesPage() {
             resetForm();
             refetchBadges();
         } catch (err: any) {
-            alert(err.message || "Lỗi khi lưu Badge");
+            toast.error(err.message || "Lỗi khi lưu Badge");
         }
     };
 
@@ -152,7 +153,7 @@ export default function InstructorBadgesPage() {
             setDeletingId(null);
             refetchBadges();
         } catch (err: any) {
-            alert(err.message || "Lỗi khi xóa Badge");
+            toast.error(err.message || "Lỗi khi xóa Badge");
             setDeletingId(null);
         }
     };

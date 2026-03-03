@@ -103,13 +103,13 @@ Don't invent details. If no course matches well, polite tell them so.
     /**
      * Generate lesson content (document body) using Gemini
      */
-    async generateLessonContent(title: string): Promise<string> {
+    async generateLessonContent(title: string, courseTitle: string): Promise<string> {
         if (!process.env.GEMINI_API_KEY) {
             throw new InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env");
         }
 
         const prompt = `
-You are an expert instructor. Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
 
 Requirements:
 - Use Markdown formatting.
@@ -148,6 +148,7 @@ Requirements:
      */
     async generateLessonContentWithQuiz(
         title: string,
+        courseTitle: string,
         quizCount: number = 5,
     ): Promise<{ body: string; quiz: { content: string; options: string[]; correctAnswer: number }[] }> {
         if (!process.env.GEMINI_API_KEY) {
@@ -155,7 +156,7 @@ Requirements:
         }
 
         const prompt = `
-You are an expert instructor. Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
 
 PART 1 — LESSON CONTENT:
 - Write in Vietnamese.

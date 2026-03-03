@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_QUIZ, SUBMIT_QUIZ } from "@/lib/graphql/quiz";
+import { toast } from "sonner";
 import { Quiz, Question } from "@/lib/graphql/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -42,7 +43,7 @@ export default function QuizSection({ lessonId, onSuccess }: QuizSectionProps) {
 
     const handleSubmit = async () => {
         if (Object.keys(answers).length < quiz.questions.length) {
-            alert("Vui lòng trả lời tất cả các câu hỏi.");
+            toast.warning("Vui lòng trả lời tất cả các câu hỏi.");
             return;
         }
 
@@ -67,7 +68,7 @@ export default function QuizSection({ lessonId, onSuccess }: QuizSectionProps) {
             }
         } catch (err: any) {
             console.error(err);
-            alert("Có lỗi xảy ra khi nộp bài: " + err.message);
+            toast.error("Có lỗi xảy ra khi nộp bài: " + err.message);
         }
     };
 

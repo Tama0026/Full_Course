@@ -26,6 +26,7 @@ import {
 import { motion, type Variants } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { triggerConfetti } from "@/lib/confetti";
+import { toast } from "sonner";
 import Leaderboard from "@/components/gamification/Leaderboard";
 
 /* ── Framer Motion Variants ── */
@@ -196,7 +197,7 @@ export default function StudentDashboard() {
                 setCertModalOpen(true);
             }
         } catch (err: any) {
-            alert("Lỗi nhận chứng chỉ: " + err.message);
+            toast.error("Lỗi nhận chứng chỉ: " + err.message);
         }
     };
 

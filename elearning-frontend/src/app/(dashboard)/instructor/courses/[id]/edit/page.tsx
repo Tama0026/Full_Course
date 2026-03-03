@@ -275,7 +275,7 @@ export default function EditCoursePage() {
                     initialOutcomes={course.learningOutcomes || []}
                 />
 
-                <CurriculumEditor courseId={course.id} initialSections={course.sections || []} />
+                <CurriculumEditor courseId={course.id} courseTitle={course.title} initialSections={course.sections || []} />
             </div>
         </div>
     );

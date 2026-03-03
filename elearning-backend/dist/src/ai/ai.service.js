@@ -92,12 +92,12 @@ Don't invent details. If no course matches well, polite tell them so.
             throw new common_1.InternalServerErrorException('AI suggestion failed');
         }
     }
-    async generateLessonContent(title) {
+    async generateLessonContent(title, courseTitle) {
         if (!process.env.GEMINI_API_KEY) {
             throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống. Vui lòng cấu hình file .env");
         }
         const prompt = `
-You are an expert instructor. Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Write a comprehensive lesson document (in Vietnamese) for a topic titled: "${title}".
 
 Requirements:
 - Use Markdown formatting.
@@ -123,12 +123,12 @@ Requirements:
             throw new common_1.InternalServerErrorException(`Content generation failed: ${msg.slice(0, 100) || 'unknown'}`);
         }
     }
-    async generateLessonContentWithQuiz(title, quizCount = 5) {
+    async generateLessonContentWithQuiz(title, courseTitle, quizCount = 5) {
         if (!process.env.GEMINI_API_KEY) {
             throw new common_1.InternalServerErrorException("GEMINI_API_KEY không tồn tại trong hệ thống.");
         }
         const prompt = `
-You are an expert instructor. Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
+You are an expert instructor for a course titled "${courseTitle}". Your task is to create BOTH a comprehensive lesson document AND a quiz for a topic titled: "${title}".
 
 PART 1 — LESSON CONTENT:
 - Write in Vietnamese.

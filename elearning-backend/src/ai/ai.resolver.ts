@@ -28,10 +28,11 @@ export class AiResolver {
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
     async generateLessonContent(
         @Args('title') title: string,
+        @Args('courseTitle') courseTitle: string,
         @Args('nonce', { type: () => Float, nullable: true }) nonce?: number,
     ): Promise<string> {
-        console.log(`[AiResolver] generateLessonContent — title: "${title}", nonce: ${nonce ?? 'none'}`);
-        const result = await this.aiService.generateLessonContent(title);
+        console.log(`[AiResolver] generateLessonContent — courseTitle: "${courseTitle}", title: "${title}", nonce: ${nonce ?? 'none'}`);
+        const result = await this.aiService.generateLessonContent(title, courseTitle);
         console.log(`[AiResolver] generateLessonContent done — ${result.length} chars`);
         return result;
     }
@@ -45,13 +46,14 @@ export class AiResolver {
     @Roles(Role.INSTRUCTOR, Role.ADMIN)
     async generateLessonContentWithQuiz(
         @Args('title') title: string,
+        @Args('courseTitle') courseTitle: string,
         @Args('lessonId') lessonId: string,
         @Args({ name: 'quizCount', type: () => Int, defaultValue: 5 }) quizCount: number,
     ): Promise<string> {
-        console.log(`[AiResolver] generateLessonContentWithQuiz — title: "${title}", lessonId: ${lessonId}, quizCount: ${quizCount}`);
+        console.log(`[AiResolver] generateLessonContentWithQuiz — courseTitle: "${courseTitle}", title: "${title}", lessonId: ${lessonId}, quizCount: ${quizCount}`);
 
         // 1. Call AI to generate both content and quiz
-        const aiResult = await this.aiService.generateLessonContentWithQuiz(title, quizCount);
+        const aiResult = await this.aiService.generateLessonContentWithQuiz(title, courseTitle, quizCount);
 
         // 2. Atomic transaction: save body + quiz together
         await this.prisma.$transaction(async (tx) => {

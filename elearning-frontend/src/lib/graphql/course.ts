@@ -155,8 +155,8 @@ export const SUGGEST_COURSES = gql`
 `;
 
 export const GENERATE_LESSON_CONTENT = gql`
-  mutation GenerateLessonContent($title: String!, $nonce: Float) {
-    generateLessonContent(title: $title, nonce: $nonce)
+  mutation GenerateLessonContent($title: String!, $courseTitle: String!, $nonce: Float) {
+    generateLessonContent(title: $title, courseTitle: $courseTitle, nonce: $nonce)
   }
 `;
 

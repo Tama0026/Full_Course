@@ -4,9 +4,11 @@ import { useQuery } from "@apollo/client/react";
 import { GET_MY_ACHIEVEMENT_STATS, GET_ALL_BADGES_WITH_STATUS, GET_MY_LOGIN_STREAK } from "@/lib/graphql/gamification";
 import { Loader2, Trophy, Medal, Star, Target, Info, Download, Share2, Award, Flame } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as htmlToImage from "html-to-image";
 import Image from "next/image";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 /* ── Animation Variants ── */
 const containerVariants: Variants = {
@@ -63,6 +65,23 @@ export default function AchievementsPage() {
     const allBadges = badgesData?.allBadgesWithStatus || [];
     const streak = streakData?.myLoginStreak;
 
+    // 🎉 Confetti celebration for newly earned badges
+    const [celebratedIds, setCelebratedIds] = useState<Set<string>>(new Set());
+    useEffect(() => {
+        const earnedBadges = allBadges.filter((b: any) => b.earned);
+        const newOnes = earnedBadges.filter((b: any) => !celebratedIds.has(b.id));
+        if (newOnes.length > 0 && celebratedIds.size > 0) {
+            // Only celebrate if this isn't the first load
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+            newOnes.forEach((b: any) => {
+                toast.success(`✨ Chúc mừng! Bạn đã nhận huy hiệu: ${b.name}`, { duration: 5000 });
+            });
+        }
+        if (earnedBadges.length > 0) {
+            setCelebratedIds(new Set(earnedBadges.map((b: any) => b.id)));
+        }
+    }, [allBadges]);
+
     // Filter Badges
     const globalBadges = allBadges.filter((b: any) => !b.courseId);
     const courseBadges = allBadges.filter((b: any) => !!b.courseId);
@@ -95,7 +114,7 @@ export default function AchievementsPage() {
             link.click();
         } catch (error) {
             console.error("Lỗi khi tải ảnh:", error);
-            alert("Không thể tải ảnh, vui lòng thử lại.");
+            toast.error("Không thể tải ảnh, vui lòng thử lại.");
         } finally {
             setDownloading(false);
         }

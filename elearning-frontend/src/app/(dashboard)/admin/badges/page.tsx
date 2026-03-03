@@ -5,6 +5,8 @@ import { GET_ADMIN_ALL_BADGES, ADMIN_CREATE_BADGE, ADMIN_UPDATE_BADGE, ADMIN_DEL
 import { useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, Award, X, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Badge {
     id: string; name: string; description: string; icon: string;
@@ -45,6 +47,7 @@ export default function AdminBadgesPage() {
     });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [confirmState, setConfirmState] = useState<{ open: boolean; badge: Badge | null }>({ open: false, badge: null });
 
     const badges: Badge[] = data?.adminAllBadges || [];
     const filteredBadges = badges.filter(b =>
@@ -103,20 +106,25 @@ export default function AdminBadgesPage() {
             }
             await refetch();
             setShowModal(false);
+            toast.success(editingBadge ? "Cập nhật badge thành công ✅" : "Tạo badge mới thành công ✨");
         } catch (err: any) {
-            setError(err.message || "Có lỗi xảy ra");
+            toast.error(err.message || "Có lỗi xảy ra");
         } finally {
             setSubmitting(false);
         }
     }
 
     async function handleDelete(badge: Badge) {
-        if (!confirm(`Xóa badge "${badge.name}"? Chỉ xóa được nếu chưa có học viên nào sở hữu.`)) return;
+        setConfirmState({ open: true, badge });
+    }
+
+    async function executeDelete(badge: Badge) {
         try {
             await deleteBadge({ variables: { badgeId: badge.id } });
             await refetch();
+            toast.success(`Đã xóa badge "${badge.name}" 🗑️`);
         } catch (err: any) {
-            alert(err.message || "Không thể xóa badge");
+            toast.error(err.message || "Không thể xóa badge");
         }
     }
 
@@ -354,6 +362,16 @@ export default function AdminBadgesPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <ConfirmDialog
+                open={confirmState.open}
+                title="Xóa Badge"
+                description={`Bạn có chắc muốn xóa badge "${confirmState.badge?.name}"? Chỉ xóa được nếu chưa có học viên nào sở hữu.`}
+                confirmText="Xóa"
+                danger
+                onConfirm={() => confirmState.badge && executeDelete(confirmState.badge)}
+                onCancel={() => setConfirmState({ open: false, badge: null })}
+            />
         </div>
     );
 }

@@ -23,6 +23,7 @@ import { CREATE_COURSE, CREATE_SECTION, CREATE_LESSON, GET_MY_COURSES, GENERATE_
 import { GET_CATEGORIES } from "@/lib/graphql/category";
 import { useApolloClient } from "@apollo/client/react";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
+import { toast } from "sonner";
 
 /* ── Types ── */
 interface LessonDraft {
@@ -110,7 +111,7 @@ export default function CreateCoursePage() {
         try {
             const result = await apolloClient.mutate({
                 mutation: GENERATE_LESSON_CONTENT,
-                variables: { title: lessonTitle, nonce }, // nonce giúp bypass cache
+                variables: { title: lessonTitle, courseTitle: title || "Khóa học chưa đặt tên", nonce }, // nonce giúp bypass cache
                 fetchPolicy: "no-cache",
             });
 
@@ -129,9 +130,9 @@ export default function CreateCoursePage() {
             // Phân biệt lỗi Rate Limit 429 và lỗi khác
             const errMsg: string = err?.message || err?.graphQLErrors?.[0]?.message || "";
             if (errMsg.includes("RATE_LIMIT") || errMsg.includes("429")) {
-                alert("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
+                toast.warning("AI đang bị giới hạn tần suất (429). Vui lòng chờ vài giây rồi thử lại.");
             } else {
-                alert(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
+                toast.error(`Lỗi khi tạo nội dung AI: ${errMsg || "Unknown error"}`);
             }
         } finally {
             setGeneratingAi(false); // [Nhiệm vụ 1] Luôn reset isLoading về false

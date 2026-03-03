@@ -11,6 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdateQuizInput = exports.QuestionInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
+const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 let QuestionInput = class QuestionInput {
     id;
     content;
@@ -20,18 +22,24 @@ let QuestionInput = class QuestionInput {
 exports.QuestionInput = QuestionInput;
 __decorate([
     (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], QuestionInput.prototype, "id", void 0);
 __decorate([
     (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], QuestionInput.prototype, "content", void 0);
 __decorate([
     (0, graphql_1.Field)(() => [String]),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], QuestionInput.prototype, "options", void 0);
 __decorate([
     (0, graphql_1.Field)(() => graphql_1.Int),
+    (0, class_validator_1.IsInt)(),
     __metadata("design:type", Number)
 ], QuestionInput.prototype, "correctAnswer", void 0);
 exports.QuestionInput = QuestionInput = __decorate([
@@ -44,10 +52,14 @@ let UpdateQuizInput = class UpdateQuizInput {
 exports.UpdateQuizInput = UpdateQuizInput;
 __decorate([
     (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateQuizInput.prototype, "lessonId", void 0);
 __decorate([
     (0, graphql_1.Field)(() => [QuestionInput]),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => QuestionInput),
     __metadata("design:type", Array)
 ], UpdateQuizInput.prototype, "questions", void 0);
 exports.UpdateQuizInput = UpdateQuizInput = __decorate([
