@@ -20,7 +20,10 @@ async function bootstrap() {
 
   // Enable CORS for frontend integration
   app.enableCors({
-    origin: true, // true reflects the incoming origin, which is required when credentials = true
+    origin: [
+      'http://127.0.0.1:4000', // Cho phép dev local
+      'https://full-course-eta.vercel.app', // Domain chính của bạn
+    ],
     credentials: true,
   });
 
