@@ -17,7 +17,7 @@ exports.AssessmentsModule = AssessmentsModule;
 exports.AssessmentsModule = AssessmentsModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        providers: [assessments_resolver_1.AssessmentsResolver, assessments_service_1.AssessmentsService],
+        providers: [assessments_resolver_1.AssessmentsResolver, assessments_resolver_1.AssessmentQuestionResolver, assessments_service_1.AssessmentsService],
         exports: [assessments_service_1.AssessmentsService],
     })
 ], AssessmentsModule);

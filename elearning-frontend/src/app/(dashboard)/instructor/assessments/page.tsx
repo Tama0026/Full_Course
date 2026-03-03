@@ -6,8 +6,11 @@ import { Loader2, Plus, Trash2, Edit, ClipboardList, Clock, ShieldAlert } from "
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function InstructorAssessmentsPage() {
+    const router = useRouter();
     const { data, loading, refetch } = useQuery(GET_INSTRUCTOR_ASSESSMENTS, { fetchPolicy: "network-only" });
     const [createAssessment] = useMutation(CREATE_ASSESSMENT, { onCompleted: () => refetch() });
     const [deleteAssessment] = useMutation(DELETE_ASSESSMENT, { onCompleted: () => refetch() });
@@ -26,7 +29,7 @@ export default function InstructorAssessmentsPage() {
         e.preventDefault();
         setCreating(true);
         try {
-            await createAssessment({
+            const result = await createAssessment({
                 variables: {
                     input: {
                         ...formData,
@@ -35,9 +38,14 @@ export default function InstructorAssessmentsPage() {
                     }
                 }
             });
-            toast.success("Tạo kỳ thi thành công!");
+            const newAssessmentId = (result.data as any)?.createAssessment?.id;
+            toast.success("Tạo kỳ thi thành công! Vui lòng thêm câu hỏi.");
             setShowCreateForm(false);
             setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, isActive: true });
+
+            if (newAssessmentId) {
+                router.push(`/instructor/assessments/${newAssessmentId}`);
+            }
         } catch (err: any) {
             toast.error("Lỗi khi tạo kỳ thi: " + err.message);
         } finally {
@@ -197,12 +205,13 @@ export default function InstructorAssessmentsPage() {
                                     Tạo ngày {format(new Date(parseInt(ast.createdAt)), "dd/MM/yyyy")}
                                 </span>
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    <Link
+                                        href={`/instructor/assessments/${ast.id}`}
+                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors inline-block"
                                         title="Chỉnh sửa kỳ thi"
                                     >
                                         <Edit className="w-4 h-4" />
-                                    </button>
+                                    </Link>
                                     <button
                                         onClick={() => handleDelete(ast.id)}
                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
