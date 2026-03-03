@@ -15,6 +15,7 @@ const auth_service_1 = require("./auth.service");
 const auth_resolver_1 = require("./auth.resolver");
 const user_repository_1 = require("./user.repository");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
+const gamification_module_1 = require("../gamification/gamification.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -33,6 +34,7 @@ exports.AuthModule = AuthModule = __decorate([
                     },
                 }),
             }),
+            gamification_module_1.GamificationModule,
         ],
         providers: [auth_service_1.AuthService, auth_resolver_1.AuthResolver, user_repository_1.UserRepository, jwt_strategy_1.JwtStrategy],
         exports: [auth_service_1.AuthService, user_repository_1.UserRepository],

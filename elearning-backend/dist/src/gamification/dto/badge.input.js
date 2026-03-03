@@ -58,6 +58,8 @@ let UpdateBadgeInput = class UpdateBadgeInput {
     description;
     icon;
     criteria;
+    criteriaType;
+    threshold;
 };
 exports.UpdateBadgeInput = UpdateBadgeInput;
 __decorate([
@@ -84,6 +86,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], UpdateBadgeInput.prototype, "criteria", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], UpdateBadgeInput.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], UpdateBadgeInput.prototype, "threshold", void 0);
 exports.UpdateBadgeInput = UpdateBadgeInput = __decorate([
     (0, graphql_1.InputType)()
 ], UpdateBadgeInput);
@@ -91,7 +104,8 @@ let AdminCreateBadgeInput = class AdminCreateBadgeInput {
     name;
     description;
     icon;
-    criteria;
+    criteriaType;
+    threshold;
     courseId;
 };
 exports.AdminCreateBadgeInput = AdminCreateBadgeInput;
@@ -114,11 +128,16 @@ __decorate([
     __metadata("design:type", String)
 ], AdminCreateBadgeInput.prototype, "icon", void 0);
 __decorate([
-    (0, graphql_1.Field)(),
+    (0, graphql_1.Field)({ defaultValue: 'LESSONS_COMPLETED' }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], AdminCreateBadgeInput.prototype, "criteria", void 0);
+], AdminCreateBadgeInput.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 1 }),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", Number)
+], AdminCreateBadgeInput.prototype, "threshold", void 0);
 __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     (0, class_validator_1.IsString)(),

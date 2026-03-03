@@ -10,6 +10,7 @@ import { UserRepository } from './user.repository';
 import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
 import { User as PrismaUser } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
 
 /** JWT payload interface */
 export interface JwtPayload {
@@ -33,6 +34,7 @@ export class AuthService {
         private readonly userRepository: UserRepository,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly gamificationService: GamificationService,
     ) { }
 
     /**
@@ -78,6 +80,11 @@ export class AuthService {
         }
 
         const tokens = this.generateTokens(user);
+
+        // Track login streak (fire-and-forget)
+        this.gamificationService.recordLoginActivity(user.id).catch(err =>
+            console.error('[Auth] Streak tracking error:', err.message),
+        );
 
         return {
             ...tokens,

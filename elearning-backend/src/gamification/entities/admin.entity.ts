@@ -17,6 +17,12 @@ export class AdminBadgeType {
     @Field()
     criteria: string;
 
+    @Field()
+    criteriaType: string;
+
+    @Field(() => Int)
+    threshold: number;
+
     @Field({ nullable: true })
     courseId?: string;
 

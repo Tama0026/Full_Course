@@ -41,6 +41,15 @@ export class BadgeWithStatus {
     @Field()
     criteria: string;
 
+    @Field()
+    criteriaType: string;
+
+    @Field(() => Int)
+    threshold: number;
+
+    @Field(() => Int)
+    currentProgress: number;
+
     @Field({ nullable: true })
     courseId?: string;
 
@@ -52,4 +61,16 @@ export class BadgeWithStatus {
 
     @Field({ nullable: true })
     awardedAt?: Date;
+}
+
+@ObjectType()
+export class LoginStreakType {
+    @Field(() => Int)
+    currentStreak: number;
+
+    @Field(() => Int)
+    longestStreak: number;
+
+    @Field({ nullable: true })
+    lastLoginDate?: string;
 }

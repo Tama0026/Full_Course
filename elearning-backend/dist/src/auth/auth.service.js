@@ -48,15 +48,18 @@ const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const bcrypt = __importStar(require("bcrypt"));
 const user_repository_1 = require("./user.repository");
+const gamification_service_1 = require("../gamification/gamification.service");
 let AuthService = class AuthService {
     userRepository;
     jwtService;
     configService;
+    gamificationService;
     BCRYPT_ROUNDS = 10;
-    constructor(userRepository, jwtService, configService) {
+    constructor(userRepository, jwtService, configService, gamificationService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.configService = configService;
+        this.gamificationService = gamificationService;
     }
     async register(input) {
         const existingUser = await this.userRepository.findByEmail(input.email);
@@ -85,6 +88,7 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const tokens = this.generateTokens(user);
+        this.gamificationService.recordLoginActivity(user.id).catch(err => console.error('[Auth] Streak tracking error:', err.message));
         return {
             ...tokens,
             user,
@@ -136,6 +140,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [user_repository_1.UserRepository,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        gamification_service_1.GamificationService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

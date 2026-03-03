@@ -58,6 +58,7 @@ model User {
   leaderboard     Leaderboard?
   userBadges      UserBadge[]
   createdBadges   Badge[]         @relation("BadgeCreator")
+  loginStreak     LoginStreak?
 }
 
 model Course {
@@ -261,14 +262,16 @@ model Leaderboard {
 }
 
 model Badge {
-  id          String      @id @default(uuid())
-  name        String      @unique
-  description String
-  icon        String      @default("🏅")
-  criteria    String      // e.g. "COMPLETE_1_COURSE", "SCORE_100_QUIZ", "COMPLETE_5_LESSONS"
-  courseId     String?     // null = Global Badge, non-null = Course-Specific Badge
-  creatorId   String      // Admin userId for system badges, instructor userId for custom
-  createdAt   DateTime    @default(now())
+  id            String      @id @default(uuid())
+  name          String      @unique
+  description   String
+  icon          String      @default("🏅")
+  criteria      String      // Legacy string, kept for display (e.g. "COMPLETE_5_LESSONS")
+  criteriaType  String      @default("LESSONS_COMPLETED") // LESSONS_COMPLETED | COURSES_COMPLETED | POINTS_EARNED | LOGIN_STREAK
+  threshold     Int         @default(1)
+  courseId       String?     // null = Global Badge, non-null = Course-Specific Badge
+  creatorId     String      // Admin userId for system badges, instructor userId for custom
+  createdAt     DateTime    @default(now())
 
   // Relations
   course      Course?     @relation("CourseBadges", fields: [courseId], references: [id], onDelete: Cascade)
@@ -287,4 +290,16 @@ model UserBadge {
   badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
+}
+
+model LoginStreak {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastLoginDate  String   @default("") // ISO date "YYYY-MM-DD"
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

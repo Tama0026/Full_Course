@@ -4,6 +4,7 @@ import { UserRepository } from './user.repository';
 import { RegisterInput } from './dto/register.input';
 import { LoginInput } from './dto/login.input';
 import { User as PrismaUser } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
 export interface JwtPayload {
     sub: string;
     email: string;
@@ -18,8 +19,9 @@ export declare class AuthService {
     private readonly userRepository;
     private readonly jwtService;
     private readonly configService;
+    private readonly gamificationService;
     private readonly BCRYPT_ROUNDS;
-    constructor(userRepository: UserRepository, jwtService: JwtService, configService: ConfigService);
+    constructor(userRepository: UserRepository, jwtService: JwtService, configService: ConfigService, gamificationService: GamificationService);
     register(input: RegisterInput): Promise<AuthResponseData>;
     login(input: LoginInput): Promise<AuthResponseData>;
     refreshToken(refreshToken: string): Promise<AuthResponseData>;

@@ -3,7 +3,7 @@ import { UseGuards, ForbiddenException } from '@nestjs/common';
 import { GamificationService } from './gamification.service';
 import { LeaderboardEntry } from './entities/leaderboard-entry.entity';
 import { BadgeType } from './entities/badge.entity';
-import { AchievementStats, BadgeWithStatus } from './entities/achievement.entity';
+import { AchievementStats, BadgeWithStatus, LoginStreakType } from './entities/achievement.entity';
 import { AdminBadgeType, AdminStats } from './entities/admin.entity';
 import { CreateBadgeInput, UpdateBadgeInput, AdminCreateBadgeInput } from './dto/badge.input';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -197,5 +197,17 @@ export class GamificationResolver {
         @Args('badgeId') badgeId: string,
     ): Promise<boolean> {
         return this.gamificationService.adminDeleteBadge(badgeId);
+    }
+
+    // ════════════════════════════════════════════════
+    // LOGIN STREAK
+    // ════════════════════════════════════════════════
+
+    @Query(() => LoginStreakType, { name: 'myLoginStreak' })
+    @UseGuards(JwtAuthGuard)
+    async getMyLoginStreak(
+        @CurrentUser() user: { id: string },
+    ): Promise<LoginStreakType> {
+        return this.gamificationService.getLoginStreak(user.id) as unknown as LoginStreakType;
     }
 }

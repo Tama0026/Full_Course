@@ -10,11 +10,14 @@ export declare class UpdateBadgeInput {
     description?: string;
     icon?: string;
     criteria?: string;
+    criteriaType?: string;
+    threshold?: number;
 }
 export declare class AdminCreateBadgeInput {
     name: string;
     description: string;
     icon: string;
-    criteria: string;
+    criteriaType: string;
+    threshold: number;
     courseId?: string;
 }

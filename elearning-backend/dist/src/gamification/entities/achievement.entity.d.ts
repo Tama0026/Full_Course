@@ -13,8 +13,16 @@ export declare class BadgeWithStatus {
     description: string;
     icon: string;
     criteria: string;
+    criteriaType: string;
+    threshold: number;
+    currentProgress: number;
     courseId?: string;
     courseName?: string;
     earned: boolean;
     awardedAt?: Date;
+}
+export declare class LoginStreakType {
+    currentStreak: number;
+    longestStreak: number;
+    lastLoginDate?: string;
 }

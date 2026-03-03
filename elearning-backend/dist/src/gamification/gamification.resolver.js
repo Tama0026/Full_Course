@@ -88,6 +88,9 @@ let GamificationResolver = class GamificationResolver {
     async adminDeleteBadge(badgeId) {
         return this.gamificationService.adminDeleteBadge(badgeId);
     }
+    async getMyLoginStreak(user) {
+        return this.gamificationService.getLoginStreak(user.id);
+    }
 };
 exports.GamificationResolver = GamificationResolver;
 __decorate([
@@ -217,6 +220,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], GamificationResolver.prototype, "adminDeleteBadge", null);
+__decorate([
+    (0, graphql_1.Query)(() => achievement_entity_1.LoginStreakType, { name: 'myLoginStreak' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], GamificationResolver.prototype, "getMyLoginStreak", null);
 exports.GamificationResolver = GamificationResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [gamification_service_1.GamificationService])

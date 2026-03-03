@@ -17,6 +17,8 @@ let AdminBadgeType = class AdminBadgeType {
     description;
     icon;
     criteria;
+    criteriaType;
+    threshold;
     courseId;
     courseName;
     creatorId;
@@ -44,6 +46,14 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], AdminBadgeType.prototype, "criteria", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AdminBadgeType.prototype, "criteriaType", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AdminBadgeType.prototype, "threshold", void 0);
 __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)

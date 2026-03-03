@@ -1,7 +1,7 @@
 import { GamificationService } from './gamification.service';
 import { LeaderboardEntry } from './entities/leaderboard-entry.entity';
 import { BadgeType } from './entities/badge.entity';
-import { AchievementStats, BadgeWithStatus } from './entities/achievement.entity';
+import { AchievementStats, BadgeWithStatus, LoginStreakType } from './entities/achievement.entity';
 import { AdminBadgeType, AdminStats } from './entities/admin.entity';
 import { CreateBadgeInput, UpdateBadgeInput, AdminCreateBadgeInput } from './dto/badge.input';
 export declare class GamificationResolver {
@@ -42,4 +42,7 @@ export declare class GamificationResolver {
     }): Promise<AdminBadgeType>;
     adminUpdateBadge(badgeId: string, input: UpdateBadgeInput): Promise<AdminBadgeType>;
     adminDeleteBadge(badgeId: string): Promise<boolean>;
+    getMyLoginStreak(user: {
+        id: string;
+    }): Promise<LoginStreakType>;
 }

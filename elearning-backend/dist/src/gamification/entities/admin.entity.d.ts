@@ -4,6 +4,8 @@ export declare class AdminBadgeType {
     description: string;
     icon: string;
     criteria: string;
+    criteriaType: string;
+    threshold: number;
     courseId?: string;
     courseName?: string;
     creatorId: string;

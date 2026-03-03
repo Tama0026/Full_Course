@@ -29,6 +29,8 @@ export const GET_ADMIN_ALL_BADGES = gql`
       description
       icon
       criteria
+      criteriaType
+      threshold
       courseId
       courseName
       creatorId
@@ -46,6 +48,8 @@ export const ADMIN_CREATE_BADGE = gql`
       description
       icon
       criteria
+      criteriaType
+      threshold
       courseId
       courseName
       creatorId
@@ -63,6 +67,8 @@ export const ADMIN_UPDATE_BADGE = gql`
       description
       icon
       criteria
+      criteriaType
+      threshold
       courseId
       courseName
       creatorId

@@ -8,23 +8,27 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface Badge {
     id: string; name: string; description: string; icon: string;
-    criteria: string; courseId?: string; courseName?: string;
+    criteria: string; criteriaType: string; threshold: number;
+    courseId?: string; courseName?: string;
     creatorId: string; awardedCount: number; createdAt: string;
 }
 
-const CRITERIA_OPTIONS = [
-    { label: "Hoàn thành 1 bài học", value: "COMPLETE_1_LESSON" },
-    { label: "Hoàn thành 5 bài học", value: "COMPLETE_5_LESSONS" },
-    { label: "Hoàn thành 10 bài học", value: "COMPLETE_10_LESSONS" },
-    { label: "Hoàn thành 25 bài học", value: "COMPLETE_25_LESSONS" },
-    { label: "Hoàn thành 1 khóa học", value: "COMPLETE_1_COURSE" },
-    { label: "Hoàn thành 3 khóa học", value: "COMPLETE_3_COURSES" },
-    { label: "Đạt 100 điểm", value: "REACH_100_POINTS" },
-    { label: "Đạt 500 điểm", value: "REACH_500_POINTS" },
-    { label: "Đạt 1.000 điểm", value: "REACH_1000_POINTS" },
+const CRITERIA_TYPES = [
+    { value: "LESSONS_COMPLETED", label: "Bài học đã hoàn thành", unit: "bài học" },
+    { value: "COURSES_COMPLETED", label: "Khóa học đã hoàn thành", unit: "khóa học" },
+    { value: "POINTS_EARNED", label: "Điểm tích lũy", unit: "điểm" },
+    { value: "LOGIN_STREAK", label: "Chuỗi đăng nhập liên tiếp", unit: "ngày" },
 ];
 
 const ICON_OPTIONS = ["🌟", "📚", "🎯", "🏆", "🎓", "💎", "⭐", "🔥", "👑", "🏅", "🥇", "🎖️", "💪", "🚀", "✨"];
+
+function getCriteriaUnit(type: string) {
+    return CRITERIA_TYPES.find(t => t.value === type)?.unit || "";
+}
+
+function getCriteriaLabel(type: string) {
+    return CRITERIA_TYPES.find(t => t.value === type)?.label || type;
+}
 
 export default function AdminBadgesPage() {
     const { data, loading, refetch } = useQuery<any>(GET_ADMIN_ALL_BADGES, { fetchPolicy: "cache-and-network" });
@@ -35,7 +39,10 @@ export default function AdminBadgesPage() {
     const [showModal, setShowModal] = useState(false);
     const [editingBadge, setEditingBadge] = useState<Badge | null>(null);
     const [search, setSearch] = useState("");
-    const [formData, setFormData] = useState({ name: "", description: "", icon: "🏅", criteria: "COMPLETE_1_LESSON" });
+    const [formData, setFormData] = useState({
+        name: "", description: "", icon: "🏅",
+        criteriaType: "LESSONS_COMPLETED", threshold: 1,
+    });
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -47,14 +54,18 @@ export default function AdminBadgesPage() {
 
     function openCreate() {
         setEditingBadge(null);
-        setFormData({ name: "", description: "", icon: "🏅", criteria: "COMPLETE_1_LESSON" });
+        setFormData({ name: "", description: "", icon: "🏅", criteriaType: "LESSONS_COMPLETED", threshold: 1 });
         setError(null);
         setShowModal(true);
     }
 
     function openEdit(badge: Badge) {
         setEditingBadge(badge);
-        setFormData({ name: badge.name, description: badge.description, icon: badge.icon, criteria: badge.criteria });
+        setFormData({
+            name: badge.name, description: badge.description, icon: badge.icon,
+            criteriaType: badge.criteriaType || "LESSONS_COMPLETED",
+            threshold: badge.threshold || 1,
+        });
         setError(null);
         setShowModal(true);
     }
@@ -65,9 +76,30 @@ export default function AdminBadgesPage() {
         setError(null);
         try {
             if (editingBadge) {
-                await updateBadge({ variables: { badgeId: editingBadge.id, input: formData } });
+                await updateBadge({
+                    variables: {
+                        badgeId: editingBadge.id,
+                        input: {
+                            name: formData.name,
+                            description: formData.description,
+                            icon: formData.icon,
+                            criteriaType: formData.criteriaType,
+                            threshold: formData.threshold,
+                        },
+                    },
+                });
             } else {
-                await createBadge({ variables: { input: formData } });
+                await createBadge({
+                    variables: {
+                        input: {
+                            name: formData.name,
+                            description: formData.description,
+                            icon: formData.icon,
+                            criteriaType: formData.criteriaType,
+                            threshold: formData.threshold,
+                        },
+                    },
+                });
             }
             await refetch();
             setShowModal(false);
@@ -145,20 +177,25 @@ export default function AdminBadgesPage() {
                             </div>
                         </div>
 
+                        {/* Dynamic criteria display */}
                         <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
-                            <div className="flex items-center gap-3 text-xs text-slate-500">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 font-mono">
-                                    {badge.criteria}
+                            <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200/60">
+                                    {getCriteriaLabel(badge.criteriaType)}
                                 </span>
-                                <span className="font-medium">{badge.awardedCount} đã nhận</span>
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-mono font-semibold border border-blue-200/60">
+                                    ≥ {badge.threshold} {getCriteriaUnit(badge.criteriaType)}
+                                </span>
                             </div>
                         </div>
-
-                        {badge.courseName && (
-                            <div className="mt-2 text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
-                                📘 {badge.courseName}
-                            </div>
-                        )}
+                        <div className="mt-2 text-xs text-slate-400">
+                            {badge.awardedCount} đã nhận
+                            {badge.courseName && (
+                                <span className="ml-2 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                    📘 {badge.courseName}
+                                </span>
+                            )}
+                        </div>
 
                         {/* Actions */}
                         <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -250,17 +287,45 @@ export default function AdminBadgesPage() {
                                     </div>
                                 </div>
 
+                                {/* ═══ Dynamic Criteria Section ═══ */}
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Điều kiện (Criteria)</label>
-                                    <select
-                                        value={formData.criteria}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, criteria: e.target.value }))}
-                                        className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 bg-white"
-                                    >
-                                        {CRITERIA_OPTIONS.map(({ label, value }) => (
-                                            <option key={value} value={value}>{label} ({value})</option>
-                                        ))}
-                                    </select>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">Loại tiêu chí</label>
+                                        <select
+                                            value={formData.criteriaType}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, criteriaType: e.target.value }))}
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400 bg-white"
+                                        >
+                                            {CRITERIA_TYPES.map(({ value, label }) => (
+                                                <option key={value} value={value}>{label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                                            Con số mục tiêu ({getCriteriaUnit(formData.criteriaType)})
+                                        </label>
+                                        <input
+                                            type="number"
+                                            required
+                                            min={1}
+                                            value={formData.threshold}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, threshold: parseInt(e.target.value) || 1 }))}
+                                            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-400"
+                                            placeholder="VD: 50"
+                                        />
+                                    </div>
+
+                                    {/* ═══ Preview Label ═══ */}
+                                    <div className="rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/60 p-3">
+                                        <p className="text-xs font-medium text-emerald-800">
+                                            📋 Preview: Người dùng cần đạt{" "}
+                                            <span className="font-bold text-emerald-900">{formData.threshold}</span>{" "}
+                                            <span className="font-bold text-emerald-900">{getCriteriaUnit(formData.criteriaType)}</span>{" "}
+                                            để nhận badge này.
+                                        </p>
+                                    </div>
                                 </div>
 
                                 {error && (

@@ -7,6 +7,7 @@ export declare class GamificationService {
     getUserPoints(userId: string): Promise<number>;
     checkAndAwardBadges(userId: string, specificCourseId?: string): Promise<void>;
     private evaluateBadgeCriteria;
+    getUserCurrentValue(userId: string, criteriaType: string, courseId?: string | null): Promise<number>;
     getUserBadges(userId: string): Promise<any>;
     getMyAchievementStats(userId: string): Promise<{
         totalPoints: any;
@@ -40,7 +41,8 @@ export declare class GamificationService {
         name: string;
         description: string;
         icon: string;
-        criteria: string;
+        criteriaType: string;
+        threshold: number;
         courseId?: string;
         creatorId: string;
     }): Promise<any>;
@@ -49,6 +51,8 @@ export declare class GamificationService {
         description?: string;
         icon?: string;
         criteria?: string;
+        criteriaType?: string;
+        threshold?: number;
     }): Promise<any>;
     adminDeleteBadge(badgeId: string): Promise<boolean>;
     getAdminStats(): Promise<{
@@ -58,5 +62,11 @@ export declare class GamificationService {
         totalBadges: any;
         totalStudents: number;
         totalInstructors: number;
+    }>;
+    recordLoginActivity(userId: string): Promise<void>;
+    getLoginStreak(userId: string): Promise<{
+        currentStreak: any;
+        longestStreak: any;
+        lastLoginDate: any;
     }>;
 }

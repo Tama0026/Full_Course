@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthResolver } from './auth.resolver';
 import { UserRepository } from './user.repository';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
                 },
             }),
         }),
+        GamificationModule,
     ],
     providers: [AuthService, AuthResolver, UserRepository, JwtStrategy],
     exports: [AuthService, UserRepository],

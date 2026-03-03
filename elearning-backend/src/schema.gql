@@ -19,10 +19,12 @@ type AdminBadgeType {
   createdAt: DateTime!
   creatorId: String!
   criteria: String!
+  criteriaType: String!
   description: String!
   icon: String!
   id: ID!
   name: String!
+  threshold: Int!
 }
 
 type AdminCourse {
@@ -50,10 +52,11 @@ type AdminCourseInstructor {
 
 input AdminCreateBadgeInput {
   courseId: String
-  criteria: String!
+  criteriaType: String! = "LESSONS_COMPLETED"
   description: String!
   icon: String! = "🏅"
   name: String!
+  threshold: Int! = 1
 }
 
 type AdminStats {
@@ -77,10 +80,12 @@ type BadgeType {
   courseName: String
   creatorId: String!
   criteria: String!
+  criteriaType: String!
   description: String!
   icon: String!
   id: ID!
   name: String!
+  threshold: Int!
 }
 
 type BadgeWithStatus {
@@ -88,11 +93,14 @@ type BadgeWithStatus {
   courseId: String
   courseName: String
   criteria: String!
+  criteriaType: String!
+  currentProgress: Int!
   description: String!
   earned: Boolean!
   icon: String!
   id: String!
   name: String!
+  threshold: Int!
 }
 
 type Category {
@@ -308,6 +316,12 @@ input LoginInput {
   password: String!
 }
 
+type LoginStreakType {
+  currentStreak: Int!
+  lastLoginDate: String
+  longestStreak: Int!
+}
+
 type Mutation {
   adminCreateBadge(input: AdminCreateBadgeInput!): AdminBadgeType!
   adminDeleteBadge(badgeId: String!): Boolean!
@@ -413,6 +427,7 @@ type Query {
   myCourses: [Course!]!
   myCreatedBadges: [BadgeType!]!
   myEnrollments: [Enrollment!]!
+  myLoginStreak: LoginStreakType!
   myOrders: [Order!]!
   myPoints: Int!
   order(id: String!): Order!
@@ -491,9 +506,11 @@ type SubmitQuizResponse {
 
 input UpdateBadgeInput {
   criteria: String
+  criteriaType: String
   description: String
   icon: String
   name: String
+  threshold: Int
 }
 
 input UpdateCourseInput {

@@ -1,4 +1,4 @@
-import { InputType, Field } from '@nestjs/graphql';
+import { InputType, Field, Int } from '@nestjs/graphql';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 @InputType()
@@ -50,6 +50,15 @@ export class UpdateBadgeInput {
     @IsString()
     @IsOptional()
     criteria?: string;
+
+    @Field({ nullable: true })
+    @IsString()
+    @IsOptional()
+    criteriaType?: string;
+
+    @Field(() => Int, { nullable: true })
+    @IsOptional()
+    threshold?: number;
 }
 
 @InputType()
@@ -69,10 +78,14 @@ export class AdminCreateBadgeInput {
     @IsOptional()
     icon: string;
 
-    @Field()
+    @Field({ defaultValue: 'LESSONS_COMPLETED' })
     @IsString()
     @IsNotEmpty()
-    criteria: string;
+    criteriaType: string;
+
+    @Field(() => Int, { defaultValue: 1 })
+    @IsNotEmpty()
+    threshold: number;
 
     @Field({ nullable: true })
     @IsString()

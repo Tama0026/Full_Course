@@ -95,55 +95,39 @@ export class GamificationService {
 
     /**
      * Evaluate a single badge criterion for a user.
-     * If badge.courseId exists → only count progress within that course.
-     * If badge.courseId is null → count across all courses (Global).
+     * Generic evaluator — uses criteriaType + threshold from DB.
      */
     private async evaluateBadgeCriteria(userId: string, badge: any): Promise<boolean> {
-        const criteria = badge.criteria;
-        const courseId = badge.courseId; // null = global
+        const currentValue = await this.getUserCurrentValue(userId, badge.criteriaType, badge.courseId);
+        return currentValue >= badge.threshold;
+    }
 
-        // Build scope filter for progress queries
-        const progressWhere: any = { enrollment: { userId } };
-        if (courseId) {
-            progressWhere.enrollment.course = { id: courseId };
+    /**
+     * Get user's current value for a given criteriaType.
+     * This is the SINGLE SOURCE OF TRUTH for all badge evaluations.
+     */
+    async getUserCurrentValue(userId: string, criteriaType: string, courseId?: string | null): Promise<number> {
+        switch (criteriaType) {
+            case 'LESSONS_COMPLETED': {
+                const where: any = { enrollment: { userId } };
+                if (courseId) where.enrollment.course = { id: courseId };
+                return this.prisma.progress.count({ where });
+            }
+            case 'COURSES_COMPLETED': {
+                const where: any = { userId, isFinished: true };
+                if (courseId) where.courseId = courseId;
+                return this.prisma.enrollment.count({ where });
+            }
+            case 'POINTS_EARNED': {
+                return this.getUserPoints(userId);
+            }
+            case 'LOGIN_STREAK': {
+                const streak = await (this.prisma as any).loginStreak.findUnique({ where: { userId } });
+                return streak?.currentStreak || 0;
+            }
+            default:
+                return 0;
         }
-
-        const enrollmentWhere: any = { userId, isFinished: true };
-        if (courseId) {
-            enrollmentWhere.courseId = courseId;
-        }
-
-        // ── Lesson-completion badges ──
-        if (criteria.startsWith('COMPLETE_') && criteria.endsWith('_LESSON')) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_LESSON', ''), 10);
-            if (isNaN(target)) return false;
-            const count = await this.prisma.progress.count({ where: progressWhere });
-            return count >= target;
-        }
-        if (criteria.startsWith('COMPLETE_') && criteria.endsWith('_LESSONS')) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_LESSONS', ''), 10);
-            if (isNaN(target)) return false;
-            const count = await this.prisma.progress.count({ where: progressWhere });
-            return count >= target;
-        }
-
-        // ── Course-completion badges ──
-        if (criteria.startsWith('COMPLETE_') && (criteria.endsWith('_COURSE') || criteria.endsWith('_COURSES'))) {
-            const target = parseInt(criteria.replace('COMPLETE_', '').replace('_COURSES', '').replace('_COURSE', ''), 10);
-            if (isNaN(target)) return false;
-            const count = await this.prisma.enrollment.count({ where: enrollmentWhere });
-            return count >= target;
-        }
-
-        // ── Points-based badges (always global, no course scoping) ──
-        if (criteria.startsWith('REACH_') && criteria.endsWith('_POINTS')) {
-            const target = parseInt(criteria.replace('REACH_', '').replace('_POINTS', ''), 10);
-            if (isNaN(target)) return false;
-            const userPoints = await this.getUserPoints(userId);
-            return userPoints >= target;
-        }
-
-        return false;
     }
 
     // ════════════════════════════════════════════════
@@ -237,14 +221,27 @@ export class GamificationService {
             orderBy: [{ courseId: 'asc' }, { name: 'asc' }],
         });
 
+        // Pre-compute user values for each criteriaType to avoid N+1
+        const valueCache = new Map<string, number>();
+        const uniqueTypes = [...new Set(allBadges.map((b: any) => b.criteriaType))] as string[];
+        for (const type of uniqueTypes) {
+            const value = await this.getUserCurrentValue(userId, type, null);
+            valueCache.set(type, value);
+        }
+
         return allBadges.map((badge: any) => {
             const earned = earnedBadgeIds.has(badge.id);
+            // For course-scoped badges, the cached value might differ, but we use global for simplicity
+            const currentProgress = valueCache.get(badge.criteriaType) || 0;
             return {
                 id: badge.id,
                 name: badge.name,
                 description: badge.description,
                 icon: badge.icon,
                 criteria: badge.criteria,
+                criteriaType: badge.criteriaType,
+                threshold: badge.threshold,
+                currentProgress: Math.min(currentProgress, badge.threshold),
                 courseId: badge.courseId,
                 courseName: badge.course?.title || null,
                 earned,
@@ -392,21 +389,35 @@ export class GamificationService {
 
     /**
      * Admin creates a badge (global or course-specific).
+     * Auto-generates legacy `criteria` string from criteriaType + threshold.
      */
     async adminCreateBadge(input: {
         name: string;
         description: string;
         icon: string;
-        criteria: string;
+        criteriaType: string;
+        threshold: number;
         courseId?: string;
         creatorId: string;
     }) {
+        // Auto-generate legacy criteria string
+        const criteriaMap: Record<string, (t: number) => string> = {
+            'LESSONS_COMPLETED': (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+            'COURSES_COMPLETED': (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+            'POINTS_EARNED': (t) => `REACH_${t}_POINTS`,
+            'LOGIN_STREAK': (t) => `LOGIN_STREAK_${t}_DAYS`,
+        };
+        const criteriaFn = criteriaMap[input.criteriaType] || ((t: number) => `${input.criteriaType}_${t}`);
+        const criteria = criteriaFn(input.threshold);
+
         const badge = await (this.prisma as any).badge.create({
             data: {
                 name: input.name,
                 description: input.description,
                 icon: input.icon,
-                criteria: input.criteria,
+                criteria,
+                criteriaType: input.criteriaType,
+                threshold: input.threshold,
                 courseId: input.courseId || null,
                 creatorId: input.creatorId,
             },
@@ -431,13 +442,33 @@ export class GamificationService {
         description?: string;
         icon?: string;
         criteria?: string;
+        criteriaType?: string;
+        threshold?: number;
     }) {
         const badge = await (this.prisma as any).badge.findUnique({ where: { id: badgeId } });
         if (!badge) throw new Error('Badge not found');
 
+        // If criteriaType or threshold changed, regenerate legacy criteria string
+        const updateData: any = { ...data };
+        const newType = data.criteriaType || badge.criteriaType;
+        const newThreshold = data.threshold ?? badge.threshold;
+
+        if (data.criteriaType || data.threshold !== undefined) {
+            const criteriaMap: Record<string, (t: number) => string> = {
+                'LESSONS_COMPLETED': (t) => `COMPLETE_${t}_LESSON${t > 1 ? 'S' : ''}`,
+                'COURSES_COMPLETED': (t) => `COMPLETE_${t}_COURSE${t > 1 ? 'S' : ''}`,
+                'POINTS_EARNED': (t) => `REACH_${t}_POINTS`,
+                'LOGIN_STREAK': (t) => `LOGIN_STREAK_${t}_DAYS`,
+            };
+            const criteriaFn = criteriaMap[newType] || ((t: number) => `${newType}_${t}`);
+            updateData.criteria = criteriaFn(newThreshold);
+            updateData.criteriaType = newType;
+            updateData.threshold = newThreshold;
+        }
+
         const updated = await (this.prisma as any).badge.update({
             where: { id: badgeId },
-            data,
+            data: updateData,
             include: {
                 course: { select: { title: true } },
                 _count: { select: { userBadges: true } },
@@ -492,5 +523,77 @@ export class GamificationService {
             totalInstructors,
         };
     }
-}
 
+    // ════════════════════════════════════════════════
+    // LOGIN STREAK
+    // ════════════════════════════════════════════════
+
+    /**
+     * Record user login activity and update streak.
+     * Should be called from AuthService.login()
+     */
+    async recordLoginActivity(userId: string): Promise<void> {
+        const today = new Date().toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+        const existing = await (this.prisma as any).loginStreak.findUnique({
+            where: { userId },
+        });
+
+        if (!existing) {
+            // First login ever
+            await (this.prisma as any).loginStreak.create({
+                data: {
+                    userId,
+                    currentStreak: 1,
+                    longestStreak: 1,
+                    lastLoginDate: today,
+                },
+            });
+            console.log(`[Streak] 🔥 First login recorded for user ${userId}`);
+        } else if (existing.lastLoginDate === today) {
+            // Already logged in today, do nothing
+            return;
+        } else {
+            // Check if yesterday
+            const lastDate = new Date(existing.lastLoginDate);
+            const todayDate = new Date(today);
+            const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+            let newStreak = 1;
+            if (diffDays === 1) {
+                // Consecutive day → increment streak
+                newStreak = existing.currentStreak + 1;
+            }
+            // diffDays > 1 → streak resets to 1
+
+            const longestStreak = Math.max(existing.longestStreak, newStreak);
+
+            await (this.prisma as any).loginStreak.update({
+                where: { userId },
+                data: {
+                    currentStreak: newStreak,
+                    longestStreak,
+                    lastLoginDate: today,
+                },
+            });
+            console.log(`[Streak] 🔥 User ${userId}: streak = ${newStreak} (longest: ${longestStreak})`);
+        }
+
+        // Check if any LOGIN_STREAK badges can be awarded
+        await this.checkAndAwardBadges(userId);
+    }
+
+    /**
+     * Get login streak for a user.
+     */
+    async getLoginStreak(userId: string) {
+        const streak = await (this.prisma as any).loginStreak.findUnique({
+            where: { userId },
+        });
+        return {
+            currentStreak: streak?.currentStreak || 0,
+            longestStreak: streak?.longestStreak || 0,
+            lastLoginDate: streak?.lastLoginDate || null,
+        };
+    }
+}

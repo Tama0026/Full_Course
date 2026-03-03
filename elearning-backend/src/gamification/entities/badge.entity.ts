@@ -1,4 +1,4 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 
 @ObjectType()
 export class BadgeType {
@@ -16,6 +16,12 @@ export class BadgeType {
 
     @Field()
     criteria: string;
+
+    @Field()
+    criteriaType: string;
+
+    @Field(() => Int)
+    threshold: number;
 
     @Field({ nullable: true })
     courseId?: string;
