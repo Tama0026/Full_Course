@@ -80,6 +80,15 @@ let CoursesService = class CoursesService {
     async getPublishedCourses() {
         return this.courseRepository.findPublished();
     }
+    async getAllCoursesForAdmin() {
+        return this.prisma.course.findMany({
+            include: {
+                instructor: { select: { id: true, name: true, email: true } },
+                _count: { select: { enrollments: true, sections: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
     async getCourseById(id) {
         const course = await this.courseRepository.findByIdWithRelations(id);
         if (!course) {

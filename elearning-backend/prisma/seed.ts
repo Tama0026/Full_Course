@@ -187,6 +187,49 @@ async function main() {
     }
 
     console.log('Seeding completed successfully!');
+
+    // ════════════════════════════════════════════════
+    // 3. Seed Default Global Badges (owned by Admin)
+    // ════════════════════════════════════════════════
+
+    // Find or create Admin user
+    let admin = await prisma.user.findUnique({
+        where: { email: 'admin@elearning.com' },
+    });
+
+    if (!admin) {
+        const adminPassword = await bcrypt.hash('Admin@123', 10);
+        admin = await prisma.user.create({
+            data: {
+                email: 'admin@elearning.com',
+                password: adminPassword,
+                name: 'System Admin',
+                role: 'ADMIN',
+            },
+        });
+        console.log('Admin user created: admin@elearning.com / Admin@123');
+    }
+
+    const defaultBadges = [
+        { name: 'COMPLETE_1_LESSON', description: 'Hoàn thành bài học đầu tiên', icon: '🌟', criteria: 'COMPLETE_1_LESSON' },
+        { name: 'COMPLETE_5_LESSONS', description: 'Hoàn thành 5 bài học', icon: '📚', criteria: 'COMPLETE_5_LESSONS' },
+        { name: 'COMPLETE_10_LESSONS', description: 'Hoàn thành 10 bài học', icon: '🎯', criteria: 'COMPLETE_10_LESSONS' },
+        { name: 'COMPLETE_25_LESSONS', description: 'Hoàn thành 25 bài học', icon: '🏆', criteria: 'COMPLETE_25_LESSONS' },
+        { name: 'COMPLETE_1_COURSE', description: 'Hoàn thành khóa học đầu tiên', icon: '🎓', criteria: 'COMPLETE_1_COURSE' },
+        { name: 'COMPLETE_3_COURSES', description: 'Hoàn thành 3 khóa học', icon: '💎', criteria: 'COMPLETE_3_COURSES' },
+        { name: 'REACH_100_POINTS', description: 'Đạt 100 điểm', icon: '⭐', criteria: 'REACH_100_POINTS' },
+        { name: 'REACH_500_POINTS', description: 'Đạt 500 điểm', icon: '🔥', criteria: 'REACH_500_POINTS' },
+        { name: 'REACH_1000_POINTS', description: 'Đạt 1000 điểm', icon: '👑', criteria: 'REACH_1000_POINTS' },
+    ];
+
+    for (const badge of defaultBadges) {
+        await (prisma as any).badge.upsert({
+            where: { name: badge.name },
+            update: {},
+            create: { ...badge, courseId: null, creatorId: admin.id },
+        });
+    }
+    console.log('✅ Default global badges seeded (owned by Admin).');
 }
 
 main()

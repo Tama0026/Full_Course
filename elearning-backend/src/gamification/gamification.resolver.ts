@@ -4,8 +4,12 @@ import { GamificationService } from './gamification.service';
 import { LeaderboardEntry } from './entities/leaderboard-entry.entity';
 import { BadgeType } from './entities/badge.entity';
 import { AchievementStats, BadgeWithStatus } from './entities/achievement.entity';
-import { CreateBadgeInput, UpdateBadgeInput } from './dto/badge.input';
+import { AdminBadgeType, AdminStats } from './entities/admin.entity';
+import { CreateBadgeInput, UpdateBadgeInput, AdminCreateBadgeInput } from './dto/badge.input';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { Role } from '../common/enums/role.enum';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Resolver()
@@ -143,5 +147,55 @@ export class GamificationResolver {
         @CurrentUser() user: { id: string },
     ): Promise<boolean> {
         return this.gamificationService.deleteCourseBadge(badgeId, user.id);
+    }
+
+    // ════════════════════════════════════════════════
+    // ADMIN QUERIES & MUTATIONS (Admin only)
+    // ════════════════════════════════════════════════
+
+    @Query(() => AdminStats, { name: 'adminStats' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async getAdminStats(): Promise<AdminStats> {
+        return this.gamificationService.getAdminStats();
+    }
+
+    @Query(() => [AdminBadgeType], { name: 'adminAllBadges' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async getAdminAllBadges(): Promise<AdminBadgeType[]> {
+        return this.gamificationService.getAllBadgesForAdmin() as unknown as AdminBadgeType[];
+    }
+
+    @Mutation(() => AdminBadgeType, { name: 'adminCreateBadge' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async adminCreateBadge(
+        @Args('input') input: AdminCreateBadgeInput,
+        @CurrentUser() user: { id: string },
+    ): Promise<AdminBadgeType> {
+        return this.gamificationService.adminCreateBadge({
+            ...input,
+            creatorId: user.id,
+        }) as unknown as AdminBadgeType;
+    }
+
+    @Mutation(() => AdminBadgeType, { name: 'adminUpdateBadge' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async adminUpdateBadge(
+        @Args('badgeId') badgeId: string,
+        @Args('input') input: UpdateBadgeInput,
+    ): Promise<AdminBadgeType> {
+        return this.gamificationService.adminUpdateBadge(badgeId, input) as unknown as AdminBadgeType;
+    }
+
+    @Mutation(() => Boolean, { name: 'adminDeleteBadge' })
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.ADMIN)
+    async adminDeleteBadge(
+        @Args('badgeId') badgeId: string,
+    ): Promise<boolean> {
+        return this.gamificationService.adminDeleteBadge(badgeId);
     }
 }

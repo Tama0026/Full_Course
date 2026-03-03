@@ -14,6 +14,33 @@ export declare class CoursesService {
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
     deleteCourse(id: string): Promise<PrismaCourse>;
     getPublishedCourses(): Promise<PrismaCourse[]>;
+    getAllCoursesForAdmin(): Promise<({
+        instructor: {
+            id: string;
+            email: string;
+            name: string | null;
+        };
+        _count: {
+            sections: number;
+            enrollments: number;
+        };
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        price: number;
+        thumbnail: string | null;
+        category: string | null;
+        learningOutcomes: string;
+        averageRating: number;
+        reviewCount: number;
+        totalDuration: number;
+        published: boolean;
+        isActive: boolean;
+        instructorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    })[]>;
     getCourseById(id: string): Promise<PrismaCourse>;
     getMyCourses(instructorId: string): Promise<PrismaCourse[]>;
     createSection(input: CreateSectionInput): Promise<Section>;
@@ -39,10 +66,10 @@ export declare class CoursesService {
         sections: ({
             lessons: {
                 id: string;
-                order: number;
+                title: string;
                 createdAt: Date;
                 updatedAt: Date;
-                title: string;
+                order: number;
                 type: string;
                 videoUrl: string | null;
                 body: string | null;
@@ -53,21 +80,19 @@ export declare class CoursesService {
             }[];
         } & {
             id: string;
-            order: number;
+            title: string;
             createdAt: Date;
             updatedAt: Date;
-            title: string;
+            order: number;
             courseId: string;
         })[];
     } & {
         id: string;
-        createdAt: Date;
-        category: string | null;
-        updatedAt: Date;
         title: string;
         description: string;
         price: number;
         thumbnail: string | null;
+        category: string | null;
         learningOutcomes: string;
         averageRating: number;
         reviewCount: number;
@@ -75,5 +100,7 @@ export declare class CoursesService {
         published: boolean;
         isActive: boolean;
         instructorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }) | null>;
 }

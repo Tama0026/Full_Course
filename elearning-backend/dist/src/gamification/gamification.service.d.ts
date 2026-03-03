@@ -35,5 +35,28 @@ export declare class GamificationService {
     deleteCourseBadge(badgeId: string, creatorId: string): Promise<boolean>;
     getCourseBadges(courseId: string): Promise<any>;
     getInstructorBadges(instructorId: string): Promise<any>;
-    seedBadges(): Promise<void>;
+    getAllBadgesForAdmin(): Promise<any>;
+    adminCreateBadge(input: {
+        name: string;
+        description: string;
+        icon: string;
+        criteria: string;
+        courseId?: string;
+        creatorId: string;
+    }): Promise<any>;
+    adminUpdateBadge(badgeId: string, data: {
+        name?: string;
+        description?: string;
+        icon?: string;
+        criteria?: string;
+    }): Promise<any>;
+    adminDeleteBadge(badgeId: string): Promise<boolean>;
+    getAdminStats(): Promise<{
+        totalUsers: number;
+        totalCourses: number;
+        totalEnrollments: number;
+        totalBadges: any;
+        totalStudents: number;
+        totalInstructors: number;
+    }>;
 }

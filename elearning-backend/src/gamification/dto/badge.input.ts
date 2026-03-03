@@ -51,3 +51,31 @@ export class UpdateBadgeInput {
     @IsOptional()
     criteria?: string;
 }
+
+@InputType()
+export class AdminCreateBadgeInput {
+    @Field()
+    @IsString()
+    @IsNotEmpty()
+    name: string;
+
+    @Field()
+    @IsString()
+    @IsNotEmpty()
+    description: string;
+
+    @Field({ defaultValue: '🏅' })
+    @IsString()
+    @IsOptional()
+    icon: string;
+
+    @Field()
+    @IsString()
+    @IsNotEmpty()
+    criteria: string;
+
+    @Field({ nullable: true })
+    @IsString()
+    @IsOptional()
+    courseId?: string;
+}

@@ -135,6 +135,19 @@ export class CoursesService {
     }
 
     /**
+     * Get ALL courses for Admin dashboard (no publish filter).
+     */
+    async getAllCoursesForAdmin() {
+        return this.prisma.course.findMany({
+            include: {
+                instructor: { select: { id: true, name: true, email: true } },
+                _count: { select: { enrollments: true, sections: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
+    /**
      * Get a single course by ID with full relations.
      */
     async getCourseById(id: string): Promise<PrismaCourse> {

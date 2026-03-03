@@ -3,14 +3,16 @@
 import { usePathname } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
 import InstructorSidebar from "./InstructorSidebar";
+import AdminSidebar from "./AdminSidebar";
 
 /**
- * Renders either the InstructorSidebar or DashboardSidebar
- * based on whether the current path is an instructor route.
+ * Renders the correct sidebar based on the current route path.
  */
 export default function SidebarRouter() {
     const pathname = usePathname();
-    const isInstructor = pathname.startsWith("/instructor");
 
-    return isInstructor ? <InstructorSidebar /> : <DashboardSidebar />;
+    if (pathname.startsWith("/admin")) return <AdminSidebar />;
+    if (pathname.startsWith("/instructor")) return <InstructorSidebar />;
+    return <DashboardSidebar />;
 }
+

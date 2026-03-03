@@ -12,6 +12,59 @@ type AchievementStats {
   userName: String
 }
 
+type AdminBadgeType {
+  awardedCount: Int!
+  courseId: String
+  courseName: String
+  createdAt: DateTime!
+  creatorId: String!
+  criteria: String!
+  description: String!
+  icon: String!
+  id: ID!
+  name: String!
+}
+
+type AdminCourse {
+  category: String
+  createdAt: DateTime!
+  description: String!
+  enrollmentCount: Int!
+  id: ID!
+  instructor: AdminCourseInstructor!
+  instructorId: String!
+  isActive: Boolean!
+  price: Float!
+  published: Boolean!
+  sectionCount: Int!
+  thumbnail: String
+  title: String!
+  updatedAt: DateTime!
+}
+
+type AdminCourseInstructor {
+  email: String!
+  id: String!
+  name: String
+}
+
+input AdminCreateBadgeInput {
+  courseId: String
+  criteria: String!
+  description: String!
+  icon: String! = "🏅"
+  name: String!
+}
+
+type AdminStats {
+  totalBadges: Int!
+  totalCourses: Int!
+  totalEnrollments: Int!
+  totalInstructors: Int!
+  totalStudents: Int!
+  totalUsers: Int!
+}
+
 type AuthResponse {
   accessToken: String!
   refreshToken: String!
@@ -256,6 +309,9 @@ input LoginInput {
 }
 
 type Mutation {
+  adminCreateBadge(input: AdminCreateBadgeInput!): AdminBadgeType!
+  adminDeleteBadge(badgeId: String!): Boolean!
+  adminUpdateBadge(badgeId: String!, input: UpdateBadgeInput!): AdminBadgeType!
   askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
   chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
@@ -332,6 +388,9 @@ type Progress {
 }
 
 type Query {
+  adminAllBadges: [AdminBadgeType!]!
+  adminAllCourses: [AdminCourse!]!
+  adminStats: AdminStats!
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
   categories: [Category!]!

@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateBadgeInput = exports.CreateBadgeInput = void 0;
+exports.AdminCreateBadgeInput = exports.UpdateBadgeInput = exports.CreateBadgeInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const class_validator_1 = require("class-validator");
 let CreateBadgeInput = class CreateBadgeInput {
@@ -87,4 +87,45 @@ __decorate([
 exports.UpdateBadgeInput = UpdateBadgeInput = __decorate([
     (0, graphql_1.InputType)()
 ], UpdateBadgeInput);
+let AdminCreateBadgeInput = class AdminCreateBadgeInput {
+    name;
+    description;
+    icon;
+    criteria;
+    courseId;
+};
+exports.AdminCreateBadgeInput = AdminCreateBadgeInput;
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "name", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "description", void 0);
+__decorate([
+    (0, graphql_1.Field)({ defaultValue: '🏅' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "icon", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "criteria", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], AdminCreateBadgeInput.prototype, "courseId", void 0);
+exports.AdminCreateBadgeInput = AdminCreateBadgeInput = __decorate([
+    (0, graphql_1.InputType)()
+], AdminCreateBadgeInput);
 //# sourceMappingURL=badge.input.js.map

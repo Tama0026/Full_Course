@@ -4,6 +4,7 @@ import { Course } from './entities/course.entity';
 import { Section } from './entities/section.entity';
 import { Lesson } from './entities/lesson.entity';
 import { InstructorStats } from './entities/instructor-stats.entity';
+import { AdminCourse } from './entities/admin-course.entity';
 import { CreateCourseInput } from './dto/create-course.input';
 import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
@@ -44,4 +45,5 @@ export declare class CoursesResolver {
     getInstructorStats(user: {
         id: string;
     }): Promise<InstructorStats>;
+    getAdminAllCourses(): Promise<AdminCourse[]>;
 }

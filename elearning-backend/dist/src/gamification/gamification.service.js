@@ -59,8 +59,8 @@ let GamificationService = class GamificationService {
                 : undefined,
         });
         for (const badge of allBadges) {
-            const existing = await this.prisma.userBadge.findUnique({
-                where: { userId_badgeId: { userId, badgeId: badge.id } },
+            const existing = await this.prisma.userBadge.findFirst({
+                where: { userId, badgeId: badge.id },
             });
             if (existing)
                 continue;
@@ -271,42 +271,89 @@ let GamificationService = class GamificationService {
             awardedCount: b._count?.userBadges || 0,
         }));
     }
-    async seedBadges() {
-        let admin = await this.prisma.user.findUnique({
-            where: { email: 'admin@elearning.com' },
+    async getAllBadgesForAdmin() {
+        const badges = await this.prisma.badge.findMany({
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+            orderBy: [{ courseId: 'asc' }, { createdAt: 'desc' }],
         });
-        if (!admin) {
-            const bcrypt = await import('bcrypt');
-            const hashedPassword = await bcrypt.hash('Admin@123', 10);
-            admin = await this.prisma.user.create({
-                data: {
-                    email: 'admin@elearning.com',
-                    password: hashedPassword,
-                    name: 'System Admin',
-                    role: 'ADMIN',
-                },
-            });
-            console.log('[Gamification] 👤 Admin user created: admin@elearning.com / Admin@123');
+        return badges.map((b) => ({
+            ...b,
+            courseName: b.course?.title || null,
+            awardedCount: b._count?.userBadges || 0,
+        }));
+    }
+    async adminCreateBadge(input) {
+        const badge = await this.prisma.badge.create({
+            data: {
+                name: input.name,
+                description: input.description,
+                icon: input.icon,
+                criteria: input.criteria,
+                courseId: input.courseId || null,
+                creatorId: input.creatorId,
+            },
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+        });
+        return {
+            ...badge,
+            courseName: badge.course?.title || null,
+            awardedCount: badge._count?.userBadges || 0,
+        };
+    }
+    async adminUpdateBadge(badgeId, data) {
+        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        if (!badge)
+            throw new Error('Badge not found');
+        const updated = await this.prisma.badge.update({
+            where: { id: badgeId },
+            data,
+            include: {
+                course: { select: { title: true } },
+                _count: { select: { userBadges: true } },
+            },
+        });
+        return {
+            ...updated,
+            courseName: updated.course?.title || null,
+            awardedCount: updated._count?.userBadges || 0,
+        };
+    }
+    async adminDeleteBadge(badgeId) {
+        const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+        if (!badge)
+            throw new Error('Badge not found');
+        const awardedCount = await this.prisma.userBadge.count({
+            where: { badgeId },
+        });
+        if (awardedCount > 0) {
+            throw new Error(`Không thể xóa Badge này vì đã có ${awardedCount} học viên sở hữu`);
         }
-        const defaultBadges = [
-            { name: 'COMPLETE_1_LESSON', description: 'Hoàn thành bài học đầu tiên', icon: '🌟', criteria: 'COMPLETE_1_LESSON' },
-            { name: 'COMPLETE_5_LESSONS', description: 'Hoàn thành 5 bài học', icon: '📚', criteria: 'COMPLETE_5_LESSONS' },
-            { name: 'COMPLETE_10_LESSONS', description: 'Hoàn thành 10 bài học', icon: '🎯', criteria: 'COMPLETE_10_LESSONS' },
-            { name: 'COMPLETE_25_LESSONS', description: 'Hoàn thành 25 bài học', icon: '🏆', criteria: 'COMPLETE_25_LESSONS' },
-            { name: 'COMPLETE_1_COURSE', description: 'Hoàn thành khóa học đầu tiên', icon: '🎓', criteria: 'COMPLETE_1_COURSE' },
-            { name: 'COMPLETE_3_COURSES', description: 'Hoàn thành 3 khóa học', icon: '💎', criteria: 'COMPLETE_3_COURSES' },
-            { name: 'REACH_100_POINTS', description: 'Đạt 100 điểm', icon: '⭐', criteria: 'REACH_100_POINTS' },
-            { name: 'REACH_500_POINTS', description: 'Đạt 500 điểm', icon: '🔥', criteria: 'REACH_500_POINTS' },
-            { name: 'REACH_1000_POINTS', description: 'Đạt 1000 điểm', icon: '👑', criteria: 'REACH_1000_POINTS' },
-        ];
-        for (const badge of defaultBadges) {
-            await this.prisma.badge.upsert({
-                where: { name: badge.name },
-                update: {},
-                create: { ...badge, courseId: null, creatorId: admin.id },
-            });
-        }
-        console.log('[Gamification] ✅ Default global badges seeded (owned by Admin).');
+        await this.prisma.badge.delete({ where: { id: badgeId } });
+        return true;
+    }
+    async getAdminStats() {
+        const [totalUsers, totalCourses, totalEnrollments, totalBadges] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.course.count(),
+            this.prisma.enrollment.count(),
+            this.prisma.badge.count(),
+        ]);
+        const totalStudents = await this.prisma.user.count({ where: { role: 'STUDENT' } });
+        const totalInstructors = await this.prisma.user.count({ where: { role: 'INSTRUCTOR' } });
+        return {
+            totalUsers,
+            totalCourses,
+            totalEnrollments,
+            totalBadges,
+            totalStudents,
+            totalInstructors,
+        };
     }
 };
 exports.GamificationService = GamificationService;

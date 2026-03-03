@@ -2,7 +2,8 @@ import { GamificationService } from './gamification.service';
 import { LeaderboardEntry } from './entities/leaderboard-entry.entity';
 import { BadgeType } from './entities/badge.entity';
 import { AchievementStats, BadgeWithStatus } from './entities/achievement.entity';
-import { CreateBadgeInput, UpdateBadgeInput } from './dto/badge.input';
+import { AdminBadgeType, AdminStats } from './entities/admin.entity';
+import { CreateBadgeInput, UpdateBadgeInput, AdminCreateBadgeInput } from './dto/badge.input';
 export declare class GamificationResolver {
     private readonly gamificationService;
     constructor(gamificationService: GamificationService);
@@ -34,4 +35,11 @@ export declare class GamificationResolver {
     deleteCourseBadge(badgeId: string, user: {
         id: string;
     }): Promise<boolean>;
+    getAdminStats(): Promise<AdminStats>;
+    getAdminAllBadges(): Promise<AdminBadgeType[]>;
+    adminCreateBadge(input: AdminCreateBadgeInput, user: {
+        id: string;
+    }): Promise<AdminBadgeType>;
+    adminUpdateBadge(badgeId: string, input: UpdateBadgeInput): Promise<AdminBadgeType>;
+    adminDeleteBadge(badgeId: string): Promise<boolean>;
 }
