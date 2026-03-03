@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssessmentsResolver = exports.AnswerInput = exports.CreateQuestionInput = exports.CreateAssessmentInput = void 0;
+exports.AssessmentQuestionResolver = exports.AssessmentsResolver = exports.AnswerInput = exports.CreateQuestionInput = exports.CreateAssessmentInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const common_1 = require("@nestjs/common");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
@@ -227,4 +227,66 @@ exports.AssessmentsResolver = AssessmentsResolver = __decorate([
     (0, graphql_1.Resolver)(() => assessment_entity_1.Assessment),
     __metadata("design:paramtypes", [assessments_service_1.AssessmentsService])
 ], AssessmentsResolver);
+let AssessmentQuestionResolver = class AssessmentQuestionResolver {
+    prompt(question) {
+        return question.content;
+    }
+    options(question) {
+        if (typeof question.options === 'string') {
+            try {
+                return JSON.parse(question.options);
+            }
+            catch (e) {
+                return [];
+            }
+        }
+        return question.options || [];
+    }
+    explanation() {
+        return '';
+    }
+    order() {
+        return 0;
+    }
+    correctAnswer(question) {
+        return question.correctAnswer.toString();
+    }
+};
+exports.AssessmentQuestionResolver = AssessmentQuestionResolver;
+__decorate([
+    (0, graphql_1.ResolveField)(() => String),
+    __param(0, (0, graphql_1.Parent)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AssessmentQuestionResolver.prototype, "prompt", null);
+__decorate([
+    (0, graphql_1.ResolveField)(() => [String]),
+    __param(0, (0, graphql_1.Parent)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AssessmentQuestionResolver.prototype, "options", null);
+__decorate([
+    (0, graphql_1.ResolveField)(() => String, { nullable: true }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AssessmentQuestionResolver.prototype, "explanation", null);
+__decorate([
+    (0, graphql_1.ResolveField)(() => graphql_1.Int, { nullable: true }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AssessmentQuestionResolver.prototype, "order", null);
+__decorate([
+    (0, graphql_1.ResolveField)(() => String),
+    __param(0, (0, graphql_1.Parent)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AssessmentQuestionResolver.prototype, "correctAnswer", null);
+exports.AssessmentQuestionResolver = AssessmentQuestionResolver = __decorate([
+    (0, graphql_1.Resolver)(() => assessment_entity_1.AssessmentQuestion)
+], AssessmentQuestionResolver);
 //# sourceMappingURL=assessments.resolver.js.map

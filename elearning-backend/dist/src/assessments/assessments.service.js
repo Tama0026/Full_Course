@@ -74,8 +74,10 @@ let AssessmentsService = class AssessmentsService {
             throw new common_1.NotFoundException();
         return this.prisma.assessmentQuestion.create({
             data: {
-                ...data,
                 assessmentId,
+                content: data.prompt,
+                options: JSON.stringify(data.options),
+                correctAnswer: parseInt(data.correctAnswer) || 0,
             },
         });
     }

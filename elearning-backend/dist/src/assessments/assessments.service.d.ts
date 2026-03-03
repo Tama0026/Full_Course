@@ -3,36 +3,36 @@ export declare class AssessmentsService {
     private prisma;
     constructor(prisma: PrismaService);
     getAssessments(userRole: string, userId: string): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }[]>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            assessmentId: string;
             content: string;
             options: string;
             correctAnswer: number;
+            assessmentId: string;
         }[];
     } & {
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }) | null>;
     createAssessment(userId: string, data: {
         title: string;
@@ -41,15 +41,15 @@ export declare class AssessmentsService {
         passingScore: number;
         isActive: boolean;
     }): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }>;
     updateAssessment(id: string, creatorId: string, data: Partial<{
         title: string;
@@ -58,66 +58,72 @@ export declare class AssessmentsService {
         passingScore: number;
         isActive: boolean;
     }>): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }>;
     deleteAssessment(id: string, creatorId: string): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
         isActive: boolean;
         creatorId: string;
-        createdAt: Date;
-        updatedAt: Date;
+        timeLimit: number;
+        passingScore: number;
     }>;
-    createQuestion(assessmentId: string, creatorId: string, data: Record<string, unknown>): Promise<{
+    createQuestion(assessmentId: string, creatorId: string, data: {
+        prompt: string;
+        options: string[];
+        correctAnswer: string;
+        explanation: string;
+        order: number;
+    }): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        assessmentId: string;
         content: string;
         options: string;
         correctAnswer: number;
+        assessmentId: string;
     }>;
     deleteQuestion(id: string, creatorId: string): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        assessmentId: string;
         content: string;
         options: string;
         correctAnswer: number;
+        assessmentId: string;
     }>;
     startAttempt(assessmentId: string, userId: string): Promise<{
         id: string;
-        assessmentId: string;
+        userId: string;
+        completedAt: Date | null;
         score: number | null;
+        assessmentId: string;
         passed: boolean;
         isInvalid: boolean;
         startedAt: Date;
-        completedAt: Date | null;
-        userId: string;
     }>;
     submitAttempt(attemptId: string, userId: string, answers: {
         questionId: string;
         answer: string;
     }[]): Promise<{
         id: string;
-        assessmentId: string;
+        userId: string;
+        completedAt: Date | null;
         score: number | null;
+        assessmentId: string;
         passed: boolean;
         isInvalid: boolean;
         startedAt: Date;
-        completedAt: Date | null;
-        userId: string;
     }>;
 }

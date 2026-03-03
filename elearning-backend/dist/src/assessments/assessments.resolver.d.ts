@@ -24,64 +24,64 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }[]>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            assessmentId: string;
             content: string;
             options: string;
             correctAnswer: number;
+            assessmentId: string;
         }[];
     } & {
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }) | null>;
     createAssessment(input: CreateAssessmentInput, user: {
         id: string;
         role: string;
     }): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }>;
     deleteAssessment(id: string, user: {
         id: string;
         role: string;
     }): Promise<{
-        id: string;
-        title: string;
         description: string;
-        timeLimit: number;
-        passingScore: number;
-        isActive: boolean;
-        creatorId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        creatorId: string;
+        timeLimit: number;
+        passingScore: number;
     }>;
     createAssessmentQuestion(assessmentId: string, input: CreateQuestionInput, user: {
         id: string;
@@ -90,10 +90,10 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        assessmentId: string;
         content: string;
         options: string;
         correctAnswer: number;
+        assessmentId: string;
     }>;
     deleteAssessmentQuestion(id: string, user: {
         id: string;
@@ -102,35 +102,48 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        assessmentId: string;
         content: string;
         options: string;
         correctAnswer: number;
+        assessmentId: string;
     }>;
     startAssessmentAttempt(assessmentId: string, user: {
         id: string;
         role: string;
     }): Promise<{
         id: string;
-        assessmentId: string;
+        userId: string;
+        completedAt: Date | null;
         score: number | null;
+        assessmentId: string;
         passed: boolean;
         isInvalid: boolean;
         startedAt: Date;
-        completedAt: Date | null;
-        userId: string;
     }>;
     submitAssessmentAttempt(attemptId: string, answers: AnswerInput[], user: {
         id: string;
         role: string;
     }): Promise<{
         id: string;
-        assessmentId: string;
+        userId: string;
+        completedAt: Date | null;
         score: number | null;
+        assessmentId: string;
         passed: boolean;
         isInvalid: boolean;
         startedAt: Date;
-        completedAt: Date | null;
-        userId: string;
     }>;
+}
+export declare class AssessmentQuestionResolver {
+    prompt(question: {
+        content: string;
+    }): string;
+    options(question: {
+        options: string | string[];
+    }): any;
+    explanation(): string;
+    order(): number;
+    correctAnswer(question: {
+        correctAnswer: number;
+    }): string;
 }
