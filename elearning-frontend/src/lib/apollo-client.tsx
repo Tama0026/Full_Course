@@ -41,9 +41,10 @@ async function refreshTokens(): Promise<boolean> {
  * Create an Apollo HttpLink.
  */
 function createHttpLink() {
+    const uri = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/graphql";
     return new HttpLink({
-        uri: "/graphql",
-        credentials: "same-origin",
+        uri,
+        credentials: "include",
         fetchOptions: { cache: "no-store" },
     });
 }
