@@ -6,28 +6,33 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Parse cookies so req.cookies is available (needed for JWT cookie extraction)
   app.use(cookieParser());
 
-  // Enable global validation pipe (class-validator integration)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip non-whitelisted properties
-      forbidNonWhitelisted: true, // Throw error on extra properties
-      transform: true, // Auto-transform payloads to DTO instances
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
-  // Enable CORS for frontend integration
+  // Cập nhật CORS linh hoạt hơn
   app.enableCors({
     origin: [
-      'http://127.0.0.1:4000', // Cho phép dev local
-      'https://full-course-eta.vercel.app', // Domain chính của bạn
+      'http://localhost:3000', // Port mặc định của Next.js local
+      'http://127.0.0.1:3000',
+      'https://full-course-eta.vercel.app', // Domain Vercel của bạn
     ],
     credentials: true,
   });
 
-  await app.listen(4000);
-  console.log(`🚀 Application is running on: http://localhost:4000/graphql`);
+  // SỬA TẠI ĐÂY: Lấy port từ biến môi trường của Railway
+  const port = process.env.PORT || 4000;
+
+  // SỬA TẠI ĐÂY: Lắng nghe trên '0.0.0.0' để Railway nhận diện được
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`🚀 Application is running on port: ${port}`);
+  console.log(`📊 GraphQL endpoint: /graphql`);
 }
 bootstrap();
