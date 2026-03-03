@@ -4,7 +4,7 @@
 
 /** Backend GraphQL endpoint (used by server-side Apollo Client) */
 export const GRAPHQL_ENDPOINT =
-    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://127.0.0.1:3000/graphql";
+    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://127.0.0.1:4000/graphql";
 
 /** Cookie names */
 export const ACCESS_TOKEN_COOKIE = "access_token";
