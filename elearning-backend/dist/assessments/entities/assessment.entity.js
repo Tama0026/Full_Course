@@ -9,11 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssessmentAttempt = exports.Assessment = exports.AssessmentQuestion = void 0;
+exports.AssessmentAttempt = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
 const graphql_1 = require("@nestjs/graphql");
+let ShuffledQuestion = class ShuffledQuestion {
+    id;
+    prompt;
+    options;
+};
+exports.ShuffledQuestion = ShuffledQuestion;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.ID),
+    __metadata("design:type", String)
+], ShuffledQuestion.prototype, "id", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], ShuffledQuestion.prototype, "prompt", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [String]),
+    __metadata("design:type", Array)
+], ShuffledQuestion.prototype, "options", void 0);
+exports.ShuffledQuestion = ShuffledQuestion = __decorate([
+    (0, graphql_1.ObjectType)()
+], ShuffledQuestion);
 let AssessmentQuestion = class AssessmentQuestion {
     id;
     assessmentId;
+    setCode;
     prompt;
     options;
     correctAnswer;
@@ -29,6 +51,10 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], AssessmentQuestion.prototype, "assessmentId", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AssessmentQuestion.prototype, "setCode", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
@@ -58,6 +84,7 @@ let Assessment = class Assessment {
     description;
     timeLimit;
     passingScore;
+    numberOfSets;
     isActive;
     creatorId;
     createdAt;
@@ -86,6 +113,10 @@ __decorate([
     __metadata("design:type", Number)
 ], Assessment.prototype, "passingScore", void 0);
 __decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], Assessment.prototype, "numberOfSets", void 0);
+__decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)
 ], Assessment.prototype, "isActive", void 0);
@@ -112,11 +143,13 @@ let AssessmentAttempt = class AssessmentAttempt {
     id;
     userId;
     assessmentId;
+    setCode;
     startedAt;
     completedAt;
     score;
     passed;
     isInvalid;
+    questions;
 };
 exports.AssessmentAttempt = AssessmentAttempt;
 __decorate([
@@ -131,6 +164,10 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], AssessmentAttempt.prototype, "assessmentId", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AssessmentAttempt.prototype, "setCode", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Date)
@@ -151,6 +188,10 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)
 ], AssessmentAttempt.prototype, "isInvalid", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [ShuffledQuestion], { nullable: 'itemsAndList' }),
+    __metadata("design:type", Array)
+], AssessmentAttempt.prototype, "questions", void 0);
 exports.AssessmentAttempt = AssessmentAttempt = __decorate([
     (0, graphql_1.ObjectType)()
 ], AssessmentAttempt);

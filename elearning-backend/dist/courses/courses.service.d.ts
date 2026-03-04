@@ -5,10 +5,14 @@ import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { Course as PrismaCourse, Section, Lesson } from '@prisma/client';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
 export declare class CoursesService {
     private readonly courseRepository;
     private readonly prisma;
-    constructor(courseRepository: CourseRepository, prisma: PrismaService);
+    private readonly emailService;
+    private readonly configService;
+    constructor(courseRepository: CourseRepository, prisma: PrismaService, emailService: EmailService, configService: ConfigService);
     validateCourseContent(courseId: string): Promise<void>;
     createCourse(input: CreateCourseInput, instructorId: string): Promise<PrismaCourse>;
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;

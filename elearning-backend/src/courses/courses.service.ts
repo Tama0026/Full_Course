@@ -11,12 +11,16 @@ import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { Course as PrismaCourse, Section, Lesson } from '@prisma/client';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CoursesService {
   constructor(
     private readonly courseRepository: CourseRepository,
     private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) { }
 
   // ==================== VALIDATION ====================
@@ -610,11 +614,19 @@ export class CoursesService {
       data: { status: 'APPROVED', enrolledAt: new Date() },
     });
 
-    // Trigger Notification (Simulated Email/System Notification)
-    console.log(`[NOTIFICATION OUTBOX] Gửi tới: ${enrollment.user.email}`);
-    console.log(
-      `[NOTIFICATION CONTENT] Chúc mừng! Đơn đăng ký khóa học "${course.title}" của bạn đã được phê duyệt. Hãy bắt đầu học ngay nhé!`,
+    // Trigger Notification Notification
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      'http://localhost:3000';
+    const courseUrl = `${frontendUrl}/courses/${courseId}`;
+
+    await this.emailService.sendEnrollmentApprovedEmail(
+      enrollment.user.email,
+      enrollment.user.name || 'Học viên',
+      course.title,
+      courseUrl,
     );
+    console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
 
     return true;
   }

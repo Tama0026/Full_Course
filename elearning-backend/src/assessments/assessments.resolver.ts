@@ -55,10 +55,19 @@ export class CreateAssessmentInput {
   @Field()
   @IsBoolean()
   isActive: boolean;
+
+  @Field(() => Int, { defaultValue: 1 })
+  @IsInt()
+  @Min(1)
+  numberOfSets: number;
 }
 
 @InputType()
 export class CreateQuestionInput {
+  @Field()
+  @IsString()
+  setCode: string;
+
   @Field()
   @IsString()
   prompt: string;
@@ -94,7 +103,7 @@ export class AnswerInput {
 
 @Resolver(() => Assessment)
 export class AssessmentsResolver {
-  constructor(private readonly assessmentsService: AssessmentsService) {}
+  constructor(private readonly assessmentsService: AssessmentsService) { }
 
   @Query(() => [Assessment], { name: 'assessments' })
   @UseGuards(JwtAuthGuard)

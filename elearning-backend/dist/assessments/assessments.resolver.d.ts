@@ -5,8 +5,10 @@ export declare class CreateAssessmentInput {
     timeLimit: number;
     passingScore: number;
     isActive: boolean;
+    numberOfSets: number;
 }
 export declare class CreateQuestionInput {
+    setCode: string;
     prompt: string;
     options: string[];
     correctAnswer: string;
@@ -33,15 +35,17 @@ export declare class AssessmentsResolver {
         creatorId: string;
         timeLimit: number;
         passingScore: number;
+        numberOfSets: number;
     }[]>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            content: string;
             options: string;
+            content: string;
             correctAnswer: number;
+            setCode: string;
             assessmentId: string;
         }[];
     } & {
@@ -54,6 +58,7 @@ export declare class AssessmentsResolver {
         creatorId: string;
         timeLimit: number;
         passingScore: number;
+        numberOfSets: number;
     }) | null>;
     createAssessment(input: CreateAssessmentInput, user: {
         id: string;
@@ -68,6 +73,7 @@ export declare class AssessmentsResolver {
         creatorId: string;
         timeLimit: number;
         passingScore: number;
+        numberOfSets: number;
     }>;
     deleteAssessment(id: string, user: {
         id: string;
@@ -82,6 +88,7 @@ export declare class AssessmentsResolver {
         creatorId: string;
         timeLimit: number;
         passingScore: number;
+        numberOfSets: number;
     }>;
     createAssessmentQuestion(assessmentId: string, input: CreateQuestionInput, user: {
         id: string;
@@ -90,9 +97,10 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        content: string;
         options: string;
+        content: string;
         correctAnswer: number;
+        setCode: string;
         assessmentId: string;
     }>;
     deleteAssessmentQuestion(id: string, user: {
@@ -102,19 +110,26 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        content: string;
         options: string;
+        content: string;
         correctAnswer: number;
+        setCode: string;
         assessmentId: string;
     }>;
     startAssessmentAttempt(assessmentId: string, user: {
         id: string;
         role: string;
     }): Promise<{
+        questions: {
+            id: string;
+            prompt: string;
+            options: any[];
+        }[];
         id: string;
         userId: string;
         completedAt: Date | null;
         score: number | null;
+        setCode: string;
         assessmentId: string;
         passed: boolean;
         isInvalid: boolean;
@@ -128,6 +143,7 @@ export declare class AssessmentsResolver {
         userId: string;
         completedAt: Date | null;
         score: number | null;
+        setCode: string;
         assessmentId: string;
         passed: boolean;
         isInvalid: boolean;

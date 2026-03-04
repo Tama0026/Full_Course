@@ -79,6 +79,7 @@ type Assessment {
   description: String!
   id: ID!
   isActive: Boolean!
+  numberOfSets: Int!
   passingScore: Float!
   questions: [AssessmentQuestion]
   timeLimit: Int!
@@ -92,7 +93,9 @@ type AssessmentAttempt {
   id: ID!
   isInvalid: Boolean!
   passed: Boolean
+  questions: [ShuffledQuestion]
   score: Float
+  setCode: String!
   startedAt: DateTime!
   userId: String!
 }
@@ -105,6 +108,7 @@ type AssessmentQuestion {
   options: [String!]!
   order: Int!
   prompt: String!
+  setCode: String!
 }
 
 type AuthResponse {
@@ -249,6 +253,7 @@ type CourseStudentProgress {
 input CreateAssessmentInput {
   description: String!
   isActive: Boolean!
+  numberOfSets: Int! = 1
   passingScore: Float!
   timeLimit: Int!
   title: String!
@@ -312,6 +317,7 @@ input CreateQuestionInput {
   options: [String!]!
   order: Int!
   prompt: String!
+  setCode: String!
 }
 
 input CreateSectionInput {
@@ -587,6 +593,12 @@ input SectionCurriculumInput {
   lessons: [LessonCurriculumInput!]! = []
   order: Int
   title: String!
+}
+
+type ShuffledQuestion {
+  id: ID!
+  options: [String!]!
+  prompt: String!
 }
 
 type SubmitQuizResponse {

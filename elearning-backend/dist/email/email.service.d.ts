@@ -4,4 +4,5 @@ export declare class EmailService {
     private transporter;
     constructor(configService: ConfigService);
     sendCertificateEmail(to: string, studentName: string, courseName: string, certificateUrl: string): Promise<void>;
+    sendEnrollmentApprovedEmail(to: string, studentName: string, courseName: string, courseUrl: string): Promise<void>;
 }

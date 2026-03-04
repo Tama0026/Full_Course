@@ -11,11 +11,13 @@ const common_1 = require("@nestjs/common");
 const courses_service_1 = require("./courses.service");
 const courses_resolver_1 = require("./courses.resolver");
 const course_repository_1 = require("./course.repository");
+const email_module_1 = require("../email/email.module");
 let CoursesModule = class CoursesModule {
 };
 exports.CoursesModule = CoursesModule;
 exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
+        imports: [email_module_1.EmailModule],
         providers: [
             courses_service_1.CoursesService,
             courses_resolver_1.CoursesResolver,

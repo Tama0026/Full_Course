@@ -29,6 +29,7 @@ let CreateAssessmentInput = class CreateAssessmentInput {
     timeLimit;
     passingScore;
     isActive;
+    numberOfSets;
 };
 exports.CreateAssessmentInput = CreateAssessmentInput;
 __decorate([
@@ -58,10 +59,17 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateAssessmentInput.prototype, "isActive", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 1 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "numberOfSets", void 0);
 exports.CreateAssessmentInput = CreateAssessmentInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreateAssessmentInput);
 let CreateQuestionInput = class CreateQuestionInput {
+    setCode;
     prompt;
     options;
     correctAnswer;
@@ -69,6 +77,11 @@ let CreateQuestionInput = class CreateQuestionInput {
     order;
 };
 exports.CreateQuestionInput = CreateQuestionInput;
+__decorate([
+    (0, graphql_1.Field)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateQuestionInput.prototype, "setCode", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     (0, class_validator_1.IsString)(),

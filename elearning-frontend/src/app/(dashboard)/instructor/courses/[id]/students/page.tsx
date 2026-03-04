@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { GET_COURSE_STUDENTS, SEND_LEARNING_REMINDER, GET_COURSE_DETAIL } from "@/lib/graphql/course";
-import { ArrowLeft, Users, Mail, Loader2, ExternalLink } from "lucide-react";
+import { GET_COURSE_STUDENTS, SEND_LEARNING_REMINDER, GET_COURSE_DETAIL, APPROVE_ENROLLMENT } from "@/lib/graphql/course";
+import { ArrowLeft, Users, Mail, Loader2, ExternalLink, CheckCircle } from "lucide-react";
 import StudentProgressTimeline from "@/components/instructor/StudentProgressTimeline";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
@@ -29,7 +29,9 @@ export default function CourseStudentsPage() {
     });
 
     const [sendReminder, { loading: sending }] = useMutation(SEND_LEARNING_REMINDER);
+    const [approveEnrollment, { loading: approving }] = useMutation(APPROVE_ENROLLMENT);
     const [sendingId, setSendingId] = useState<string | null>(null);
+    const [approvingId, setApprovingId] = useState<string | null>(null);
 
     const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
@@ -46,6 +48,22 @@ export default function CourseStudentsPage() {
             toast.error(err?.message || "Lỗi khi gửi nhắc nhở", { id: toastId });
         } finally {
             setSendingId(null);
+        }
+    };
+
+    const handleApprove = async (student: any) => {
+        setApprovingId(student.id);
+        const toastId = toast.loading(`Đang duyệt học viên ${student.name}...`);
+        try {
+            await approveEnrollment({
+                variables: { studentId: student.id, courseId }
+            });
+            toast.success(`Đã duyệt thành công cho ${student.name}!`, { id: toastId });
+            refetch(); // Update status directly from server
+        } catch (err: any) {
+            toast.error(err?.message || "Lỗi khi duyệt", { id: toastId });
+        } finally {
+            setApprovingId(null);
         }
     };
 
@@ -169,19 +187,36 @@ export default function CourseStudentsPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button
-                                                        onClick={() => handleSendReminder(st)}
-                                                        disabled={!canRemind || sendingId === st.id || sending || isCompleted}
-                                                        className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-indigo-600 disabled:hover:text-slate-700 shadow-sm"
-                                                        title={!canRemind ? "Mỗi học viên chỉ nhận 1 mail nhắc nhở mỗi ngày" : isCompleted ? "Học viên đã hoàn thành khóa học" : "Gửi email nhắc nhở học viên"}
-                                                    >
-                                                        {sendingId === st.id ? (
-                                                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                        ) : (
-                                                            <Mail className="h-3.5 w-3.5" />
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {st.status === 'PENDING' && (
+                                                            <button
+                                                                onClick={() => handleApprove(st)}
+                                                                disabled={approvingId === st.id || approving}
+                                                                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all shadow-sm border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 disabled:opacity-50"
+                                                                title="Phê duyệt tham gia khóa học"
+                                                            >
+                                                                {approvingId === st.id ? (
+                                                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                                ) : (
+                                                                    <CheckCircle className="h-3.5 w-3.5" />
+                                                                )}
+                                                                Duyệt
+                                                            </button>
                                                         )}
-                                                        Nhắc nhở
-                                                    </button>
+                                                        <button
+                                                            onClick={() => handleSendReminder(st)}
+                                                            disabled={!canRemind || sendingId === st.id || sending || isCompleted || st.status === 'PENDING'}
+                                                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-indigo-600 disabled:hover:text-slate-700 shadow-sm"
+                                                            title={!canRemind ? "Mỗi học viên chỉ nhận 1 mail nhắc nhở mỗi ngày" : isCompleted ? "Học viên đã hoàn thành khóa học" : "Gửi email nhắc nhở học viên"}
+                                                        >
+                                                            {sendingId === st.id ? (
+                                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                            ) : (
+                                                                <Mail className="h-3.5 w-3.5" />
+                                                            )}
+                                                            Nhắc nhở
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

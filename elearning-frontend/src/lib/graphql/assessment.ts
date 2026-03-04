@@ -8,6 +8,7 @@ export const GET_INSTRUCTOR_ASSESSMENTS = gql`
       description
       timeLimit
       passingScore
+      numberOfSets
       isActive
       createdAt
     }
@@ -21,6 +22,7 @@ export const CREATE_ASSESSMENT = gql`
       title
       timeLimit
       passingScore
+      numberOfSets
       isActive
     }
   }
@@ -42,9 +44,11 @@ export const GET_ASSESSMENT_DETAIL = gql`
       description
       timeLimit
       passingScore
+      numberOfSets
       isActive
       questions {
         id
+        setCode
         prompt
         options
         correctAnswer
@@ -59,6 +63,7 @@ export const CREATE_ASSESSMENT_QUESTION = gql`
   mutation CreateAssessmentQuestion($assessmentId: String!, $input: CreateQuestionInput!) {
     createAssessmentQuestion(assessmentId: $assessmentId, input: $input) {
       id
+      setCode
       prompt
       options
       correctAnswer
@@ -81,6 +86,12 @@ export const START_ASSESSMENT_ATTEMPT = gql`
       id
       startedAt
       assessmentId
+      setCode
+      questions {
+        id
+        prompt
+        options
+      }
     }
   }
 `;

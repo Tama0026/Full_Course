@@ -1,6 +1,12 @@
+export declare class ShuffledQuestion {
+    id: string;
+    prompt: string;
+    options: string[];
+}
 export declare class AssessmentQuestion {
     id: string;
     assessmentId: string;
+    setCode: string;
     prompt: string;
     options: string[];
     correctAnswer: string;
@@ -13,6 +19,7 @@ export declare class Assessment {
     description: string;
     timeLimit: number;
     passingScore: number;
+    numberOfSets: number;
     isActive: boolean;
     creatorId: string;
     createdAt: Date;
@@ -23,9 +30,11 @@ export declare class AssessmentAttempt {
     id: string;
     userId: string;
     assessmentId: string;
+    setCode: string;
     startedAt: Date;
     completedAt?: Date;
     score?: number;
     passed?: boolean;
     isInvalid: boolean;
+    questions?: ShuffledQuestion[];
 }
