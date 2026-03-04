@@ -41,9 +41,10 @@ async function refreshTokens(): Promise<boolean> {
  * Create an Apollo HttpLink.
  */
 function createHttpLink() {
-    const uri = process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/graphql";
+    // Luôn dùng relative URL "/graphql" để đi qua Next.js rewrite
+    // Điều này đảm bảo cookie HttpOnly được gửi kèm (cùng domain)
     return new HttpLink({
-        uri,
+        uri: "/graphql",
         credentials: "include",
         fetchOptions: { cache: "no-store" },
     });
