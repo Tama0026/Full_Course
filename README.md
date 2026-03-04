@@ -1,147 +1,303 @@
-# Fullstack eLearning Platform
+# 🎓 Full Course — Fullstack eLearning Platform
 
-Welcome to the fullstack eLearning Platform repository! This project consists of a modern frontend built with Next.js and a robust backend built with NestJS, utilizing GraphQL for efficient data fetching and manipulation.
+A modern, full-featured eLearning platform built with **Next.js 16** and **NestJS 11**, featuring AI-powered content, gamification, and secure JWT authentication.
 
-## Project Structure
+🌐 **Live Demo**: [https://full-course-eta.vercel.app](https://full-course-eta.vercel.app)
 
-This repository is organized into a monorepo-style structure containing two main directories:
+## 📸 Features Overview
 
-- `/elearning-frontend`: The Next.js web application.
-- `/elearning-backend`: The NestJS GraphQL server.
+### For Students
+- 📚 Browse & enroll in courses with category filtering
+- 🎬 Video lessons with progress tracking & resume playback
+- 📝 Interactive quizzes (AI-generated from lesson content)
+- 💬 Comments & discussion on each lesson
+- 🗒️ Timestamped notes synced with video
+- 🏆 Gamification: points, badges, leaderboard, login streaks
+- 🎓 Certificates upon course completion
+- 🤖 AI-powered learning assistant & skill assessment
 
-## Technologies Used
+### For Instructors
+- 📋 Course creation with curriculum editor (sections & lessons)
+- 🎥 Video upload via Cloudinary
+- 📝 Markdown lesson editor with rich content support
+- ❓ Quiz management with AI auto-generation
+- 📊 Student progress tracking & enrollment approval
+- 🏅 Custom badge creation for courses
 
-### Frontend (`elearning-frontend`)
-- **Framework**: [Next.js](https://nextjs.org/) (v16) with React 19
-- **Data Fetching**: [Apollo Client](https://www.apollographql.com/docs/react/) & GraphQL
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) (v4) & Radix UI
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **Media**: `react-player` for videos, Next Cloudinary for media assets
-- **Content Parsing**: `react-markdown`, `remark-gfm`, and `react-syntax-highlighter`
-- **Forms & Validation**: React Hook Form with Zod
-- **AI Integration**: Google GenAI
+### For Admins
+- 👥 User & course management
+- 📊 Platform-wide analytics & oversight
 
-### Backend (`elearning-backend`)
-- **Framework**: [NestJS](https://nestjs.com/) (v11)
-- **API**: GraphQL with Apollo Server (`@nestjs/graphql`, `@nestjs/apollo`)
-- **Database ORM**: [Prisma](https://www.prisma.io/) (`@prisma/client`)
-- **Authentication**: Passport.js, JWT (`@nestjs/jwt`), bcrypt
-- **Media Storage**: Cloudinary
-- **AI Integration**: Google GenAI
+## 🏗️ Architecture
 
-## Key Features
-- **User Authentication**: Secure JWT-based login and registration.
-- **Course & Lesson Management**: Curriculum editor for creating and managing courses.
-- **Video Playback**: Embedded video lessons.
-- **AI-Powered Quizzes**: Automatic generation of quizzes using Google Gemini AI based on lesson markdown content.
-- **Learning Interface**: Rich markdown rendering, progress tracking, and interactive view.
-- **Certificates**: Interactive certificates upon course completion.
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v20+ recommended)
-- npm, yarn, or pnpm
-- A relational database (configured via Prisma, typically PostgreSQL or MySQL)
-- Accounts and API Keys for:
-  - Google Gemini AI
-  - Cloudinary
-
-### 1. Backend Setup
-Navigate to the backend directory:
-```bash
-cd elearning-backend
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        DEPLOYMENT                                │
+├──────────────┬──────────────────┬────────────────┬───────────────┤
+│   Vercel     │    Railway       │    Neon        │  Cloudinary   │
+│   Frontend   │    Backend       │    Database    │  Media        │
+│   (Next.js)  │    (NestJS)      │  (PostgreSQL)  │  (Images/Vid) │
+└──────┬───────┴────────┬─────────┴───────┬────────┴───────┬───────┘
+       │                │                 │                │
+       │   Rewrite      │    Prisma ORM   │    Upload API  │
+       │   /graphql ──► │ ◄──────────────►│                │
+       │                │                 │                │
+└──────┴────────────────┴─────────────────┴────────────────┘
 ```
 
-Install dependencies:
+## 🛠️ Tech Stack
+
+### Frontend (`elearning-frontend`)
+| Category | Technology |
+|----------|-----------|
+| **Framework** | Next.js 16 (App Router) + React 19 |
+| **Data Fetching** | Apollo Client 4 + GraphQL |
+| **Styling** | Tailwind CSS 4 + Radix UI |
+| **Animations** | Framer Motion |
+| **Forms** | React Hook Form + Zod validation |
+| **Media** | react-player, next-cloudinary |
+| **Content** | react-markdown, react-syntax-highlighter |
+| **Charts** | Recharts |
+| **Auth** | jose (JWT verify in middleware) |
+| **AI** | Google Generative AI |
+
+### Backend (`elearning-backend`)
+| Category | Technology |
+|----------|-----------|
+| **Framework** | NestJS 11 |
+| **API** | GraphQL (Apollo Server 5) |
+| **Database** | PostgreSQL (Neon) |
+| **ORM** | Prisma 6 |
+| **Auth** | Passport.js + JWT + bcrypt |
+| **Media** | Cloudinary SDK |
+| **Email** | Nodemailer (SMTP) |
+| **AI** | Google Generative AI (Gemini) |
+
+## 📁 Project Structure
+
+```
+Full_Course/
+├── elearning-frontend/          # Next.js frontend
+│   └── src/
+│       ├── app/
+│       │   ├── (auth)/          # Login & Register pages
+│       │   ├── (marketing)/     # Public pages (home, courses, checkout)
+│       │   ├── (dashboard)/     # Protected dashboards
+│       │   │   ├── student/     # Student dashboard
+│       │   │   ├── instructor/  # Instructor dashboard
+│       │   │   ├── admin/       # Admin dashboard
+│       │   │   ├── profile/     # User profile
+│       │   │   ├── interview/   # AI mock interview
+│       │   │   └── certificates/# Certificate viewer
+│       │   ├── (learning)/      # Course learning interface
+│       │   └── api/auth/        # Server-side auth API routes
+│       ├── components/          # Reusable UI components
+│       ├── lib/                 # Apollo client, constants, GraphQL queries
+│       └── middleware.ts        # Route protection & RBAC
+│
+├── elearning-backend/           # NestJS backend
+│   ├── prisma/
+│   │   ├── schema.prisma        # Database schema
+│   │   └── seed.ts              # Seed data
+│   └── src/
+│       ├── auth/                # Authentication (JWT, Passport)
+│       ├── courses/             # Course CRUD
+│       ├── learning/            # Enrollment, progress, certificates
+│       ├── quiz/                # Quiz management
+│       ├── comments/            # Lesson comments
+│       ├── notes/               # Timestamped notes
+│       ├── orders/              # Course purchases
+│       ├── categories/          # Course categories
+│       ├── gamification/        # Points, badges, leaderboard, streaks
+│       ├── assessments/         # Standalone exams
+│       ├── ai/                  # AI services (quiz gen, assistant, rank)
+│       ├── interview/           # AI mock interview
+│       ├── cloudinary/          # Media upload & certificate generation
+│       ├── email/               # Email service (SMTP)
+│       └── prisma/              # Prisma service
+│
+└── README.md
+```
+
+## 🔐 Authentication Flow
+
+The app uses a **BFF (Backend for Frontend)** pattern with **HttpOnly cookies**:
+
+```
+1. User submits login form
+   → Browser calls POST /api/auth/login (Next.js API Route)
+   → Vercel server calls NestJS backend (server-to-server)
+   → Backend verifies credentials, returns JWT tokens
+   → Next.js sets HttpOnly cookies (access_token, refresh_token)
+
+2. Subsequent API calls
+   → Apollo Client calls /graphql (relative URL, same domain)
+   → Cookie sent automatically → Next.js rewrites to Railway backend
+   → Backend reads JWT from cookie → processes request
+
+3. Token expired (15 min)
+   → Apollo ErrorLink catches UNAUTHENTICATED error
+   → Auto-calls /api/auth/refresh using refresh_token cookie
+   → New tokens issued → original request retried silently
+
+4. Refresh token expired (7 days)
+   → All cookies cleared → redirect to /login
+```
+
+**Security highlights:**
+- ✅ HttpOnly cookies (JS cannot read tokens → XSS protection)
+- ✅ Secure + SameSite=Lax (HTTPS only, basic CSRF protection)
+- ✅ Short-lived access token (15 min) + long-lived refresh token (7 days)
+- ✅ bcrypt password hashing (10 rounds)
+- ✅ Role-based access control via middleware (STUDENT / INSTRUCTOR / ADMIN)
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js** v20+
+- **npm** (or yarn/pnpm)
+- **PostgreSQL** database (or use [Neon](https://neon.tech) free tier)
+- API keys for: **Google Gemini AI**, **Cloudinary**, **Gmail SMTP** (optional)
+
+### 1. Clone & Install
+
 ```bash
+git clone https://github.com/Tama0026/Full_Course.git
+cd Full_Course
+```
+
+### 2. Backend Setup
+
+```bash
+cd elearning-backend
 npm install
 ```
 
-**Configure Environment Variables:**
-Create a `.env` file in the `elearning-backend` directory and add your connection strings and secrets as follows:
-```env
-# Database connection string
-DATABASE_URL="file:./dev.db"  # Use your PostgreSQL/MySQL URL here if not using SQLite
+Create `.env` file:
 
-# JWT Configuration
-JWT_SECRET="super-secret-key-change-in-production"
+```env
+# Database
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+
+# JWT
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 JWT_EXPIRES_IN="15m"
-JWT_REFRESH_SECRET="super-refresh-secret-key-change-in-production"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-in-production"
 JWT_REFRESH_EXPIRES_IN="7d"
 
-# Google Gemini API
-GEMINI_API_KEY="your_gemini_api_key_here"
+# Google Gemini AI
+GEMINI_API_KEY="your_gemini_api_key"
 
-# Cloudinary Setup (replace with your real credentials)
+# Cloudinary
 CLOUDINARY_CLOUD_NAME="your_cloud_name"
 CLOUDINARY_API_KEY="your_api_key"
 CLOUDINARY_API_SECRET="your_api_secret"
+
+# Email (Gmail SMTP)
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="your-email@gmail.com"
+SMTP_PASS="your-app-password"
+SMTP_FROM="E-Learning <your-email@gmail.com>"
 ```
 
-Set up Prisma and Database:
+Set up database & start:
+
 ```bash
 npx prisma generate
-npx prisma db push
-# or npx prisma migrate dev
+npx prisma migrate dev    # Create tables
+npx prisma db seed        # Seed sample data
+npm run start:dev         # Start dev server (port 4000)
 ```
 
-Start the development server:
-```bash
-npm run start:dev
-```
-The backend GraphQL playground is typically available at `http://localhost:3000/graphql`.
+**Seeded accounts:**
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | `admin@elearning.com` | `Admin@123` |
+| Instructor | `instructor@example.com` | `password123` |
+| Student | `student@example.com` | `password123` |
 
-### 2. Frontend Setup
-Navigate to the frontend directory:
+### 3. Frontend Setup
+
 ```bash
 cd elearning-frontend
-```
-
-Install dependencies:
-```bash
 npm install
 ```
 
-**Configure Environment Variables:**
-Create a `.env.local` (or `.env`) file in the `elearning-frontend` directory and add the following variables:
+Create `.env.local` file:
+
 ```env
-NEXT_PUBLIC_GRAPHQL_ENDPOINT="http://127.0.0.1:3000/graphql"
-JWT_SECRET="super-secret-key-change-in-production"
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your_cloud_name"
+# For server-side API routes (points to backend directly)
+NEXT_PUBLIC_GRAPHQL_ENDPOINT="http://127.0.0.1:4000/graphql"
+
+# JWT secret (must match backend's JWT_SECRET for middleware verification)
+JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 ```
 
-Start the development server:
+Start the dev server:
+
 ```bash
-npm run dev
+npm run dev               # Start dev server (port 3000)
 ```
-The frontend application will run at `http://localhost:3000` (or `http://localhost:3001` if port 3000 is occupied).
 
-### 3. Cloudinary Certificate Template Setup
-To enable the automatic generation of course certificates upon completion, you need to upload a **Certificate Template Image** to Cloudinary with a specific **Public ID**.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-1. Go to your Cloudinary Media Library dashboard.
-2. Upload a blank certificate image (e.g., a `.jpg` or `.png` file) that serves as the background template for your certificates.
-3. Once uploaded, edit the image details and **rename its Public ID** to EXACTLY:
-   ```text
-   swt470ijgwmqhm6utf6h
-   ```
-   *(Note: This is the ID hardcoded in `elearning-backend/src/cloudinary/cloudinary.service.ts` to dynamically render student names, course names, and dates over the template).*
-4. Alternatively, if you want to use a different template ID, you must change the `templatePublicId` variable inside the `generateCertificateUrl` method located in `elearning-backend/src/cloudinary/cloudinary.service.ts`.
+> **Note**: Both frontend and backend must be running simultaneously for the app to work.
 
-## Common Commands
+### 4. Certificate Template (Optional)
 
-### Backend
-- `npm run start:dev` - Starts the development server with watch mode.
-- `npm run build` - Builds the application.
-- `npx prisma studio` - Opens the Prisma Studio to view and edit database records on `http://localhost:5555`.
+To enable automatic certificate generation:
 
-### Frontend
-- `npm run dev` - Starts the Next.js development server.
-- `npm run build` - Builds the Next.js application for production.
-- `npm run lint` - Runs ESLint.
+1. Upload a blank certificate template image to **Cloudinary**
+2. Set its **Public ID** to `swt470ijgwmqhm6utf6h`
+3. Or change `templatePublicId` in `elearning-backend/src/cloudinary/cloudinary.service.ts`
 
-## Development
+## ☁️ Deployment
 
-- Make sure both servers (Next.js and NestJS) are running concurrently during development.
-- For schema changes, after updating `schema.prisma` in the backend, always run `npx prisma generate` and reflect the required mutations/queries in the frontend.
+| Service | Platform | Free Tier |
+|---------|----------|-----------|
+| **Database** | [Neon](https://neon.tech) | ✅ 0.5GB free |
+| **Backend** | [Railway](https://railway.com) | ✅ $5/month credit |
+| **Frontend** | [Vercel](https://vercel.com) | ✅ Free (hobby) |
+
+### Deploy Backend (Railway)
+
+1. Connect GitHub repo → set **Root Directory**: `elearning-backend`
+2. **Build Command**: `npm install --include=dev && npx prisma generate && npx tsc -p tsconfig.build.json`
+3. **Start Command**: `npx prisma migrate deploy && npm run start:prod`
+4. Add all environment variables from `.env`
+5. Generate public domain (port `8080`)
+
+### Deploy Frontend (Vercel)
+
+1. Import GitHub repo → set **Root Directory**: `elearning-frontend`
+2. Add environment variables:
+   - `NEXT_PUBLIC_GRAPHQL_ENDPOINT` = `https://your-backend.up.railway.app/graphql`
+   - `JWT_SECRET` = same as backend
+3. Deploy — Vercel auto-builds on push
+
+> **Important**: The frontend's `next.config.ts` rewrites `/graphql` to the backend URL. Apollo Client uses relative URL `/graphql` so HttpOnly cookies work correctly across domains.
+
+## 📋 Common Commands
+
+### Backend (`elearning-backend`)
+| Command | Description |
+|---------|-------------|
+| `npm run start:dev` | Start dev server with hot reload |
+| `npm run build` | Build for production |
+| `npm run start:prod` | Start production server |
+| `npx prisma studio` | Open Prisma Studio (DB GUI) |
+| `npx prisma migrate dev` | Create & apply migration |
+| `npx prisma db seed` | Seed sample data |
+
+### Frontend (`elearning-frontend`)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Next.js dev server |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+
+## 📄 License
+
+This project is UNLICENSED — private use only.

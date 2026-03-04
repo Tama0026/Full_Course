@@ -3,7 +3,7 @@
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_ASSESSMENT_DETAIL, CREATE_ASSESSMENT_QUESTION, DELETE_ASSESSMENT_QUESTION } from "@/lib/graphql/assessment";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, CheckCircle2, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -21,6 +21,10 @@ export default function AssessmentEditorPage() {
     const [deleteQuestion] = useMutation(DELETE_ASSESSMENT_QUESTION, { onCompleted: () => refetch() });
 
     const [showForm, setShowForm] = useState(false);
+    const [activeSet, setActiveSet] = useState(1);
+    const [autoGenerating, setAutoGenerating] = useState(false);
+    const [copyFromSet, setCopyFromSet] = useState(1);
+
     const [formData, setFormData] = useState({
         prompt: "",
         options: ["", "", "", ""],
@@ -50,6 +54,7 @@ export default function AssessmentEditorPage() {
                 variables: {
                     assessmentId: id,
                     input: {
+                        setCode: `SET_${activeSet}`,
                         prompt: formData.prompt,
                         options: formData.options,
                         correctAnswer: formData.correctAnswer.toString(),
@@ -94,6 +99,46 @@ export default function AssessmentEditorPage() {
         return <div className="p-10 text-center">Không tìm thấy bài thi</div>;
     }
 
+    const handleAutoGenerate = async () => {
+        if (!ast || ast.numberOfSets <= 1) return;
+        const sourceSetCode = `SET_${copyFromSet}`;
+        const sourceQuestions = ast.questions?.filter((q: any) => q.setCode === sourceSetCode) || [];
+        if (sourceQuestions.length === 0) {
+            return toast.error(`Mã đề ${copyFromSet} chưa có câu hỏi nào để copy!`);
+        }
+
+        const targetSet = `SET_${activeSet}`;
+        if (!confirm(`Sao chép ${sourceQuestions.length} câu hỏi từ Mã đề ${copyFromSet} sang Mã đề ${activeSet}. Tiếp tục?`)) return;
+
+        setAutoGenerating(true);
+        try {
+            const shuffledQuestions = [...sourceQuestions].sort(() => Math.random() - 0.5);
+            for (const q of shuffledQuestions) {
+                await createQuestion({
+                    variables: {
+                        assessmentId: id,
+                        input: {
+                            setCode: targetSet,
+                            prompt: q.prompt,
+                            options: q.options,
+                            correctAnswer: q.correctAnswer,
+                            explanation: q.explanation || "",
+                            order: 1
+                        }
+                    }
+                });
+            }
+            toast.success(`Đã copy ${sourceQuestions.length} câu từ Mã đề ${copyFromSet} sang Mã đề ${activeSet}!`);
+            refetch();
+        } catch (error: any) {
+            toast.error("Lỗi khi tạo tự động: " + error.message);
+        } finally {
+            setAutoGenerating(false);
+        }
+    };
+
+    const currentQuestions = ast.questions?.filter((q: any) => q.setCode === `SET_${activeSet}`) || [];
+
     return (
         <div className="p-6 max-w-4xl mx-auto space-y-6">
             <button
@@ -106,15 +151,68 @@ export default function AssessmentEditorPage() {
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <h1 className="text-2xl font-bold text-slate-900 mb-2">{ast.title}</h1>
                 <p className="text-slate-500">{ast.description}</p>
-                <div className="flex gap-4 mt-4 text-sm font-medium text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 w-fit">
+                <div className="flex gap-4 mt-4 text-sm font-medium text-slate-600 w-fit">
                     <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">⏱ Thời gian: {ast.timeLimit} phút</span>
                     <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">🎯 Điểm đỗ: {ast.passingScore}%</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">❓ Câu hỏi: {ast.questions?.length || 0}</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">📝 Mã đề: {ast.numberOfSets}</span>
                 </div>
             </div>
 
+            {ast.numberOfSets > 1 && (
+                <>
+                    <div className="flex gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200 overflow-x-auto overflow-y-hidden">
+                        {Array.from({ length: ast.numberOfSets }).map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setActiveSet(i + 1)}
+                                className={`px-6 py-2 rounded-lg font-bold text-sm whitespace-nowrap transition-colors ${activeSet === i + 1
+                                    ? "bg-white text-violet-700 shadow-sm"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                                    }`}
+                            >
+                                Mã đề {i + 1}
+                            </button>
+                        ))}
+                    </div>
+
+                    {currentQuestions.length === 0 && (
+                        <div className="flex items-center gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-2">
+                            <p className="text-sm text-amber-800 font-medium flex-1 min-w-[200px]">
+                                ⚠️ Mã đề {activeSet} chưa có câu hỏi. Copy từ mã đề khác:
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={copyFromSet}
+                                    onChange={(e) => setCopyFromSet(parseInt(e.target.value))}
+                                    className="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium bg-white focus:ring-violet-500 focus:border-violet-500"
+                                >
+                                    {Array.from({ length: ast.numberOfSets }).map((_, i) => {
+                                        const setNum = i + 1;
+                                        if (setNum === activeSet) return null;
+                                        const count = ast.questions?.filter((q: any) => q.setCode === `SET_${setNum}`).length || 0;
+                                        return (
+                                            <option key={setNum} value={setNum}>
+                                                Mã đề {setNum} ({count} câu)
+                                            </option>
+                                        );
+                                    })}
+                                </select>
+                                <button
+                                    onClick={handleAutoGenerate}
+                                    disabled={autoGenerating}
+                                    className="flex items-center gap-2 text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 px-5 py-2.5 rounded-xl shadow-sm disabled:opacity-50 transition-colors whitespace-nowrap"
+                                >
+                                    {autoGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                                    Copy sang Mã đề {activeSet}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-slate-900">Danh sách câu hỏi</h2>
+                <h2 className="text-xl font-bold text-slate-900">Danh sách câu hỏi {ast.numberOfSets > 1 ? `(Mã đề ${activeSet})` : ""}</h2>
                 {!showForm && (
                     <button
                         onClick={() => setShowForm(true)}
@@ -127,7 +225,7 @@ export default function AssessmentEditorPage() {
 
             {showForm && (
                 <form onSubmit={handleCreate} className="bg-violet-50/50 p-6 rounded-2xl border border-violet-100 space-y-4 animate-in fade-in zoom-in-95">
-                    <h3 className="font-bold text-violet-900 mb-2">Thêm câu hỏi mới</h3>
+                    <h3 className="font-bold text-violet-900 mb-2">Thêm câu hỏi mới ({ast.numberOfSets > 1 ? `Mã đề ${activeSet}` : "Chung"})</h3>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1">Nội dung câu hỏi</label>
                         <textarea
@@ -184,13 +282,13 @@ export default function AssessmentEditorPage() {
             )}
 
             <div className="space-y-4">
-                {ast.questions?.length === 0 && !showForm && (
+                {currentQuestions.length === 0 && !showForm && (
                     <div className="text-center p-10 bg-slate-50 rounded-2xl border border-slate-200 border-dashed">
                         <p className="text-slate-500 italic">Chưa có câu hỏi nào. Hãy thêm câu hỏi đầu tiên!</p>
                     </div>
                 )}
 
-                {ast.questions?.map((q: any, i: number) => {
+                {currentQuestions.map((q: any, i: number) => {
                     const correctIdx = parseInt(q.correctAnswer) || 0;
                     return (
                         <div key={q.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 relative group">

@@ -2,8 +2,10 @@ import { Module } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CoursesResolver, LessonResolver } from './courses.resolver';
 import { CourseRepository } from './course.repository';
+import { EmailModule } from '../email/email.module';
 
 @Module({
+  imports: [EmailModule],
   providers: [
     CoursesService,
     CoursesResolver,
@@ -12,4 +14,4 @@ import { CourseRepository } from './course.repository';
   ],
   exports: [CoursesService, CourseRepository],
 })
-export class CoursesModule {}
+export class CoursesModule { }

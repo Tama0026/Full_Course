@@ -13,12 +13,18 @@ exports.CoursesService = void 0;
 const common_1 = require("@nestjs/common");
 const course_repository_1 = require("./course.repository");
 const prisma_service_1 = require("../prisma/prisma.service");
+const email_service_1 = require("../email/email.service");
+const config_1 = require("@nestjs/config");
 let CoursesService = class CoursesService {
     courseRepository;
     prisma;
-    constructor(courseRepository, prisma) {
+    emailService;
+    configService;
+    constructor(courseRepository, prisma, emailService, configService) {
         this.courseRepository = courseRepository;
         this.prisma = prisma;
+        this.emailService = emailService;
+        this.configService = configService;
     }
     async validateCourseContent(courseId) {
         const course = await this.prisma.course.findUnique({
@@ -418,8 +424,11 @@ let CoursesService = class CoursesService {
             where: { id: enrollment.id },
             data: { status: 'APPROVED', enrolledAt: new Date() },
         });
-        console.log(`[NOTIFICATION OUTBOX] Gửi tới: ${enrollment.user.email}`);
-        console.log(`[NOTIFICATION CONTENT] Chúc mừng! Đơn đăng ký khóa học "${course.title}" của bạn đã được phê duyệt. Hãy bắt đầu học ngay nhé!`);
+        const frontendUrl = this.configService.get('FRONTEND_URL') ||
+            'http://localhost:3000';
+        const courseUrl = `${frontendUrl}/courses/${courseId}`;
+        await this.emailService.sendEnrollmentApprovedEmail(enrollment.user.email, enrollment.user.name || 'Học viên', course.title, courseUrl);
+        console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
         return true;
     }
     async rejectEnrollment(studentId, courseId, instructorId) {
@@ -480,6 +489,8 @@ exports.CoursesService = CoursesService;
 exports.CoursesService = CoursesService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [course_repository_1.CourseRepository,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        email_service_1.EmailService,
+        config_1.ConfigService])
 ], CoursesService);
 //# sourceMappingURL=courses.service.js.map

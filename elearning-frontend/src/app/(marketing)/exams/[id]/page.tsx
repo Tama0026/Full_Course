@@ -7,7 +7,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-
 import { useParams } from "next/navigation";
 
 export default function TakeAssessmentPage() {
@@ -20,10 +19,15 @@ export default function TakeAssessmentPage() {
 
     // Exam states
     const [attemptId, setAttemptId] = useState<string | null>(null);
+    const [attemptInfo, setAttemptInfo] = useState<any>(null);
     const [startedAt, setStartedAt] = useState<Date | null>(null);
     const [timeLeft, setTimeLeft] = useState<number | null>(null);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [result, setResult] = useState<any>(null);
+
+    // Carousel states
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [direction, setDirection] = useState(0);
 
     const { data: detailData, loading: detailLoading } = useQuery(GET_ASSESSMENT_DETAIL, {
         variables: { id: assessmentId }
@@ -31,8 +35,10 @@ export default function TakeAssessmentPage() {
 
     const [startAttempt, { loading: starting }] = useMutation(START_ASSESSMENT_ATTEMPT, {
         onCompleted: (data: any) => {
-            setAttemptId(data.startAssessmentAttempt.id);
-            setStartedAt(new Date(parseInt(data.startAssessmentAttempt.startedAt)));
+            const attempt = data.startAssessmentAttempt;
+            setAttemptId(attempt.id);
+            setAttemptInfo(attempt);
+            setStartedAt(new Date(parseInt(attempt.startedAt)));
             setViewState("taking");
             setShowWarningModal(false);
         },
@@ -100,6 +106,27 @@ export default function TakeAssessmentPage() {
     };
 
     const isLowTime = timeLeft !== null && timeLeft <= 60; // Less than 1 min
+
+    const slideVariants = {
+        enter: (direction: number) => ({ x: direction > 0 ? 50 : -50, opacity: 0 }),
+        center: { x: 0, opacity: 1 },
+        exit: (direction: number) => ({ x: direction < 0 ? 50 : -50, opacity: 0 })
+    };
+
+    const handleNext = () => {
+        if (!attemptInfo) return;
+        if (currentQuestionIndex < attemptInfo.questions.length - 1) {
+            setDirection(1);
+            setCurrentQuestionIndex(prev => prev + 1);
+        }
+    };
+
+    const handlePrev = () => {
+        if (currentQuestionIndex > 0) {
+            setDirection(-1);
+            setCurrentQuestionIndex(prev => prev - 1);
+        }
+    };
 
     return (
         <div className="bg-slate-50 min-h-screen py-10 px-4">
@@ -170,11 +197,14 @@ export default function TakeAssessmentPage() {
                 </AnimatePresence>
 
                 {/* 2. TAKING VIEW */}
-                {viewState === "taking" && (
+                {viewState === "taking" && attemptInfo && (
                     <div className="space-y-6">
-                        {/* Sticky Header with Timer */}
-                        <div className={`sticky top-4 z-40 rounded-2xl p-4 flex items-center justify-between shadow-lg transition-colors ${isLowTime ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
-                            <div className="font-medium truncate max-w-[200px] sm:max-w-xs">{assessment.title}</div>
+                        {/* Sticky Header with Timer & attemptInfo */}
+                        <div className={`sticky top-4 z-40 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-lg transition-colors ${isLowTime ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
+                            <div className="flex flex-col">
+                                <div className="font-bold truncate max-w-[200px] sm:max-w-xs">{assessment.title}</div>
+                                <div className="text-xs opacity-80 bg-white/20 w-fit px-2 py-0.5 rounded-full mt-1">Mã Khoá: {attemptInfo.setCode}</div>
+                            </div>
                             <div className="flex gap-4 items-center">
                                 <span className="text-sm opacity-80">Còn lại</span>
                                 <div className={`text-2xl font-mono font-bold tracking-wider ${isLowTime ? 'animate-pulse' : ''}`}>
@@ -190,33 +220,69 @@ export default function TakeAssessmentPage() {
                             </div>
                         </div>
 
-                        {/* Questions List */}
-                        <div className="space-y-6">
-                            {(assessment.questions || []).map((q: any, idx: number) => (
-                                <div key={q.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                    <h3 className="text-lg font-medium text-slate-900 mb-4">
-                                        <span className="font-bold mr-2 text-blue-600">Câu {idx + 1}:</span>
-                                        {q.prompt}
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {q.options.map((opt: string, oIdx: number) => {
-                                            const isSelected = answers[q.id] === opt;
-                                            return (
-                                                <button
-                                                    key={oIdx}
-                                                    onClick={() => handleSelectAnswer(q.id, opt)}
-                                                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${isSelected
-                                                        ? 'border-blue-500 bg-blue-50 text-blue-900'
-                                                        : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50 text-slate-700'
-                                                        }`}
-                                                >
-                                                    {opt}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
+                        {/* Questions Carousel */}
+                        <div className="relative overflow-hidden min-h-[400px]">
+                            <AnimatePresence mode="wait" custom={direction}>
+                                {attemptInfo.questions[currentQuestionIndex] && (() => {
+                                    const q = attemptInfo.questions[currentQuestionIndex];
+                                    return (
+                                        <motion.div
+                                            key={currentQuestionIndex}
+                                            custom={direction}
+                                            variants={slideVariants}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
+                                            transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                                            className="bg-white p-6 sm:p-10 rounded-2xl border border-slate-200 shadow-sm"
+                                        >
+                                            <div className="flex justify-between items-center mb-6">
+                                                <span className="text-sm font-bold text-violet-600 bg-violet-50 px-3 py-1 rounded-full">
+                                                    Câu {currentQuestionIndex + 1} / {attemptInfo.questions.length}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-xl font-medium text-slate-900 mb-8 leading-relaxed">
+                                                {q.prompt}
+                                            </h3>
+                                            <div className="space-y-3">
+                                                {q.options.map((opt: string, oIdx: number) => {
+                                                    const isSelected = answers[q.id] === opt;
+                                                    return (
+                                                        <button
+                                                            key={oIdx}
+                                                            onClick={() => handleSelectAnswer(q.id, opt)}
+                                                            className={`w-full text-left p-4 rounded-xl border-2 transition-all ${isSelected
+                                                                ? 'border-blue-500 bg-blue-50 text-blue-900'
+                                                                : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50 text-slate-700'
+                                                                }`}
+                                                        >
+                                                            {opt}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })()}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Navigation */}
+                        <div className="flex justify-between items-center pt-4">
+                            <button
+                                onClick={handlePrev}
+                                disabled={currentQuestionIndex === 0}
+                                className="px-6 py-3 bg-white text-slate-700 border border-slate-200 font-bold rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                            >
+                                Câu Trước
+                            </button>
+                            <button
+                                onClick={handleNext}
+                                disabled={currentQuestionIndex === attemptInfo.questions.length - 1}
+                                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            >
+                                Câu Tiếp Theo
+                            </button>
                         </div>
                     </div>
                 )}

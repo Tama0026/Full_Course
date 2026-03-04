@@ -1,12 +1,27 @@
 import { ObjectType, Field, ID, Int, Float } from '@nestjs/graphql';
 
 @ObjectType()
+export class ShuffledQuestion {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  prompt: string;
+
+  @Field(() => [String])
+  options: string[];
+}
+
+@ObjectType()
 export class AssessmentQuestion {
   @Field(() => ID)
   id: string;
 
   @Field()
   assessmentId: string;
+
+  @Field()
+  setCode: string;
 
   @Field()
   prompt: string;
@@ -41,6 +56,9 @@ export class Assessment {
   @Field(() => Float)
   passingScore: number;
 
+  @Field(() => Int)
+  numberOfSets: number;
+
   @Field()
   isActive: boolean;
 
@@ -69,6 +87,9 @@ export class AssessmentAttempt {
   assessmentId: string;
 
   @Field()
+  setCode: string;
+
+  @Field()
   startedAt: Date;
 
   @Field({ nullable: true })
@@ -82,4 +103,7 @@ export class AssessmentAttempt {
 
   @Field()
   isInvalid: boolean;
+
+  @Field(() => [ShuffledQuestion], { nullable: 'itemsAndList' })
+  questions?: ShuffledQuestion[];
 }

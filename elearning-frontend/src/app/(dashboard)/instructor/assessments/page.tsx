@@ -21,6 +21,7 @@ export default function InstructorAssessmentsPage() {
         description: "",
         timeLimit: 30,
         passingScore: 80,
+        numberOfSets: 1,
         isActive: true
     });
     const [creating, setCreating] = useState(false);
@@ -34,14 +35,15 @@ export default function InstructorAssessmentsPage() {
                     input: {
                         ...formData,
                         timeLimit: parseInt(formData.timeLimit.toString()),
-                        passingScore: parseFloat(formData.passingScore.toString())
+                        passingScore: parseFloat(formData.passingScore.toString()),
+                        numberOfSets: parseInt(formData.numberOfSets.toString())
                     }
                 }
             });
             const newAssessmentId = (result.data as any)?.createAssessment?.id;
             toast.success("Tạo kỳ thi thành công! Vui lòng thêm câu hỏi.");
             setShowCreateForm(false);
-            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, isActive: true });
+            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, numberOfSets: 1, isActive: true });
 
             if (newAssessmentId) {
                 router.push(`/instructor/assessments/${newAssessmentId}`);
@@ -137,15 +139,29 @@ export default function InstructorAssessmentsPage() {
                                 />
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
-                            <input
-                                type="checkbox"
-                                id="isActive"
-                                checked={formData.isActive}
-                                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                className="rounded text-violet-600 focus:ring-violet-500"
-                            />
-                            <label htmlFor="isActive" className="text-sm font-medium text-slate-700">Trạng thái Mở/Đóng kỳ thi</label>
+                        <div className="flex items-center gap-4 mt-2">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Số lượng Mã đề</label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    required
+                                    value={formData.numberOfSets}
+                                    onChange={(e) => setFormData({ ...formData, numberOfSets: parseInt(e.target.value) || 1 })}
+                                    className="w-full border-slate-200 rounded-lg p-2.5 focus:ring-violet-500 focus:border-violet-500"
+                                />
+                            </div>
+                            <div className="flex-1 flex items-center gap-2 mt-6">
+                                <input
+                                    type="checkbox"
+                                    id="isActive"
+                                    checked={formData.isActive}
+                                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                    className="rounded text-violet-600 focus:ring-violet-500"
+                                />
+                                <label htmlFor="isActive" className="text-sm font-medium text-slate-700">Trạng thái Mở kỳ thi</label>
+                            </div>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
                             <button
@@ -189,14 +205,18 @@ export default function InstructorAssessmentsPage() {
 
                             <p className="text-sm text-slate-500 line-clamp-2 mb-6 flex-1">{ast.description}</p>
 
-                            <div className="grid grid-cols-2 gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <div className="grid grid-cols-3 gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <div className="text-center border-r border-slate-200">
                                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Thời Gian</p>
                                     <p className="font-semibold text-slate-700">{ast.timeLimit} Phút</p>
                                 </div>
-                                <div className="text-center">
+                                <div className="text-center border-r border-slate-200">
                                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Điểm Sàn</p>
                                     <p className="font-semibold text-slate-700">{ast.passingScore}%</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Số Mã đề</p>
+                                    <p className="font-semibold text-slate-700">{ast.numberOfSets || 1}</p>
                                 </div>
                             </div>
 

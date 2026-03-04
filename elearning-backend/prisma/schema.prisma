@@ -319,6 +319,7 @@ model Assessment {
   description  String
   timeLimit    Int // Minutes
   passingScore Int      @default(50)
+  numberOfSets Int      @default(1)
   isActive     Boolean  @default(true)
   creatorId    String
   createdAt    DateTime @default(now())
@@ -332,6 +333,7 @@ model Assessment {
 model AssessmentQuestion {
   id            String   @id @default(uuid())
   assessmentId  String
+  setCode       String   @default("SET_1")
   content       String
   options       String // JSON string
   correctAnswer Int
@@ -345,6 +347,7 @@ model AssessmentAttempt {
   id           String    @id @default(uuid())
   assessmentId String
   userId       String
+  setCode      String    @default("SET_1")
   score        Int?
   passed       Boolean   @default(false)
   isInvalid    Boolean   @default(false) // Cheating flagged

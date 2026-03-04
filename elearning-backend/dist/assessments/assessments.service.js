@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 let AssessmentsService = class AssessmentsService {
     prisma;
+    attemptCache = new Map();
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -75,6 +76,7 @@ let AssessmentsService = class AssessmentsService {
         return this.prisma.assessmentQuestion.create({
             data: {
                 assessmentId,
+                setCode: data.setCode,
                 content: data.prompt,
                 options: JSON.stringify(data.options),
                 correctAnswer: parseInt(data.correctAnswer) || 0,
@@ -93,15 +95,43 @@ let AssessmentsService = class AssessmentsService {
     async startAttempt(assessmentId, userId) {
         const assessment = await this.prisma.assessment.findUnique({
             where: { id: assessmentId, isActive: true },
+            include: { questions: true },
         });
         if (!assessment)
             throw new common_1.NotFoundException('Assessment not found or inactive');
-        return this.prisma.assessmentAttempt.create({
+        const setCodes = [...new Set(assessment.questions.map((q) => q.setCode))];
+        const pickedSetCode = setCodes.length > 0
+            ? setCodes[Math.floor(Math.random() * setCodes.length)]
+            : 'SET_1';
+        const setQuestions = assessment.questions.filter((q) => q.setCode === pickedSetCode);
+        const shuffledQuestions = [...setQuestions].sort(() => Math.random() - 0.5);
+        const correctMap = {};
+        const clientQuestions = shuffledQuestions.map((q) => {
+            const options = JSON.parse(q.options || '[]');
+            const correctText = options[q.correctAnswer];
+            correctMap[q.id] = correctText;
+            const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+            return {
+                id: q.id,
+                prompt: q.content,
+                options: shuffledOptions,
+            };
+        });
+        const attempt = await this.prisma.assessmentAttempt.create({
             data: {
                 userId,
                 assessmentId,
+                setCode: pickedSetCode,
             },
         });
+        this.attemptCache.set(attempt.id, {
+            questions: clientQuestions,
+            correctMap,
+        });
+        return {
+            ...attempt,
+            questions: clientQuestions,
+        };
     }
     async submitAttempt(attemptId, userId, answers) {
         const attempt = await this.prisma.assessmentAttempt.findUnique({
@@ -117,16 +147,37 @@ let AssessmentsService = class AssessmentsService {
         const isInvalid = durationSec > attempt.assessment.timeLimit * 60 + 30;
         let score = 0;
         if (!isInvalid) {
-            const questions = attempt.assessment.questions;
-            let correctCount = 0;
-            for (const ans of answers) {
-                const q = questions.find((q) => q.id === ans.questionId);
-                if (q && q.correctAnswer.toString() === ans.answer) {
-                    correctCount++;
+            const cached = this.attemptCache.get(attemptId);
+            if (cached) {
+                let correctCount = 0;
+                for (const ans of answers) {
+                    if (cached.correctMap[ans.questionId] === ans.answer) {
+                        correctCount++;
+                    }
                 }
+                score =
+                    cached.questions.length > 0
+                        ? (correctCount / cached.questions.length) * 100
+                        : 0;
             }
-            score =
-                questions.length > 0 ? (correctCount / questions.length) * 100 : 0;
+            else {
+                const questions = attempt.assessment.questions.filter((q) => q.setCode === attempt.setCode);
+                let correctCount = 0;
+                for (const ans of answers) {
+                    const q = questions.find((q) => q.id === ans.questionId);
+                    if (q) {
+                        const opts = JSON.parse(q.options || '[]');
+                        if (opts[q.correctAnswer] === ans.answer) {
+                            correctCount++;
+                        }
+                    }
+                }
+                score =
+                    questions.length > 0 ? (correctCount / questions.length) * 100 : 0;
+            }
+        }
+        if (this.attemptCache.has(attemptId)) {
+            this.attemptCache.delete(attemptId);
         }
         const passed = !isInvalid && score >= attempt.assessment.passingScore;
         return this.prisma.assessmentAttempt.update({
