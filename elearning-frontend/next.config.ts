@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Lấy URL backend từ biến môi trường, fallback về localhost cho dev
+const backendUrl =
+  process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT?.replace("/graphql", "") ||
+  "http://127.0.0.1:4000";
+
 const nextConfig: NextConfig = {
   // Proxy /graphql requests to the NestJS backend
   // This keeps all browser requests on the same origin
@@ -8,7 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/graphql",
-        destination: "http://127.0.0.1:4000/graphql",
+        destination: `${backendUrl}/graphql`,
       },
     ];
   },
