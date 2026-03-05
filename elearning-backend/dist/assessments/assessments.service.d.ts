@@ -169,13 +169,13 @@ export declare class AssessmentsService {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     }>;
     submitAttempt(attemptId: string, userId: string, answers: {
@@ -186,13 +186,13 @@ export declare class AssessmentsService {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     }>;
     getAttemptForSocket(attemptId: string, userId: string): Promise<({
@@ -204,13 +204,13 @@ export declare class AssessmentsService {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     }) | null>;
     logViolation(attemptId: string, type: string): Promise<{
@@ -241,13 +241,13 @@ export declare class AssessmentsService {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     })[]>;
     getAssessmentReport(assessmentId: string, creatorId: string): Promise<{

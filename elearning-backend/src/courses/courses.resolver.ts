@@ -458,4 +458,33 @@ export class CoursesResolver {
             user.role === 'ADMIN' ? 'ADMIN' : user.id,
         );
     }
+
+    // ==================== DISCOVERY & ENROLL CODE ====================
+
+    /**
+     * Get courses for the Explore/Discovery page.
+     * Supports search and category filtering.
+     */
+    @Query(() => [Course], { name: 'discoveryCourses' })
+    @UseGuards(OptionalJwtAuthGuard)
+    async getDiscoveryCourses(
+        @Args('search', { type: () => String, nullable: true }) search?: string,
+        @Args('category', { type: () => String, nullable: true }) category?: string,
+    ): Promise<Course[]> {
+        return this.coursesService.getDiscoveryCourses(search, category) as unknown as Course[];
+    }
+
+    /**
+     * Enroll a student by entering a course enroll code.
+     * Case-insensitive matching via .toUpperCase().
+     */
+    @Mutation(() => Boolean, { name: 'enrollByCode' })
+    @UseGuards(JwtAuthGuard)
+    async enrollByCode(
+        @Args('code', { type: () => String }) code: string,
+        @CurrentUser() user: { id: string },
+    ): Promise<boolean> {
+        await this.coursesService.enrollByCode(code, user.id);
+        return true;
+    }
 }

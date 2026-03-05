@@ -65,24 +65,31 @@ model User {
   questionBanks        QuestionBank[]        @relation("QuestionBankOwner")
 }
 
+enum CourseType {
+  MARKETPLACE
+  PRIVATE
+}
+
 model Course {
-  id                 String   @id @default(uuid())
+  id                 String     @id @default(uuid())
   title              String
   description        String
   price              Float
+  type               CourseType @default(MARKETPLACE)
+  enrollCode         String?    @unique
   thumbnail          String?
   category           String?
-  learningOutcomes   String   @default("[]") // JSON array of learning outcome strings
-  averageRating      Float    @default(0)
-  reviewCount        Int      @default(0)
-  totalDuration      Int      @default(0) // In seconds
-  published          Boolean  @default(false)
-  isActive           Boolean  @default(true)
+  learningOutcomes   String     @default("[]") // JSON array of learning outcome strings
+  averageRating      Float      @default(0)
+  reviewCount        Int        @default(0)
+  totalDuration      Int        @default(0) // In seconds
+  published          Boolean    @default(false)
+  isActive           Boolean    @default(true)
   maxStudents        Int?
-  isApprovalRequired Boolean  @default(false)
+  isApprovalRequired Boolean    @default(false)
   instructorId       String
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   // Relations
   instructor   User          @relation("InstructorCourses", fields: [instructorId], references: [id])

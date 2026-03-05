@@ -1,6 +1,12 @@
-import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float, registerEnumType } from '@nestjs/graphql';
 import { User } from '../../auth/entities/user.entity';
 import { Section } from './section.entity';
+import { CourseType } from '@prisma/client';
+
+registerEnumType(CourseType, {
+  name: 'CourseType',
+  description: 'Type of the course: MARKETPLACE (public) or PRIVATE (code-only)',
+});
 
 @ObjectType()
 export class Course {
@@ -15,6 +21,12 @@ export class Course {
 
   @Field(() => Float)
   price: number;
+
+  @Field(() => CourseType)
+  type: CourseType;
+
+  @Field({ nullable: true })
+  enrollCode?: string;
 
   @Field({ nullable: true })
   thumbnail?: string;

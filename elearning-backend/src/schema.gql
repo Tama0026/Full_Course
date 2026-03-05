@@ -256,6 +256,7 @@ type Course {
   category: String
   createdAt: DateTime!
   description: String!
+  enrollCode: String
   id: ID!
   instructor: User
   instructorId: String!
@@ -270,6 +271,7 @@ type Course {
   thumbnail: String
   title: String!
   totalDuration: Float!
+  type: CourseType!
   updatedAt: DateTime!
 }
 
@@ -306,6 +308,12 @@ type CourseStudentProgress {
   chapterTitle: String!
   completedAt: DateTime!
   lessonTitle: String!
+}
+
+"""Type of the course: MARKETPLACE (public) or PRIVATE (code-only)"""
+enum CourseType {
+  MARKETPLACE
+  PRIVATE
 }
 
 input CreateAssessmentInput {
@@ -357,6 +365,7 @@ input CreateCourseInput {
   published: Boolean = false
   thumbnail: String
   title: String!
+  type: CourseType = MARKETPLACE
 }
 
 input CreateLessonInput {
@@ -521,6 +530,7 @@ type Mutation {
   deleteNote(id: String!): Note!
   deleteQuestionBank(id: String!): QuestionBank!
   deleteSection(id: String!): Section!
+  enrollByCode(code: String!): Boolean!
   generateAiExamQuestions(assessmentId: String!, bankId: String, questionCount: Int!, setCode: String! = "SET_1"): Assessment!
   generateLessonContent(courseTitle: String!, nonce: Float, title: String!): String!
   generateLessonContentWithQuiz(courseTitle: String!, lessonId: String!, quizCount: Int! = 5, title: String!): String!
@@ -592,6 +602,7 @@ type Query {
   adminAllBadges: [AdminBadgeType!]!
   adminAllCourses: [AdminCourse!]!
   adminStats: AdminStats!
+  aiRecommendations: String!
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
   assessment(id: String!): Assessment!
@@ -603,6 +614,7 @@ type Query {
   courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
   courses: [Course!]!
+  discoveryCourses(category: String, search: String): [Course!]!
   getCourseStudents(courseId: String!): [CourseStudent!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!

@@ -22,8 +22,8 @@ export declare class RemediationResolver {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        totalQuestions: number;
         assessmentId: string;
+        totalQuestions: number;
         scorePercent: number;
         wrongCount: number;
         aiAnalysis: string;

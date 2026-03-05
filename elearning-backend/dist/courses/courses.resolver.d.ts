@@ -66,4 +66,8 @@ export declare class CoursesResolver {
     sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;
     approveEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
     rejectEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
+    getDiscoveryCourses(search?: string, category?: string): Promise<Course[]>;
+    enrollByCode(code: string, user: {
+        id: string;
+    }): Promise<boolean>;
 }

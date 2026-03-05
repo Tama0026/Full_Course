@@ -26,8 +26,8 @@ export declare class RemediationService {
         createdAt: Date;
         updatedAt: Date;
         userId: string;
-        totalQuestions: number;
         assessmentId: string;
+        totalQuestions: number;
         scorePercent: number;
         wrongCount: number;
         aiAnalysis: string;

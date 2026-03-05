@@ -11,8 +11,10 @@ import {
     CheckCircle2,
     GraduationCap,
     LayoutList,
+    Lock,
     Loader2,
     Plus,
+    ShoppingCart,
     Sparkles,
     Trash2,
     Video,
@@ -65,6 +67,7 @@ export default function CreateCoursePage() {
     const [learningOutcomes, setLearningOutcomes] = useState<string[]>([""]);
     const [maxStudents, setMaxStudents] = useState<number | "">("");
     const [isApprovalRequired, setIsApprovalRequired] = useState(false);
+    const [courseType, setCourseType] = useState<"MARKETPLACE" | "PRIVATE">("MARKETPLACE");
     const [suggestingAi, setSuggestingAi] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -236,6 +239,7 @@ export default function CreateCoursePage() {
                         description: description.trim(),
                         price: parseFloat(price),
                         published: false,
+                        type: courseType,
                         category,
                         thumbnail: thumbnail || null,
                         learningOutcomes: learningOutcomes.filter(o => o.trim() !== ""),
@@ -386,6 +390,44 @@ export default function CreateCoursePage() {
                                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
                                 </div>
+                            </div>
+
+                            {/* Course Type */}
+                            <div className="mt-4">
+                                <label className="mb-1.5 block text-sm font-semibold text-slate-700">Loại khóa học</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCourseType("MARKETPLACE")}
+                                        className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${courseType === "MARKETPLACE"
+                                            ? "border-primary-500 bg-primary-50 text-primary-700 shadow-sm"
+                                            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                    >
+                                        <ShoppingCart className="h-4 w-4" />
+                                        <div className="text-left">
+                                            <div>Marketplace</div>
+                                            <div className="text-xs font-normal text-slate-400">Công khai, mua trực tuyến</div>
+                                        </div>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setCourseType("PRIVATE")}
+                                        className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-all ${courseType === "PRIVATE"
+                                            ? "border-amber-500 bg-amber-50 text-amber-700 shadow-sm"
+                                            : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                    >
+                                        <Lock className="h-4 w-4" />
+                                        <div className="text-left">
+                                            <div>Private</div>
+                                            <div className="text-xs font-normal text-slate-400">Mã code tự sinh, học viên nhập mã</div>
+                                        </div>
+                                    </button>
+                                </div>
+                                {courseType === "PRIVATE" && (
+                                    <p className="mt-2 text-xs text-amber-600">Mã đăng ký sẽ được tự động tạo khi bạn lưu khóa học (VD: JS-2026-X8Y)</p>
+                                )}
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2 mt-4">

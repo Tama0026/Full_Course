@@ -2,81 +2,166 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import {
-    BookOpen, Award, User, LogOut,
-    GraduationCap, ChevronRight, Home, Bot,
+    BookOpen,
+    Award,
+    User,
+    LogOut,
+    GraduationCap,
+    ChevronRight,
+    LayoutDashboard,
+    Plus,
+    ClipboardList,
+    Database,
+    Bot,
+    Trophy,
+    FileText,
+    Loader2,
+    Home,
 } from "lucide-react";
 
-const NAV_ITEMS = [
-    { href: "/student", icon: BookOpen, label: "Khóa học của tôi" },
-    { href: "/student/achievements", icon: Award, label: "Thành tựu" },
-    { href: "/certificates", icon: Award, label: "Chứng chỉ" },
-    { href: "/interview", icon: Bot, label: "AI Phỏng vấn" },
-    { href: "/profile", icon: User, label: "Hồ sơ" },
+/* ── Navigation items per role ── */
+
+const STUDENT_NAV = [
+    { href: "/dashboard", icon: Home, label: "Dashboard", exact: true },
+    { href: "/explore", icon: GraduationCap, label: "Khám phá", exact: false },
+    { href: "/student", icon: BookOpen, label: "Khóa học của tôi", exact: true },
+    { href: "/exams", icon: ClipboardList, label: "Kỳ thi", exact: false },
+    { href: "/student/achievements", icon: Trophy, label: "Thành tựu", exact: false },
+    { href: "/certificates", icon: Award, label: "Chứng chỉ", exact: false },
+    { href: "/interview", icon: Bot, label: "AI Phỏng vấn", exact: false },
+    { href: "/profile", icon: User, label: "Hồ sơ", exact: false },
 ];
 
+const INSTRUCTOR_NAV = [
+    { href: "/instructor", icon: LayoutDashboard, label: "Dashboard", exact: true },
+    { href: "/instructor/courses", icon: BookOpen, label: "Quản lý khóa học", exact: true },
+    { href: "/instructor/assessments", icon: ClipboardList, label: "Kỳ thi độc lập", exact: false },
+    { href: "/instructor/question-bank", icon: Database, label: "Ngân hàng đề thi", exact: false },
+    { href: "/instructor/badges", icon: Award, label: "Quản lý Badge", exact: false },
+];
+
+const ADMIN_NAV = [
+    { href: "/admin", icon: LayoutDashboard, label: "Admin Dashboard", exact: true },
+];
+
+/**
+ * Unified sidebar for the Dashboard layout.
+ * Uses useAuth() (TanStack Query) to show role-specific navigation.
+ * Active state is driven by usePathname().
+ */
 export default function DashboardSidebar() {
     const pathname = usePathname();
+    const { user, isLoading, logout } = useAuth();
 
-    async function handleLogout() {
-        await fetch("/api/auth/logout", { method: "POST" });
-        window.location.href = "/login";
+    // Choose items based on role
+    const navItems = (() => {
+        if (user?.role === "ADMIN") return ADMIN_NAV;
+        if (user?.role === "INSTRUCTOR") return INSTRUCTOR_NAV;
+        return STUDENT_NAV;
+    })();
+
+    const isInstructorOrAdmin = user?.role === "INSTRUCTOR" || user?.role === "ADMIN";
+
+    // Gradient style per role
+    const sidebarClass = isInstructorOrAdmin
+        ? "bg-gradient-to-b from-violet-950 to-indigo-900"
+        : "bg-white border-r border-slate-100";
+
+    const textPrimary = isInstructorOrAdmin ? "text-white" : "text-slate-900";
+    const textSecondary = isInstructorOrAdmin ? "text-violet-200" : "text-slate-600";
+    const textMuted = isInstructorOrAdmin ? "text-violet-300" : "text-slate-400";
+    const activeClass = isInstructorOrAdmin
+        ? "bg-white/20 text-white shadow-sm"
+        : "bg-blue-50 text-blue-700 shadow-sm";
+    const hoverClass = isInstructorOrAdmin
+        ? "hover:bg-white/10 hover:text-white"
+        : "hover:bg-slate-50 hover:text-slate-900";
+    const activeIconClass = isInstructorOrAdmin ? "text-white" : "text-blue-600";
+    const inactiveIconClass = isInstructorOrAdmin
+        ? "text-violet-300 group-hover:text-white"
+        : "text-slate-400 group-hover:text-slate-600";
+    const chevronClass = isInstructorOrAdmin ? "text-violet-300" : "text-blue-400";
+    const borderClass = isInstructorOrAdmin ? "border-white/10" : "border-slate-100";
+    const logoutHover = isInstructorOrAdmin
+        ? "hover:bg-red-500/20 hover:text-red-300"
+        : "hover:bg-red-50 hover:text-red-600";
+    const logoutIcon = isInstructorOrAdmin
+        ? "text-violet-300 group-hover:text-red-300"
+        : "text-slate-400 group-hover:text-red-500";
+
+    const subtitle = (() => {
+        if (user?.role === "ADMIN") return "Admin Panel";
+        if (user?.role === "INSTRUCTOR") return "Instructor Studio";
+        return "Học mọi lúc, mọi nơi";
+    })();
+
+    if (isLoading) {
+        return (
+            <aside className="flex flex-col w-64 h-screen sticky top-0 bg-white border-r border-slate-100 shrink-0 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            </aside>
+        );
     }
 
     return (
-        <aside className="flex flex-col w-64 h-screen sticky top-0 bg-white border-r border-slate-100 shadow-sm shrink-0">
-            {/* Logo — click để về trang chủ */}
+        <aside className={`flex flex-col w-64 h-screen sticky top-0 shadow-sm shrink-0 ${sidebarClass}`}>
+            {/* Logo */}
             <Link
-                href="/"
-                className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 hover:bg-slate-50 transition-colors group"
+                href={isInstructorOrAdmin ? "/" : "/"}
+                className={`flex items-center gap-3 px-6 py-5 border-b ${borderClass} group transition-colors`}
             >
-                <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md group-hover:scale-105 transition-transform">
+                <div className={`flex items-center justify-center w-9 h-9 rounded-xl ${isInstructorOrAdmin ? "bg-white/15 shadow-md group-hover:bg-white/25" : "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md group-hover:scale-105"} transition-all`}>
                     <GraduationCap className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                    <p className="text-sm font-bold text-slate-900 leading-none">E-Learning</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Học mọi lúc, mọi nơi</p>
+                    <p className={`text-sm font-bold ${textPrimary} leading-none`}>E-Learning</p>
+                    <p className={`text-[10px] ${textMuted} mt-0.5`}>{subtitle}</p>
                 </div>
             </Link>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-6 space-y-0.5 overflow-y-auto">
-                {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-                    // Exact match for /student, otherwise startswith for subpages (if added later)
-                    const isActive = href === "/student"
-                        ? pathname === href
-                        : pathname.startsWith(href) && href !== "/dashboard";
+            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+                {navItems.map(({ href, icon: Icon, label, exact }) => {
+                    const isActive = exact ? pathname === href : pathname.startsWith(href);
                     return (
                         <Link
-                            key={href}
+                            key={href + label}
                             href={href}
-                            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive
-                                ? "bg-blue-50 text-blue-700 shadow-sm"
-                                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                }`}
+                            className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? activeClass : `${textSecondary} ${hoverClass}`}`}
                         >
-                            <Icon
-                                className={`w-4 h-4 flex-shrink-0 ${isActive
-                                    ? "text-blue-600"
-                                    : "text-slate-400 group-hover:text-slate-600"
-                                    }`}
-                            />
+                            <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? activeIconClass : inactiveIconClass}`} />
                             <span className="flex-1">{label}</span>
-                            {isActive && (
-                                <ChevronRight className="w-3.5 h-3.5 text-blue-400" />
-                            )}
+                            {isActive && <ChevronRight className={`w-3.5 h-3.5 ${chevronClass}`} />}
                         </Link>
                     );
                 })}
+
+                {/* Instructor shortcut: Create Course */}
+                {user?.role === "INSTRUCTOR" && (
+                    <Link
+                        href="/instructor/courses/create"
+                        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${textSecondary} ${hoverClass} transition-all duration-200`}
+                    >
+                        <Plus className={`w-4 h-4 flex-shrink-0 ${inactiveIconClass}`} />
+                        <span className="flex-1">Tạo khóa học</span>
+                    </Link>
+                )}
             </nav>
 
-            {/* Logout */}
-            <div className="px-3 py-4 border-t border-slate-100">
+            {/* User info & Logout */}
+            <div className={`px-3 py-4 space-y-1 border-t ${borderClass}`}>
+                {user && (
+                    <div className={`px-3 py-2 mb-1 text-xs ${textMuted} truncate`}>
+                        {user.name || user.email}
+                    </div>
+                )}
                 <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                    onClick={logout}
+                    className={`flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${textSecondary} ${logoutHover} transition-all duration-200 group`}
                 >
-                    <LogOut className="w-4 h-4 text-slate-400 group-hover:text-red-500" />
+                    <LogOut className={`w-4 h-4 ${logoutIcon}`} />
                     Đăng xuất
                 </button>
             </div>

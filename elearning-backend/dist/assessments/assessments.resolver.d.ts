@@ -168,13 +168,13 @@ export declare class AssessmentsResolver {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     }>;
     submitAssessmentAttempt(attemptId: string, answers: AnswerInput[], user: {
@@ -185,13 +185,13 @@ export declare class AssessmentsResolver {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     }>;
     myAttemptHistory(assessmentId: string, user: {
@@ -214,13 +214,13 @@ export declare class AssessmentsResolver {
         userId: string;
         status: string;
         completedAt: Date | null;
-        score: number | null;
-        answers: string | null;
         assessmentId: string;
         setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
         violationCount: number;
+        answers: string | null;
         startedAt: Date;
     })[]>;
     assessmentReport(assessmentId: string, user: {

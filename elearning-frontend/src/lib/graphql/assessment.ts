@@ -15,6 +15,21 @@ export const GET_INSTRUCTOR_ASSESSMENTS = gql`
   }
 `;
 
+export const GET_STUDENT_ASSESSMENTS_WITH_ATTEMPTS = gql`
+  query GetStudentAssessmentsWithAttempts {
+    assessments {
+      id
+      title
+      isActive
+      attempts {
+        id
+        score
+        status
+      }
+    }
+  }
+`;
+
 export const CREATE_ASSESSMENT = gql`
   mutation CreateAssessment($input: CreateAssessmentInput!) {
     createAssessment(input: $input) {

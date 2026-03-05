@@ -801,4 +801,154 @@ Hướng dẫn phỏng vấn:
       );
     }
   }
+
+  // ==================== AI RECOMMENDATIONS (Knowledge-Gap) ====================
+
+  /**
+   * AI-powered course recommendations for a student.
+   * Sends knowledge-gap context (categories of wrong answers) + performance data to Gemini.
+   */
+  async getAiRecommendations(userId: string): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      return JSON.stringify({
+        recommendations: [],
+        message: 'AI đang tạm thời không khả dụng.',
+      });
+    }
+
+    try {
+      // 1. Fetch student enrollments
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: { userId },
+        include: {
+          course: { select: { id: true, title: true, category: true } },
+          progresses: { select: { lessonId: true } },
+        },
+      });
+
+      const enrolledCourseIds = enrollments.map((e) => e.course.id);
+      const totalCompletedLessons = enrollments.reduce(
+        (sum, e) => sum + e.progresses.length,
+        0,
+      );
+
+      // 2. Fetch exam attempts with assessment info
+      const attempts = await this.prisma.assessmentAttempt.findMany({
+        where: { userId, status: 'COMPLETED' },
+        include: {
+          assessment: { select: { title: true, id: true } },
+        },
+      });
+
+      // 3. Build knowledge-gap map (categories where student is weakest)
+      const wrongCategories: Record<string, number> = {};
+      let totalScore = 0;
+      let totalAttempts = 0;
+
+      for (const attempt of attempts) {
+        totalScore += attempt.score || 0;
+        totalAttempts++;
+
+        // Parse the JSON answers string: [{questionId, selectedAnswer, isCorrect}]
+        try {
+          const answersArr: any[] = JSON.parse(attempt.answers || '[]');
+          const wrongAnswers = answersArr.filter((a: any) => !a.isCorrect);
+
+          if (wrongAnswers.length > 0) {
+            // Use assessment title as category proxy for knowledge gaps
+            const category = attempt.assessment?.title || 'General';
+            wrongCategories[category] =
+              (wrongCategories[category] || 0) + wrongAnswers.length;
+          }
+        } catch {
+          // Skip unparseable answers
+        }
+      }
+
+      const avgScore =
+        totalAttempts > 0 ? Math.round(totalScore / totalAttempts) : 0;
+
+      // Sort gaps by frequency (most wrong first)
+      const knowledgeGaps = Object.entries(wrongCategories)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([category, count]) => `${category} (${count} lần sai)`);
+
+      // 4. Fetch available courses not yet enrolled
+      const availableCourses = await this.prisma.course.findMany({
+        where: {
+          published: true,
+          isActive: true,
+          id: { notIn: enrolledCourseIds },
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          category: true,
+          price: true,
+          type: true,
+        },
+      });
+
+      const catalogText = JSON.stringify(availableCourses);
+
+      // 5. Build prompt with knowledge-gap context
+      const prompt = `
+You are a friendly and encouraging e-learning advisor for Vietnamese students.
+
+**Student Profile:**
+- Completed lessons: ${totalCompletedLessons}
+- Exam attempts: ${totalAttempts}
+- Average exam score: ${avgScore}%
+- Currently enrolled in: ${enrollments.map((e) => e.course.title).join(', ') || 'None'}
+
+**Knowledge Gaps (topics they answer incorrectly most often):**
+${knowledgeGaps.length > 0 ? knowledgeGaps.join('\n') : 'Chưa có dữ liệu kỳ thi.'}
+
+**Available Courses (not yet enrolled):**
+${catalogText}
+
+**Task:**
+1. Based on their knowledge gaps, recommend 1-3 courses that would help them improve.
+2. Include a short motivational message based on their progress.
+   - If avgScore > 70: "Bạn đang tiến bộ rất tốt!"
+   - If avgScore 40-70: "Cố lên! Bạn đang trên đường tiến bộ."
+   - If avgScore < 40 or no data: "Hãy bắt đầu hành trình của bạn!"
+3. Format as JSON (no markdown fences):
+{
+  "motivation": "<motivational message in Vietnamese>",
+  "recommendations": [
+    {
+      "courseId": "<id>",
+      "title": "<course title>",
+      "reason": "<why this course helps, referencing their knowledge gap>"
+    }
+  ]
+}
+Only return the JSON object.
+`;
+
+      console.log(`[AiService] getAiRecommendations for userId: ${userId}`);
+      const text = await this.generateWithFallback(prompt);
+      console.log(
+        `[AiService] getAiRecommendations done — ${text.length} chars`,
+      );
+
+      return text || JSON.stringify({
+        motivation: 'Hãy khám phá các khóa học mới!',
+        recommendations: [],
+      });
+    } catch (error: any) {
+      const msg: string = error?.message || '';
+      console.error(`[AiService] getAiRecommendations error:`, msg.slice(0, 200));
+
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
+        );
+      }
+      throw new InternalServerErrorException('AI recommendations failed');
+    }
+  }
 }

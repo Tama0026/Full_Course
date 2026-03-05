@@ -30,12 +30,14 @@ export declare class CoursesService {
         };
     } & {
         category: string | null;
+        type: import("@prisma/client").$Enums.CourseType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         price: number;
+        enrollCode: string | null;
         thumbnail: string | null;
         learningOutcomes: string;
         averageRating: number;
@@ -94,12 +96,14 @@ export declare class CoursesService {
         })[];
     } & {
         category: string | null;
+        type: import("@prisma/client").$Enums.CourseType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
         price: number;
+        enrollCode: string | null;
         thumbnail: string | null;
         learningOutcomes: string;
         averageRating: number;
@@ -131,4 +135,113 @@ export declare class CoursesService {
     approveEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
     rejectEnrollment(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
     sendLearningReminder(studentId: string, courseId: string, instructorId: string): Promise<boolean>;
+    generateUniqueEnrollCode(category?: string): Promise<string>;
+    enrollByCode(code: string, userId: string): Promise<{
+        course: {
+            instructor: {
+                name: string | null;
+                id: string;
+                email: string;
+            };
+            sections: ({
+                lessons: {
+                    order: number;
+                    type: string;
+                    format: string | null;
+                    body: string | null;
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    title: string;
+                    videoUrl: string | null;
+                    duration: number | null;
+                    isPreview: boolean;
+                    sectionId: string;
+                }[];
+            } & {
+                order: number;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                courseId: string;
+                title: string;
+            })[];
+        } & {
+            category: string | null;
+            type: import("@prisma/client").$Enums.CourseType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            price: number;
+            enrollCode: string | null;
+            thumbnail: string | null;
+            learningOutcomes: string;
+            averageRating: number;
+            reviewCount: number;
+            totalDuration: number;
+            published: boolean;
+            isActive: boolean;
+            maxStudents: number | null;
+            isApprovalRequired: boolean;
+            instructorId: string;
+        };
+    } & {
+        id: string;
+        courseId: string;
+        userId: string;
+        status: string;
+        completedLessons: string;
+        isFinished: boolean;
+        isLocked: boolean;
+        requestedAt: Date;
+        enrolledAt: Date | null;
+        lastRemindedAt: Date | null;
+    }>;
+    getDiscoveryCourses(search?: string, category?: string): Promise<({
+        _count: {
+            enrollments: number;
+        };
+        instructor: {
+            name: string | null;
+            id: string;
+            email: string;
+        };
+        sections: ({
+            lessons: {
+                order: number;
+                id: string;
+                title: string;
+                duration: number | null;
+            }[];
+        } & {
+            order: number;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            courseId: string;
+            title: string;
+        })[];
+    } & {
+        category: string | null;
+        type: import("@prisma/client").$Enums.CourseType;
+        description: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        price: number;
+        enrollCode: string | null;
+        thumbnail: string | null;
+        learningOutcomes: string;
+        averageRating: number;
+        reviewCount: number;
+        totalDuration: number;
+        published: boolean;
+        isActive: boolean;
+        maxStudents: number | null;
+        isApprovalRequired: boolean;
+        instructorId: string;
+    })[]>;
 }

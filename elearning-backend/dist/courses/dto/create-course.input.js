@@ -12,10 +12,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateCourseInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const class_validator_1 = require("class-validator");
+const client_1 = require("@prisma/client");
 let CreateCourseInput = class CreateCourseInput {
     title;
     description;
     price;
+    type;
     published;
     thumbnail;
     category;
@@ -40,6 +42,11 @@ __decorate([
     (0, class_validator_1.Min)(0, { message: 'Price must be non-negative' }),
     __metadata("design:type", Number)
 ], CreateCourseInput.prototype, "price", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => client_1.CourseType, { nullable: true, defaultValue: 'MARKETPLACE' }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateCourseInput.prototype, "type", void 0);
 __decorate([
     (0, graphql_1.Field)({ nullable: true, defaultValue: false }),
     (0, class_validator_1.IsOptional)(),

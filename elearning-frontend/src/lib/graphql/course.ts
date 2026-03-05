@@ -227,3 +227,37 @@ export const REJECT_ENROLLMENT = gql`
     rejectEnrollment(studentId: $studentId, courseId: $courseId)
   }
 `;
+
+export const DISCOVERY_COURSES = gql`
+  query DiscoveryCourses($search: String, $category: String) {
+    discoveryCourses(search: $search, category: $category) {
+      id
+      title
+      description
+      price
+      type
+      thumbnail
+      category
+      averageRating
+      reviewCount
+      totalDuration
+      instructor { id email name }
+      sections {
+        id title
+        lessons { id title duration }
+      }
+    }
+  }
+`;
+
+export const ENROLL_BY_CODE = gql`
+  mutation EnrollByCode($code: String!) {
+    enrollByCode(code: $code)
+  }
+`;
+
+export const AI_RECOMMENDATIONS = gql`
+  query AiRecommendations {
+    aiRecommendations
+  }
+`;

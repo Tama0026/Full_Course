@@ -161,4 +161,16 @@ export class AiResolver {
     console.log(`[AiResolver] suggestLearningOutcomes — title: "${title}"`);
     return this.aiService.suggestLearningOutcomes(title, description);
   }
+
+  /**
+   * AI Recommendations — personalized course suggestions based on knowledge gaps.
+   */
+  @Query(() => String, { name: 'aiRecommendations' })
+  @UseGuards(JwtAuthGuard)
+  async getAiRecommendations(
+    @CurrentUser() user: { id: string },
+  ): Promise<string> {
+    console.log(`[AiResolver] aiRecommendations — userId: ${user.id}`);
+    return this.aiService.getAiRecommendations(user.id);
+  }
 }
