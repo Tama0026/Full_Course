@@ -84,14 +84,20 @@ export class CoursesService {
   ): Promise<PrismaCourse> {
     // Block publishing on creation if requested (new course has no lessons)
     if (input.published || (input as any).isActive) {
-      // A new course can never be published because it has no lessons yet
       throw new BadRequestException(
         'Không thể công khai khóa học khi tạo mới. Vui lòng tạo bài học và quiz trước, sau đó bật công khai.',
       );
     }
 
+    // Auto-generate enrollCode for PRIVATE courses
+    let enrollCode: string | undefined;
+    if (input.type === 'PRIVATE') {
+      enrollCode = await this.generateUniqueEnrollCode(input.category);
+    }
+
     return this.courseRepository.create({
       ...input,
+      enrollCode,
       learningOutcomes: input.learningOutcomes
         ? JSON.stringify(input.learningOutcomes)
         : '[]',
@@ -616,8 +622,7 @@ export class CoursesService {
 
     // Trigger Notification Notification
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const courseUrl = `${frontendUrl}/courses/${courseId}`;
 
     await this.emailService.sendEnrollmentApprovedEmail(
@@ -626,7 +631,9 @@ export class CoursesService {
       course.title,
       courseUrl,
     );
-    console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
+    console.log(
+      `[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`,
+    );
 
     return true;
   }
@@ -685,17 +692,7 @@ export class CoursesService {
     if (!enrollment)
       throw new NotFoundException('Học viên chưa đăng ký khóa học này');
 
-    // Check Rate Limit (24 hours) - Use 24h interval
-    if (enrollment.lastRemindedAt) {
-      const timeSinceLastReminder =
-        new Date().getTime() - enrollment.lastRemindedAt.getTime();
-      const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
-      if (hoursSince < 24) {
-        throw new BadRequestException(
-          'Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.',
-        );
-      }
-    }
+    // Removed Rate Limit for testing
 
     await this.prisma.enrollment.update({
       where: { id: enrollment.id },
@@ -704,11 +701,166 @@ export class CoursesService {
 
     const studentName = enrollment.user.name || 'Bạn';
     const instName = course.instructor.name || 'Giảng viên';
-    console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
-    console.log(
-      `[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`,
+
+    // Trigger Notification Email
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const courseUrl = `${frontendUrl}/courses/${courseId}`;
+
+    await this.emailService.sendLearningReminderEmail(
+      enrollment.user.email,
+      studentName,
+      course.title,
+      instName,
+      courseUrl,
     );
+    console.log(`[EMAIL SEND] Đã gửi nhắc nhở tới: ${enrollment.user.email}`);
 
     return true;
+  }
+
+  // ==================== ENROLL CODE ====================
+
+  /**
+   * Generate a unique enroll code like "JS-2026-X8Y".
+   */
+  async generateUniqueEnrollCode(category?: string): Promise<string> {
+    const prefix = category
+      ? category
+        .substring(0, 3)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, 'X')
+      : 'CRS';
+    const year = new Date().getFullYear();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      let suffix = '';
+      for (let i = 0; i < 4; i++) {
+        suffix += chars[Math.floor(Math.random() * chars.length)];
+      }
+      const code = `${prefix}-${year}-${suffix}`;
+
+      const existing = await this.prisma.course.findUnique({
+        where: { enrollCode: code },
+      });
+      if (!existing) return code;
+    }
+
+    // Fallback: UUID-based
+    return `${prefix}-${year}-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  /**
+   * Enroll a student by entering a course code.
+   * Case-insensitive: always toUpperCase().
+   */
+  async enrollByCode(code: string, userId: string) {
+    const normalizedCode = code.toUpperCase().trim();
+
+    const course = await this.prisma.course.findUnique({
+      where: { enrollCode: normalizedCode },
+      select: { id: true, title: true, type: true, maxStudents: true },
+    });
+
+    if (!course) {
+      throw new NotFoundException(
+        'Mã khóa học không hợp lệ hoặc không tồn tại.',
+      );
+    }
+
+    // Check if already enrolled
+    const existing = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: course.id } },
+    });
+    if (existing) {
+      throw new BadRequestException('Bạn đã đăng ký khóa học này rồi.');
+    }
+
+    // Check max students
+    if (course.maxStudents) {
+      const count = await this.prisma.enrollment.count({
+        where: { courseId: course.id },
+      });
+      if (count >= course.maxStudents) {
+        throw new BadRequestException('Khóa học đã đầy.');
+      }
+    }
+
+    // Auto-approve for code-based enrollment
+    const enrollment = await this.prisma.enrollment.create({
+      data: {
+        userId,
+        courseId: course.id,
+        status: 'APPROVED',
+        enrolledAt: new Date(),
+      },
+      include: {
+        course: {
+          include: {
+            instructor: { select: { id: true, email: true, name: true } },
+            sections: {
+              include: { lessons: { orderBy: { order: 'asc' } } },
+              orderBy: { order: 'asc' },
+            },
+          },
+        },
+      },
+    });
+
+    return enrollment;
+  }
+
+  // ==================== DISCOVERY ====================
+
+  /**
+   * Get courses for the Explore/Discovery page.
+   * PRIVATE courses have their sections/lessons stripped for security.
+   */
+  async getDiscoveryCourses(search?: string, category?: string) {
+    const where: any = {
+      published: true,
+      isActive: true,
+    };
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (category) {
+      where.category = category;
+    }
+
+    const courses = await this.prisma.course.findMany({
+      where,
+      include: {
+        instructor: { select: { id: true, email: true, name: true } },
+        sections: {
+          include: {
+            lessons: {
+              select: { id: true, title: true, order: true, duration: true },
+            },
+          },
+          orderBy: { order: 'asc' },
+        },
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    // Strip lesson details for PRIVATE courses (API-level security)
+    return courses.map((course) => {
+      if (course.type === 'PRIVATE') {
+        return {
+          ...course,
+          sections: [], // Hide all content for PRIVATE courses
+        };
+      }
+      return course;
+    });
   }
 }

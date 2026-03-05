@@ -135,6 +135,18 @@ export class AiResolver {
   }
 
   /**
+   * AI Magic Import — parses raw text into valid JSON array of questions
+   */
+  @Mutation(() => String, { name: 'parseRawQuestions' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async parseRawQuestions(@Args('rawText') rawText: string): Promise<string> {
+    console.log(`[AiResolver] parseRawQuestions length: ${rawText.length}`);
+    const questions = await this.aiService.parseRawQuestions(rawText);
+    return JSON.stringify(questions);
+  }
+
+  /**
    * AI Learning Outcomes — suggests 5-8 learning outcomes for a course.
    */
   @Mutation(() => [String], { name: 'suggestLearningOutcomes' })
@@ -146,5 +158,17 @@ export class AiResolver {
   ): Promise<string[]> {
     console.log(`[AiResolver] suggestLearningOutcomes — title: "${title}"`);
     return this.aiService.suggestLearningOutcomes(title, description);
+  }
+
+  /**
+   * AI Recommendations — personalized course suggestions based on knowledge gaps.
+   */
+  @Query(() => String, { name: 'aiRecommendations' })
+  @UseGuards(JwtAuthGuard)
+  async getAiRecommendations(
+    @CurrentUser() user: { id: string },
+  ): Promise<string> {
+    console.log(`[AiResolver] aiRecommendations — userId: ${user.id}`);
+    return this.aiService.getAiRecommendations(user.id);
   }
 }

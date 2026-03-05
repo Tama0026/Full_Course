@@ -165,8 +165,8 @@ export const GENERATE_LESSON_CONTENT = gql`
 `;
 
 export const GENERATE_LESSON_CONTENT_WITH_QUIZ = gql`
-  mutation GenerateLessonContentWithQuiz($title: String!, $lessonId: String!, $quizCount: Int = 5) {
-    generateLessonContentWithQuiz(title: $title, lessonId: $lessonId, quizCount: $quizCount)
+  mutation GenerateLessonContentWithQuiz($title: String!, $courseTitle: String!, $lessonId: String!, $quizCount: Int = 5) {
+    generateLessonContentWithQuiz(title: $title, courseTitle: $courseTitle, lessonId: $lessonId, quizCount: $quizCount)
   }
 `;
 
@@ -225,5 +225,39 @@ export const APPROVE_ENROLLMENT = gql`
 export const REJECT_ENROLLMENT = gql`
   mutation RejectEnrollment($studentId: String!, $courseId: String!) {
     rejectEnrollment(studentId: $studentId, courseId: $courseId)
+  }
+`;
+
+export const DISCOVERY_COURSES = gql`
+  query DiscoveryCourses($search: String, $category: String) {
+    discoveryCourses(search: $search, category: $category) {
+      id
+      title
+      description
+      price
+      type
+      thumbnail
+      category
+      averageRating
+      reviewCount
+      totalDuration
+      instructor { id email name }
+      sections {
+        id title
+        lessons { id title duration }
+      }
+    }
+  }
+`;
+
+export const ENROLL_BY_CODE = gql`
+  mutation EnrollByCode($code: String!) {
+    enrollByCode(code: $code)
+  }
+`;
+
+export const AI_RECOMMENDATIONS = gql`
+  query AiRecommendations {
+    aiRecommendations
   }
 `;

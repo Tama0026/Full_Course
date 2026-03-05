@@ -81,9 +81,18 @@ let AiResolver = class AiResolver {
         console.log(`[AiResolver] askTutor — lessonId: ${lessonId}`);
         return this.aiService.askTutor(question, lessonId);
     }
+    async parseRawQuestions(rawText) {
+        console.log(`[AiResolver] parseRawQuestions length: ${rawText.length}`);
+        const questions = await this.aiService.parseRawQuestions(rawText);
+        return JSON.stringify(questions);
+    }
     async suggestLearningOutcomes(title, description) {
         console.log(`[AiResolver] suggestLearningOutcomes — title: "${title}"`);
         return this.aiService.suggestLearningOutcomes(title, description);
+    }
+    async getAiRecommendations(user) {
+        console.log(`[AiResolver] aiRecommendations — userId: ${user.id}`);
+        return this.aiService.getAiRecommendations(user.id);
     }
 };
 exports.AiResolver = AiResolver;
@@ -135,6 +144,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AiResolver.prototype, "askTutor", null);
 __decorate([
+    (0, graphql_1.Mutation)(() => String, { name: 'parseRawQuestions' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('rawText')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AiResolver.prototype, "parseRawQuestions", null);
+__decorate([
     (0, graphql_1.Mutation)(() => [String], { name: 'suggestLearningOutcomes' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
@@ -144,6 +162,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AiResolver.prototype, "suggestLearningOutcomes", null);
+__decorate([
+    (0, graphql_1.Query)(() => String, { name: 'aiRecommendations' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AiResolver.prototype, "getAiRecommendations", null);
 exports.AiResolver = AiResolver = __decorate([
     (0, graphql_1.Resolver)(),
     __metadata("design:paramtypes", [ai_service_1.AiService,

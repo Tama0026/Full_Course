@@ -58,8 +58,13 @@ let CoursesService = class CoursesService {
         if (input.published || input.isActive) {
             throw new common_1.BadRequestException('Không thể công khai khóa học khi tạo mới. Vui lòng tạo bài học và quiz trước, sau đó bật công khai.');
         }
+        let enrollCode;
+        if (input.type === 'PRIVATE') {
+            enrollCode = await this.generateUniqueEnrollCode(input.category);
+        }
         return this.courseRepository.create({
             ...input,
+            enrollCode,
             learningOutcomes: input.learningOutcomes
                 ? JSON.stringify(input.learningOutcomes)
                 : '[]',
@@ -424,8 +429,7 @@ let CoursesService = class CoursesService {
             where: { id: enrollment.id },
             data: { status: 'APPROVED', enrolledAt: new Date() },
         });
-        const frontendUrl = this.configService.get('FRONTEND_URL') ||
-            'http://localhost:3000';
+        const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
         const courseUrl = `${frontendUrl}/courses/${courseId}`;
         await this.emailService.sendEnrollmentApprovedEmail(enrollment.user.email, enrollment.user.name || 'Học viên', course.title, courseUrl);
         console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
@@ -467,22 +471,125 @@ let CoursesService = class CoursesService {
         });
         if (!enrollment)
             throw new common_1.NotFoundException('Học viên chưa đăng ký khóa học này');
-        if (enrollment.lastRemindedAt) {
-            const timeSinceLastReminder = new Date().getTime() - enrollment.lastRemindedAt.getTime();
-            const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
-            if (hoursSince < 24) {
-                throw new common_1.BadRequestException('Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.');
-            }
-        }
         await this.prisma.enrollment.update({
             where: { id: enrollment.id },
             data: { lastRemindedAt: new Date() },
         });
         const studentName = enrollment.user.name || 'Bạn';
         const instName = course.instructor.name || 'Giảng viên';
-        console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
-        console.log(`[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`);
+        const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+        const courseUrl = `${frontendUrl}/courses/${courseId}`;
+        await this.emailService.sendLearningReminderEmail(enrollment.user.email, studentName, course.title, instName, courseUrl);
+        console.log(`[EMAIL SEND] Đã gửi nhắc nhở tới: ${enrollment.user.email}`);
         return true;
+    }
+    async generateUniqueEnrollCode(category) {
+        const prefix = category
+            ? category
+                .substring(0, 3)
+                .toUpperCase()
+                .replace(/[^A-Z]/g, 'X')
+            : 'CRS';
+        const year = new Date().getFullYear();
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        for (let attempt = 0; attempt < 20; attempt++) {
+            let suffix = '';
+            for (let i = 0; i < 4; i++) {
+                suffix += chars[Math.floor(Math.random() * chars.length)];
+            }
+            const code = `${prefix}-${year}-${suffix}`;
+            const existing = await this.prisma.course.findUnique({
+                where: { enrollCode: code },
+            });
+            if (!existing)
+                return code;
+        }
+        return `${prefix}-${year}-${Date.now().toString(36).toUpperCase()}`;
+    }
+    async enrollByCode(code, userId) {
+        const normalizedCode = code.toUpperCase().trim();
+        const course = await this.prisma.course.findUnique({
+            where: { enrollCode: normalizedCode },
+            select: { id: true, title: true, type: true, maxStudents: true },
+        });
+        if (!course) {
+            throw new common_1.NotFoundException('Mã khóa học không hợp lệ hoặc không tồn tại.');
+        }
+        const existing = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId: course.id } },
+        });
+        if (existing) {
+            throw new common_1.BadRequestException('Bạn đã đăng ký khóa học này rồi.');
+        }
+        if (course.maxStudents) {
+            const count = await this.prisma.enrollment.count({
+                where: { courseId: course.id },
+            });
+            if (count >= course.maxStudents) {
+                throw new common_1.BadRequestException('Khóa học đã đầy.');
+            }
+        }
+        const enrollment = await this.prisma.enrollment.create({
+            data: {
+                userId,
+                courseId: course.id,
+                status: 'APPROVED',
+                enrolledAt: new Date(),
+            },
+            include: {
+                course: {
+                    include: {
+                        instructor: { select: { id: true, email: true, name: true } },
+                        sections: {
+                            include: { lessons: { orderBy: { order: 'asc' } } },
+                            orderBy: { order: 'asc' },
+                        },
+                    },
+                },
+            },
+        });
+        return enrollment;
+    }
+    async getDiscoveryCourses(search, category) {
+        const where = {
+            published: true,
+            isActive: true,
+        };
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        if (category) {
+            where.category = category;
+        }
+        const courses = await this.prisma.course.findMany({
+            where,
+            include: {
+                instructor: { select: { id: true, email: true, name: true } },
+                sections: {
+                    include: {
+                        lessons: {
+                            select: { id: true, title: true, order: true, duration: true },
+                        },
+                    },
+                    orderBy: { order: 'asc' },
+                },
+                _count: { select: { enrollments: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+        });
+        return courses.map((course) => {
+            if (course.type === 'PRIVATE') {
+                return {
+                    ...course,
+                    sections: [],
+                };
+            }
+            return course;
+        });
     }
 };
 exports.CoursesService = CoursesService;

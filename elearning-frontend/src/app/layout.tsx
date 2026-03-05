@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { ApolloWrapper } from "@/lib/apollo-client";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,7 +28,9 @@ export default function RootLayout({
   return (
     <html lang="vi" className={inter.variable}>
       <body className="antialiased">
-        <ApolloWrapper>{children}</ApolloWrapper>
+        <QueryProvider>
+          <ApolloWrapper>{children}</ApolloWrapper>
+        </QueryProvider>
         <Toaster position="top-right" richColors closeButton />
       </body>
     </html>

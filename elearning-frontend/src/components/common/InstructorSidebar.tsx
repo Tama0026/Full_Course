@@ -4,13 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     User, LogOut,
-    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award, BookOpen, ClipboardList
+    GraduationCap, ChevronRight, Home, LayoutDashboard, Plus, Award, BookOpen, ClipboardList, Database
 } from "lucide-react";
 
 const NAV_ITEMS = [
     { href: "/instructor", icon: LayoutDashboard, label: "Instructor Dashboard", exact: true },
     { href: "/instructor/courses", icon: BookOpen, label: "Quản lý khóa học", exact: true },
     { href: "/instructor/assessments", icon: ClipboardList, label: "Kỳ thi độc lập", exact: false },
+    { href: "/instructor/question-bank", icon: Database, label: "Ngân hàng đề thi", exact: false },
     { href: "/instructor/badges", icon: Award, label: "Quản lý Badge", exact: false },
 ];
 
@@ -71,7 +72,7 @@ export default function InstructorSidebar() {
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-violet-200 hover:bg-red-500/20 hover:text-red-300 transition-all duration-200 group"
                 >
-                    <LogOut className="w-4 h-4 text-violet-300 group-hover:text-red-300" />
+                    <LogOut className="w-4 h-4 text-violet-300 group-hover:cursor-pointer" />
                     Đăng xuất
                 </button>
             </div>

@@ -48,39 +48,48 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  courses            Course[]            @relation("InstructorCourses")
-  orders             Order[]
-  enrollments        Enrollment[]
-  comments           Comment[]
-  notes              Note[]
-  certificates       Certificate[]
-  videoProgresses    VideoProgress[]
-  leaderboard        Leaderboard?
-  userBadges         UserBadge[]
-  createdBadges      Badge[]             @relation("BadgeCreator")
-  loginStreak        LoginStreak?
-  createdAssessments Assessment[]        @relation("AssessmentCreator")
-  assessmentAttempts AssessmentAttempt[]
+  courses              Course[]              @relation("InstructorCourses")
+  orders               Order[]
+  enrollments          Enrollment[]
+  comments             Comment[]
+  notes                Note[]
+  certificates         Certificate[]
+  videoProgresses      VideoProgress[]
+  leaderboard          Leaderboard?
+  userBadges           UserBadge[]
+  createdBadges        Badge[]               @relation("BadgeCreator")
+  loginStreak          LoginStreak?
+  createdAssessments   Assessment[]          @relation("AssessmentCreator")
+  assessmentAttempts   AssessmentAttempt[]
+  remediationReports   RemediationReport[]
+  questionBanks        QuestionBank[]        @relation("QuestionBankOwner")
+}
+
+enum CourseType {
+  MARKETPLACE
+  PRIVATE
 }
 
 model Course {
-  id                 String   @id @default(uuid())
+  id                 String     @id @default(uuid())
   title              String
   description        String
   price              Float
+  type               CourseType @default(MARKETPLACE)
+  enrollCode         String?    @unique
   thumbnail          String?
   category           String?
-  learningOutcomes   String   @default("[]") // JSON array of learning outcome strings
-  averageRating      Float    @default(0)
-  reviewCount        Int      @default(0)
-  totalDuration      Int      @default(0) // In seconds
-  published          Boolean  @default(false)
-  isActive           Boolean  @default(true)
+  learningOutcomes   String     @default("[]") // JSON array of learning outcome strings
+  averageRating      Float      @default(0)
+  reviewCount        Int        @default(0)
+  totalDuration      Int        @default(0) // In seconds
+  published          Boolean    @default(false)
+  isActive           Boolean    @default(true)
   maxStudents        Int?
-  isApprovalRequired Boolean  @default(false)
+  isApprovalRequired Boolean    @default(false)
   instructorId       String
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
   // Relations
   instructor   User          @relation("InstructorCourses", fields: [instructorId], references: [id])
@@ -125,6 +134,7 @@ model Lesson {
   notes           Note[]
   quiz            Quiz?
   videoProgresses VideoProgress[]
+  reviewPathItems ReviewPathItem[]
 }
 
 model Quiz {
@@ -169,6 +179,7 @@ model Enrollment {
   status           String    @default("APPROVED") // PENDING, APPROVED, REJECTED
   completedLessons String    @default("[]") // JSON string field to support SQLite
   isFinished       Boolean   @default(false)
+  isLocked         Boolean   @default(false) // Locked when remediation is required
   requestedAt      DateTime  @default(now())
   enrolledAt       DateTime?
   lastRemindedAt   DateTime?
@@ -314,16 +325,20 @@ model LoginStreak {
 // ==================== STANDALONE ASSESSMENTS ====================
 
 model Assessment {
-  id           String   @id @default(uuid())
-  title        String
-  description  String
-  timeLimit    Int // Minutes
-  passingScore Int      @default(50)
-  numberOfSets Int      @default(1)
-  isActive     Boolean  @default(true)
-  creatorId    String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  timeLimit     Int // Minutes
+  passingScore  Int      @default(50)
+  numberOfSets  Int      @default(1)
+  maxAttempts   Int      @default(1)  // Max number of attempts per student
+  maxViolations Int      @default(5)  // Auto-void threshold
+  totalPoints   Float    @default(10) // Total exam points
+  isPublished   Boolean  @default(false) // Draft = false, Locked = true
+  isActive      Boolean  @default(true)
+  creatorId     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   creator   User                 @relation("AssessmentCreator", fields: [creatorId], references: [id])
   questions AssessmentQuestion[]
@@ -331,29 +346,111 @@ model Assessment {
 }
 
 model AssessmentQuestion {
-  id            String   @id @default(uuid())
-  assessmentId  String
-  setCode       String   @default("SET_1")
-  content       String
-  options       String // JSON string
-  correctAnswer Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  assessmentId    String
+  setCode         String   @default("SET_1")
+  content         String
+  options         String // JSON string
+  correctAnswer   Int
+  points          Float    @default(1)     // Per-question points
+  difficulty      String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  isAiGenerated   Boolean  @default(false) // Audit trail for AI content
+  bankQuestionId  String?                  // FK to BankQuestion origin
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
 
 model AssessmentAttempt {
-  id           String    @id @default(uuid())
-  assessmentId String
-  userId       String
-  setCode      String    @default("SET_1")
-  score        Int?
-  passed       Boolean   @default(false)
-  isInvalid    Boolean   @default(false) // Cheating flagged
-  startedAt    DateTime  @default(now())
-  completedAt  DateTime?
+  id             String    @id @default(uuid())
+  assessmentId   String
+  userId         String
+  setCode        String    @default("SET_1")
+  score          Int?
+  passed         Boolean   @default(false)
+  isInvalid      Boolean   @default(false)
+  violationCount Int       @default(0)
+  status         String    @default("IN_PROGRESS") // IN_PROGRESS | COMPLETED | VOIDED
+  answers        String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
 
-  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id])
+  assessment         Assessment          @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id])
+  remediationReport  RemediationReport?
+  violations         ViolationRecord[]
+}
+
+model ViolationRecord {
+  id        String   @id @default(uuid())
+  attemptId String
+  type      String   // TAB_SWITCH | FULLSCREEN_EXIT | WINDOW_BLUR
+  timestamp DateTime @default(now())
+
+  attempt AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+// ==================== QUESTION BANK ====================
+
+model QuestionBank {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   // e.g. "Math", "Programming", "English"
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User           @relation("QuestionBankOwner", fields: [userId], references: [id])
+  questions BankQuestion[]
+}
+
+model BankQuestion {
+  id            String   @id @default(uuid())
+  bankId        String
+  content       String
+  options       String   // JSON string
+  correctAnswer Int
+  explanation   String?
+  difficulty    String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  createdAt     DateTime @default(now())
+
+  bank QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
+}
+
+// ==================== REMEDIATION ====================
+
+model RemediationReport {
+  id             String   @id @default(uuid())
+  attemptId      String   @unique
+  userId         String
+  assessmentId   String
+  scorePercent   Float
+  totalQuestions Int
+  wrongCount     Int
+  aiAnalysis     String   // JSON: gap analysis from Gemini
+  severity       String   @default("LOW") // LOW | MEDIUM | CRITICAL
+  isResolved     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  attempt   AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id])
+  pathItems ReviewPathItem[]
+}
+
+model ReviewPathItem {
+  id           String    @id @default(uuid())
+  reportId     String
+  lessonId     String
+  lessonTitle  String
+  reason       String
+  priority     Int       @default(0)
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  report RemediationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  lesson Lesson            @relation(fields: [lessonId], references: [id])
 }

@@ -13,7 +13,7 @@ export class OrdersService {
   constructor(
     private readonly orderRepository: OrderRepository,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   /**
    * Create a new order for a course.

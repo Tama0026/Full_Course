@@ -1,10 +1,13 @@
 import { User } from '../../auth/entities/user.entity';
 import { Section } from './section.entity';
+import { CourseType } from '@prisma/client';
 export declare class Course {
     id: string;
     title: string;
     description: string;
     price: number;
+    type: CourseType;
+    enrollCode?: string;
     thumbnail?: string;
     category?: string;
     learningOutcomes?: string[];
@@ -37,4 +40,5 @@ export declare class CourseStudent {
     lastRemindedAt?: Date;
     enrolledAt?: Date;
     status?: string;
+    requestedAt?: Date;
 }

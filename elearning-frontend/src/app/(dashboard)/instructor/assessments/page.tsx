@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_INSTRUCTOR_ASSESSMENTS, CREATE_ASSESSMENT, DELETE_ASSESSMENT } from "@/lib/graphql/assessment";
-import { Loader2, Plus, Trash2, Edit, ClipboardList, Clock, ShieldAlert } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, ClipboardList, Clock, ShieldAlert, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -21,7 +21,10 @@ export default function InstructorAssessmentsPage() {
         description: "",
         timeLimit: 30,
         passingScore: 80,
+        totalPoints: 100,
         numberOfSets: 1,
+        maxAttempts: 1,
+        maxViolations: 5,
         isActive: true
     });
     const [creating, setCreating] = useState(false);
@@ -36,6 +39,7 @@ export default function InstructorAssessmentsPage() {
                         ...formData,
                         timeLimit: parseInt(formData.timeLimit.toString()),
                         passingScore: parseFloat(formData.passingScore.toString()),
+                        totalPoints: parseFloat(formData.totalPoints.toString()),
                         numberOfSets: parseInt(formData.numberOfSets.toString())
                     }
                 }
@@ -43,7 +47,7 @@ export default function InstructorAssessmentsPage() {
             const newAssessmentId = (result.data as any)?.createAssessment?.id;
             toast.success("Tạo kỳ thi thành công! Vui lòng thêm câu hỏi.");
             setShowCreateForm(false);
-            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, numberOfSets: 1, isActive: true });
+            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, totalPoints: 100, numberOfSets: 1, maxAttempts: 1, maxViolations: 5, isActive: true });
 
             if (newAssessmentId) {
                 router.push(`/instructor/assessments/${newAssessmentId}`);
@@ -139,6 +143,49 @@ export default function InstructorAssessmentsPage() {
                                 />
                             </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
+                                    🌟 Tổng điểm (ví dụ: 10, 100)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    required
+                                    value={formData.totalPoints}
+                                    onChange={(e) => setFormData({ ...formData, totalPoints: parseFloat(e.target.value) || 0 })}
+                                    className="w-full border-slate-200 rounded-lg p-2.5 focus:ring-violet-500 focus:border-violet-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
+                                    <RotateCcw className="w-4 h-4" /> Số lượt thi tối đa
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="10"
+                                    required
+                                    value={formData.maxAttempts}
+                                    onChange={(e) => setFormData({ ...formData, maxAttempts: parseInt(e.target.value) || 1 })}
+                                    className="w-full border-slate-200 rounded-lg p-2.5 focus:ring-violet-500 focus:border-violet-500"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
+                                    <ShieldAlert className="w-4 h-4" /> Ngưỡng vi phạm huỷ bài
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    required
+                                    value={formData.maxViolations}
+                                    onChange={(e) => setFormData({ ...formData, maxViolations: parseInt(e.target.value) || 5 })}
+                                    className="w-full border-slate-200 rounded-lg p-2.5 focus:ring-violet-500 focus:border-violet-500"
+                                />
+                            </div>
+                        </div>
                         <div className="flex items-center gap-4 mt-2">
                             <div className="flex-1">
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Số lượng Mã đề</label>
@@ -205,18 +252,24 @@ export default function InstructorAssessmentsPage() {
 
                             <p className="text-sm text-slate-500 line-clamp-2 mb-6 flex-1">{ast.description}</p>
 
-                            <div className="grid grid-cols-3 gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Thời Gian</p>
-                                    <p className="font-semibold text-slate-700">{ast.timeLimit} Phút</p>
+                            <div className="grid grid-cols-2 gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                <div className="space-y-2">
+                                    <div className="flex items-center text-sm text-slate-600">
+                                        <Clock className="w-4 h-4 mr-2" />
+                                        Thời gian: <span className="font-semibold text-slate-900 ml-1">{ast.timeLimit} phút</span>
+                                    </div>
+                                    <div className="flex items-center text-sm text-slate-600">
+                                        <ShieldAlert className="w-4 h-4 mr-2" />
+                                        Điểm đỗ: <span className="font-semibold text-slate-900 ml-1">{ast.passingScore}%</span>
+                                    </div>
+                                    <div className="flex items-center text-sm text-slate-600">
+                                        <span className="w-4 h-4 mr-2 flex justify-center items-center">💎</span>
+                                        Tổng điểm: <span className="font-semibold text-slate-900 ml-1">{ast.totalPoints}đ</span>
+                                    </div>
                                 </div>
-                                <div className="text-center border-r border-slate-200">
-                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Điểm Sàn</p>
-                                    <p className="font-semibold text-slate-700">{ast.passingScore}%</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Số Mã đề</p>
-                                    <p className="font-semibold text-slate-700">{ast.numberOfSets || 1}</p>
+                                <div className="text-center flex flex-col justify-center items-center">
+                                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Max Lượt</p>
+                                    <p className="font-semibold text-slate-700">{ast.maxAttempts || 1}</p>
                                 </div>
                             </div>
 

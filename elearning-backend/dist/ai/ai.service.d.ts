@@ -17,10 +17,13 @@ export declare class AiService {
     }>;
     assessSkill(userId: string): Promise<string>;
     generateQuiz(lessonContent: string, count?: number): Promise<any[]>;
+    generateExamFromBank(title: string, description: string, bankContext: string, questionCount: number, totalPoints: number): Promise<any[]>;
+    parseRawQuestions(rawText: string): Promise<any[]>;
     askTutor(question: string, lessonId: string): Promise<string>;
     conductInterview(courseContext: string, courseName: string, userMessage: string, history: {
         role: string;
         content: string;
     }[]): Promise<string>;
     suggestLearningOutcomes(title: string, description: string): Promise<string[]>;
+    getAiRecommendations(userId: string): Promise<string>;
 }

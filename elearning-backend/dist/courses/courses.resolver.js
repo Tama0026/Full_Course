@@ -271,6 +271,13 @@ let CoursesResolver = class CoursesResolver {
     async rejectEnrollment(studentId, courseId, user) {
         return this.coursesService.rejectEnrollment(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
     }
+    async getDiscoveryCourses(search, category) {
+        return this.coursesService.getDiscoveryCourses(search, category);
+    }
+    async enrollByCode(code, user) {
+        await this.coursesService.enrollByCode(code, user.id);
+        return true;
+    }
 };
 exports.CoursesResolver = CoursesResolver;
 __decorate([
@@ -456,6 +463,24 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "rejectEnrollment", null);
+__decorate([
+    (0, graphql_1.Query)(() => [course_entity_1.Course], { name: 'discoveryCourses' }),
+    (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),
+    __param(0, (0, graphql_1.Args)('search', { type: () => String, nullable: true })),
+    __param(1, (0, graphql_1.Args)('category', { type: () => String, nullable: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "getDiscoveryCourses", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => Boolean, { name: 'enrollByCode' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, graphql_1.Args)('code', { type: () => String })),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "enrollByCode", null);
 exports.CoursesResolver = CoursesResolver = __decorate([
     (0, graphql_1.Resolver)(() => course_entity_1.Course),
     __metadata("design:paramtypes", [courses_service_1.CoursesService])

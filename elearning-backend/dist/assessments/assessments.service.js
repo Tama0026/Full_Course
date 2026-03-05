@@ -12,11 +12,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssessmentsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const remediation_service_1 = require("../remediation/remediation.service");
+const ai_service_1 = require("../ai/ai.service");
 let AssessmentsService = class AssessmentsService {
     prisma;
+    remediationService;
+    aiService;
     attemptCache = new Map();
-    constructor(prisma) {
+    constructor(prisma, remediationService, aiService) {
         this.prisma = prisma;
+        this.remediationService = remediationService;
+        this.aiService = aiService;
     }
     async getAssessments(userRole, userId) {
         if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
@@ -73,6 +79,8 @@ let AssessmentsService = class AssessmentsService {
         });
         if (!assessment || assessment.creatorId !== creatorId)
             throw new common_1.NotFoundException();
+        if (assessment.isPublished)
+            throw new common_1.ForbiddenException('Bài thi đã được công bố. Không thể thêm câu hỏi.');
         return this.prisma.assessmentQuestion.create({
             data: {
                 assessmentId,
@@ -80,6 +88,8 @@ let AssessmentsService = class AssessmentsService {
                 content: data.prompt,
                 options: JSON.stringify(data.options),
                 correctAnswer: parseInt(data.correctAnswer) || 0,
+                points: data.points || 1,
+                difficulty: data.difficulty || 'MEDIUM',
             },
         });
     }
@@ -90,6 +100,8 @@ let AssessmentsService = class AssessmentsService {
         });
         if (!question || question.assessment.creatorId !== creatorId)
             throw new common_1.NotFoundException();
+        if (question.assessment.isPublished)
+            throw new common_1.ForbiddenException('Bài thi đã được công bố. Không thể xoá câu hỏi.');
         return this.prisma.assessmentQuestion.delete({ where: { id } });
     }
     async startAttempt(assessmentId, userId) {
@@ -99,6 +111,12 @@ let AssessmentsService = class AssessmentsService {
         });
         if (!assessment)
             throw new common_1.NotFoundException('Assessment not found or inactive');
+        const existingAttempts = await this.prisma.assessmentAttempt.count({
+            where: { assessmentId, userId },
+        });
+        if (existingAttempts >= assessment.maxAttempts) {
+            throw new common_1.ForbiddenException(`Bạn đã sử dụng hết ${assessment.maxAttempts} lượt thi cho bài này.`);
+        }
         const setCodes = [...new Set(assessment.questions.map((q) => q.setCode))];
         const pickedSetCode = setCodes.length > 0
             ? setCodes[Math.floor(Math.random() * setCodes.length)]
@@ -180,20 +198,346 @@ let AssessmentsService = class AssessmentsService {
             this.attemptCache.delete(attemptId);
         }
         const passed = !isInvalid && score >= attempt.assessment.passingScore;
-        return this.prisma.assessmentAttempt.update({
+        const updatedAttempt = await this.prisma.assessmentAttempt.update({
             where: { id: attemptId },
             data: {
                 completedAt: now,
                 score,
                 passed,
                 isInvalid,
+                status: 'COMPLETED',
+                answers: JSON.stringify(answers),
             },
+        });
+        this.remediationService
+            .analyzeAttempt(attemptId, userId)
+            .catch((err) => console.error('[AssessmentsService] Remediation analysis failed:', err?.message));
+        return updatedAttempt;
+    }
+    async getAttemptForSocket(attemptId, userId) {
+        return this.prisma.assessmentAttempt.findFirst({
+            where: {
+                id: attemptId,
+                userId,
+                status: 'IN_PROGRESS',
+            },
+            include: {
+                assessment: { select: { maxViolations: true } },
+            },
+        });
+    }
+    async logViolation(attemptId, type) {
+        const attempt = await this.prisma.assessmentAttempt.update({
+            where: { id: attemptId },
+            data: {
+                violationCount: { increment: 1 },
+            },
+            include: {
+                assessment: { select: { maxViolations: true } },
+            },
+        });
+        await this.prisma.violationRecord.create({
+            data: { attemptId, type },
+        });
+        const maxV = attempt.assessment.maxViolations;
+        const voided = attempt.violationCount >= maxV;
+        if (voided) {
+            let score = 0;
+            let finalAnswersStr = '[]';
+            const cached = this.attemptCache.get(attemptId);
+            if (cached && cached.currentAnswers) {
+                let correctCount = 0;
+                for (const ans of cached.currentAnswers) {
+                    if (cached.correctMap[ans.questionId] === ans.answer) {
+                        correctCount++;
+                    }
+                }
+                score =
+                    cached.questions.length > 0
+                        ? (correctCount / cached.questions.length) * 100
+                        : 0;
+                finalAnswersStr = JSON.stringify(cached.currentAnswers.map((a) => ({
+                    questionId: a.questionId,
+                    answer: a.rawIdx,
+                })));
+            }
+            await this.prisma.assessmentAttempt.update({
+                where: { id: attemptId },
+                data: {
+                    status: 'VOIDED',
+                    isInvalid: true,
+                    completedAt: new Date(),
+                    score,
+                    answers: finalAnswersStr,
+                },
+            });
+            if (this.attemptCache.has(attemptId)) {
+                this.attemptCache.delete(attemptId);
+            }
+        }
+        return {
+            violationCount: attempt.violationCount,
+            maxViolations: maxV,
+            remaining: Math.max(0, maxV - attempt.violationCount),
+            voided,
+        };
+    }
+    async cacheAnswers(attemptId, userId, answers) {
+        const cached = this.attemptCache.get(attemptId);
+        if (!cached)
+            return;
+        const answersArray = Object.entries(answers).map(([questionId, ansStr]) => {
+            const q = cached.questions.find((q) => q.id === questionId);
+            const answerIdx = parseInt(ansStr, 10);
+            const answerText = q ? q.options[answerIdx] : '';
+            return { questionId, answer: answerText, rawIdx: ansStr };
+        });
+        this.attemptCache.set(attemptId, {
+            ...cached,
+            currentAnswers: answersArray,
+        });
+    }
+    async getAttemptById(attemptId) {
+        return this.prisma.assessmentAttempt.findUnique({
+            where: { id: attemptId },
+            select: { id: true, status: true },
+        });
+    }
+    async getAttemptHistory(assessmentId, userId) {
+        return this.prisma.assessmentAttempt.findMany({
+            where: { assessmentId, userId },
+            orderBy: { startedAt: 'desc' },
+            include: {
+                assessment: {
+                    select: { title: true, passingScore: true, maxAttempts: true },
+                },
+                violations: { orderBy: { timestamp: 'asc' } },
+            },
+        });
+    }
+    async getAssessmentReport(assessmentId, creatorId) {
+        const assessment = await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+        });
+        if (!assessment || assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        const attempts = await this.prisma.assessmentAttempt.findMany({
+            where: { assessmentId },
+            include: {
+                user: { select: { id: true, name: true, email: true } },
+                violations: { orderBy: { timestamp: 'asc' } },
+            },
+            orderBy: { startedAt: 'desc' },
+        });
+        const completedAttempts = attempts.filter((a) => a.status === 'COMPLETED');
+        const scores = completedAttempts.map((a) => a.score || 0);
+        const avgScore = scores.length > 0
+            ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+            : 0;
+        const passRate = completedAttempts.length > 0
+            ? Math.round((completedAttempts.filter((a) => a.passed).length /
+                completedAttempts.length) *
+                100)
+            : 0;
+        const voidedCount = attempts.filter((a) => a.status === 'VOIDED').length;
+        return {
+            assessment,
+            totalAttempts: attempts.length,
+            avgScore,
+            passRate,
+            voidedCount,
+            attempts: attempts.map((a) => ({
+                id: a.id,
+                userId: a.userId,
+                userName: a.user?.name || a.user?.email?.split('@')[0] || 'N/A',
+                userEmail: a.user?.email || '',
+                setCode: a.setCode,
+                startedAt: a.startedAt,
+                completedAt: a.completedAt,
+                score: a.score,
+                passed: a.passed,
+                isInvalid: a.isInvalid,
+                violationCount: a.violationCount,
+                status: a.status,
+                violations: a.violations || [],
+            })),
+        };
+    }
+    normalizePoints(questions, totalPoints) {
+        const WEIGHT = { EASY: 1, MEDIUM: 2, HARD: 3 };
+        const weightedSum = questions.reduce((sum, q) => sum + (WEIGHT[q.difficulty] || 2), 0);
+        if (weightedSum === 0)
+            return questions.map((q) => ({ id: q.id, points: 0 }));
+        const basePoint = totalPoints / weightedSum;
+        const result = questions.map((q) => ({
+            id: q.id,
+            points: parseFloat((basePoint * (WEIGHT[q.difficulty] || 2)).toFixed(2)),
+        }));
+        const currentSum = result.reduce((s, r) => s + r.points, 0);
+        const diff = parseFloat((totalPoints - currentSum).toFixed(2));
+        if (diff !== 0) {
+            let hardestIdx = 0;
+            let maxWeight = 0;
+            questions.forEach((q, i) => {
+                const w = WEIGHT[q.difficulty] || 2;
+                if (w > maxWeight) {
+                    maxWeight = w;
+                    hardestIdx = i;
+                }
+            });
+            result[hardestIdx].points = parseFloat((result[hardestIdx].points + diff).toFixed(2));
+        }
+        return result;
+    }
+    async autoBalancePoints(assessmentId, creatorId) {
+        const assessment = await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+            include: { questions: true },
+        });
+        if (!assessment || assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        if (assessment.isPublished)
+            throw new common_1.ForbiddenException('Bài thi đã công bố.');
+        if (assessment.questions.length === 0)
+            throw new common_1.BadRequestException('Chưa có câu hỏi nào.');
+        const questionsBySet = assessment.questions.reduce((acc, q) => {
+            if (!acc[q.setCode])
+                acc[q.setCode] = [];
+            acc[q.setCode].push(q);
+            return acc;
+        }, {});
+        const updates = [];
+        for (const setCode of Object.keys(questionsBySet)) {
+            const setQuestions = questionsBySet[setCode];
+            const normalized = this.normalizePoints(setQuestions.map((q) => ({ id: q.id, difficulty: q.difficulty })), assessment.totalPoints);
+            for (const n of normalized) {
+                updates.push(this.prisma.assessmentQuestion.update({
+                    where: { id: n.id },
+                    data: { points: n.points },
+                }));
+            }
+        }
+        await this.prisma.$transaction(updates);
+        return this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+            include: { questions: { orderBy: { createdAt: 'asc' } } },
+        });
+    }
+    async publishAssessment(assessmentId, creatorId) {
+        const assessment = await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+            include: { questions: true },
+        });
+        if (!assessment || assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        if (assessment.isPublished)
+            throw new common_1.BadRequestException('Bài thi đã được công bố.');
+        if (assessment.questions.length === 0)
+            throw new common_1.BadRequestException('Cần ít nhất 1 câu hỏi.');
+        const questionsBySet = assessment.questions.reduce((acc, q) => {
+            if (!acc[q.setCode])
+                acc[q.setCode] = [];
+            acc[q.setCode].push(q);
+            return acc;
+        }, {});
+        for (const [setCode, setQuestions] of Object.entries(questionsBySet)) {
+            const pointsSum = setQuestions.reduce((s, q) => s + q.points, 0);
+            const diff = Math.abs(pointsSum - assessment.totalPoints);
+            if (diff > 0.01) {
+                throw new common_1.BadRequestException(`Tổng điểm của Mã đề ${setCode} (${pointsSum}) không khớp totalPoints (${assessment.totalPoints}). Vui lòng chạy Auto-balance trước.`);
+            }
+        }
+        return this.prisma.assessment.update({
+            where: { id: assessmentId },
+            data: { isPublished: true },
+            include: { questions: { orderBy: { createdAt: 'asc' } } },
+        });
+    }
+    async unpublishAssessment(assessmentId, creatorId) {
+        const assessment = await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+        });
+        if (!assessment || assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        return this.prisma.assessment.update({
+            where: { id: assessmentId },
+            data: { isPublished: false },
+        });
+    }
+    async updateQuestionInline(questionId, creatorId, data) {
+        const question = await this.prisma.assessmentQuestion.findUnique({
+            where: { id: questionId },
+            include: { assessment: true },
+        });
+        if (!question || question.assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        if (question.assessment.isPublished)
+            throw new common_1.ForbiddenException('Bài thi đã công bố. Không thể chỉnh sửa.');
+        return this.prisma.assessmentQuestion.update({
+            where: { id: questionId },
+            data: {
+                ...(data.points !== undefined && { points: data.points }),
+                ...(data.correctAnswer !== undefined && {
+                    correctAnswer: data.correctAnswer,
+                }),
+                ...(data.difficulty !== undefined && { difficulty: data.difficulty }),
+            },
+        });
+    }
+    async generateAiExamQuestions(assessmentId, creatorId, bankId, questionCount, setCode = 'SET_1') {
+        const assessment = await this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+        });
+        if (!assessment || assessment.creatorId !== creatorId)
+            throw new common_1.NotFoundException();
+        if (assessment.isPublished)
+            throw new common_1.ForbiddenException('Bài thi đã công bố.');
+        let bankContext = '';
+        if (bankId) {
+            const bank = await this.prisma.questionBank.findUnique({
+                where: { id: bankId },
+                include: { questions: true },
+            });
+            if (bank && bank.questions.length > 0) {
+                bankContext = bank.questions
+                    .slice(0, 30)
+                    .map((q, i) => `${i + 1}. [${q.difficulty}] ${q.content} | Options: ${q.options} | Answer: ${q.correctAnswer}`)
+                    .join('\n');
+            }
+        }
+        const aiQuestions = await this.aiService.generateExamFromBank(assessment.title, assessment.description, bankContext, questionCount, assessment.totalPoints);
+        const normalized = this.normalizePoints(aiQuestions.map((q, i) => ({
+            id: `temp-${i}`,
+            difficulty: q.difficulty || 'MEDIUM',
+        })), assessment.totalPoints);
+        const created = [];
+        for (let i = 0; i < aiQuestions.length; i++) {
+            const q = aiQuestions[i];
+            const record = await this.prisma.assessmentQuestion.create({
+                data: {
+                    assessmentId,
+                    setCode,
+                    content: q.content,
+                    options: JSON.stringify(q.options),
+                    correctAnswer: q.correctAnswer,
+                    points: normalized[i].points,
+                    difficulty: q.difficulty || 'MEDIUM',
+                    isAiGenerated: true,
+                },
+            });
+            created.push(record);
+        }
+        return this.prisma.assessment.findUnique({
+            where: { id: assessmentId },
+            include: { questions: { orderBy: { createdAt: 'asc' } } },
         });
     }
 };
 exports.AssessmentsService = AssessmentsService;
 exports.AssessmentsService = AssessmentsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        remediation_service_1.RemediationService,
+        ai_service_1.AiService])
 ], AssessmentsService);
 //# sourceMappingURL=assessments.service.js.map

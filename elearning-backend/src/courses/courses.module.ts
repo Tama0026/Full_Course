@@ -14,4 +14,4 @@ import { EmailModule } from '../email/email.module';
   ],
   exports: [CoursesService, CourseRepository],
 })
-export class CoursesModule { }
+export class CoursesModule {}

@@ -6,6 +6,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { CourseType } from '@prisma/client';
 
 @InputType()
 export class CreateCourseInput {
@@ -21,6 +22,10 @@ export class CreateCourseInput {
   @IsNumber({}, { message: 'Price must be a number' })
   @Min(0, { message: 'Price must be non-negative' })
   price: number;
+
+  @Field(() => CourseType, { nullable: true, defaultValue: 'MARKETPLACE' })
+  @IsOptional()
+  type?: CourseType;
 
   @Field({ nullable: true, defaultValue: false })
   @IsOptional()

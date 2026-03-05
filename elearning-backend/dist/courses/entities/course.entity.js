@@ -13,11 +13,18 @@ exports.CourseStudent = exports.CourseStudentProgress = exports.Course = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const user_entity_1 = require("../../auth/entities/user.entity");
 const section_entity_1 = require("./section.entity");
+const client_1 = require("@prisma/client");
+(0, graphql_1.registerEnumType)(client_1.CourseType, {
+    name: 'CourseType',
+    description: 'Type of the course: MARKETPLACE (public) or PRIVATE (code-only)',
+});
 let Course = class Course {
     id;
     title;
     description;
     price;
+    type;
+    enrollCode;
     thumbnail;
     category;
     learningOutcomes;
@@ -51,6 +58,14 @@ __decorate([
     (0, graphql_1.Field)(() => graphql_1.Float),
     __metadata("design:type", Number)
 ], Course.prototype, "price", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => client_1.CourseType),
+    __metadata("design:type", String)
+], Course.prototype, "type", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Course.prototype, "enrollCode", void 0);
 __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)
@@ -146,6 +161,7 @@ let CourseStudent = class CourseStudent {
     lastRemindedAt;
     enrolledAt;
     status;
+    requestedAt;
 };
 exports.CourseStudent = CourseStudent;
 __decorate([
@@ -188,6 +204,10 @@ __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)
 ], CourseStudent.prototype, "status", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], CourseStudent.prototype, "requestedAt", void 0);
 exports.CourseStudent = CourseStudent = __decorate([
     (0, graphql_1.ObjectType)()
 ], CourseStudent);

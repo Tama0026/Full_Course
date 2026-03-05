@@ -18,6 +18,8 @@ import { AssessmentsModule } from './assessments/assessments.module';
 import { EmailModule } from './email/email.module';
 import { InterviewModule } from './interview/interview.module';
 import { CategoriesModule } from './categories/categories.module';
+import { RemediationModule } from './remediation/remediation.module';
+import { QuestionBankModule } from './question-bank/question-bank.module';
 
 @Module({
   imports: [
@@ -53,6 +55,8 @@ import { CategoriesModule } from './categories/categories.module';
     AssessmentsModule,
     InterviewModule,
     CategoriesModule,
+    RemediationModule,
+    QuestionBankModule,
   ],
 })
 export class AppModule {}

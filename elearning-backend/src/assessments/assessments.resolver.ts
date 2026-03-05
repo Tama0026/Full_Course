@@ -21,6 +21,7 @@ import {
   Assessment,
   AssessmentQuestion,
   AssessmentAttempt,
+  AssessmentReport,
 } from './entities/assessment.entity';
 
 import {
@@ -29,6 +30,7 @@ import {
   IsNumber,
   IsBoolean,
   IsArray,
+  IsOptional,
   Min,
 } from 'class-validator';
 
@@ -60,6 +62,25 @@ export class CreateAssessmentInput {
   @IsInt()
   @Min(1)
   numberOfSets: number;
+
+  @Field(() => Int, { defaultValue: 1 })
+  @IsInt()
+  @Min(1)
+  maxAttempts: number;
+
+  @Field(() => Int, { defaultValue: 5 })
+  @IsInt()
+  @Min(1)
+  maxViolations: number;
+
+  @Field(() => Float, { defaultValue: 10 })
+  @IsNumber()
+  @Min(1)
+  totalPoints: number;
+
+  @Field({ defaultValue: false })
+  @IsBoolean()
+  isPublished: boolean;
 }
 
 @InputType()
@@ -88,6 +109,31 @@ export class CreateQuestionInput {
   @Field(() => Int)
   @IsInt()
   order: number;
+
+  @Field(() => Float, { nullable: true })
+  @IsOptional()
+  @IsNumber()
+  points?: number;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+}
+
+@InputType()
+export class UpdateQuestionInlineInput {
+  @Field(() => Float, { nullable: true })
+  @IsNumber()
+  points?: number;
+
+  @Field(() => Int, { nullable: true })
+  @IsInt()
+  correctAnswer?: number;
+
+  @Field({ nullable: true })
+  @IsString()
+  difficulty?: string;
 }
 
 @InputType()
@@ -103,7 +149,7 @@ export class AnswerInput {
 
 @Resolver(() => Assessment)
 export class AssessmentsResolver {
-  constructor(private readonly assessmentsService: AssessmentsService) { }
+  constructor(private readonly assessmentsService: AssessmentsService) {}
 
   @Query(() => [Assessment], { name: 'assessments' })
   @UseGuards(JwtAuthGuard)
@@ -176,6 +222,89 @@ export class AssessmentsResolver {
     @CurrentUser() user: { id: string; role: string },
   ) {
     return this.assessmentsService.submitAttempt(attemptId, user.id, answers);
+  }
+
+  @Query(() => [AssessmentAttempt], { name: 'myAttemptHistory' })
+  @UseGuards(JwtAuthGuard)
+  async myAttemptHistory(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.getAttemptHistory(assessmentId, user.id);
+  }
+
+  @Query(() => AssessmentReport, { name: 'assessmentReport' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async assessmentReport(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.getAssessmentReport(assessmentId, user.id);
+  }
+
+  @Mutation(() => Assessment)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async publishAssessment(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.publishAssessment(assessmentId, user.id);
+  }
+
+  @Mutation(() => Assessment)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async unpublishAssessment(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.unpublishAssessment(assessmentId, user.id);
+  }
+
+  @Mutation(() => Assessment)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async autoBalancePoints(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.autoBalancePoints(assessmentId, user.id);
+  }
+
+  @Mutation(() => AssessmentQuestion)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async updateQuestionInline(
+    @Args('questionId') questionId: string,
+    @Args('input') input: UpdateQuestionInlineInput,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.updateQuestionInline(
+      questionId,
+      user.id,
+      input,
+    );
+  }
+
+  @Mutation(() => Assessment)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async generateAiExamQuestions(
+    @Args('assessmentId') assessmentId: string,
+    @Args('questionCount', { type: () => Int }) questionCount: number,
+    @Args('bankId', { nullable: true }) bankId: string,
+    @Args('setCode', { defaultValue: 'SET_1' }) setCode: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.generateAiExamQuestions(
+      assessmentId,
+      user.id,
+      bankId,
+      questionCount,
+      setCode,
+    );
   }
 }
 

@@ -12,7 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssessmentQuestionResolver = exports.AssessmentsResolver = exports.AnswerInput = exports.CreateQuestionInput = exports.CreateAssessmentInput = void 0;
+exports.AssessmentQuestionResolver = exports.AssessmentsResolver = exports.AnswerInput = exports.UpdateQuestionInlineInput = exports.CreateQuestionInput = exports.CreateAssessmentInput = void 0;
 const graphql_1 = require("@nestjs/graphql");
 const common_1 = require("@nestjs/common");
 const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
@@ -30,6 +30,10 @@ let CreateAssessmentInput = class CreateAssessmentInput {
     passingScore;
     isActive;
     numberOfSets;
+    maxAttempts;
+    maxViolations;
+    totalPoints;
+    isPublished;
 };
 exports.CreateAssessmentInput = CreateAssessmentInput;
 __decorate([
@@ -65,6 +69,29 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], CreateAssessmentInput.prototype, "numberOfSets", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 1 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "maxAttempts", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 5 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "maxViolations", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float, { defaultValue: 10 }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "totalPoints", void 0);
+__decorate([
+    (0, graphql_1.Field)({ defaultValue: false }),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateAssessmentInput.prototype, "isPublished", void 0);
 exports.CreateAssessmentInput = CreateAssessmentInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreateAssessmentInput);
@@ -75,6 +102,8 @@ let CreateQuestionInput = class CreateQuestionInput {
     correctAnswer;
     explanation;
     order;
+    points;
+    difficulty;
 };
 exports.CreateQuestionInput = CreateQuestionInput;
 __decorate([
@@ -108,9 +137,45 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     __metadata("design:type", Number)
 ], CreateQuestionInput.prototype, "order", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float, { nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], CreateQuestionInput.prototype, "points", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateQuestionInput.prototype, "difficulty", void 0);
 exports.CreateQuestionInput = CreateQuestionInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreateQuestionInput);
+let UpdateQuestionInlineInput = class UpdateQuestionInlineInput {
+    points;
+    correctAnswer;
+    difficulty;
+};
+exports.UpdateQuestionInlineInput = UpdateQuestionInlineInput;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float, { nullable: true }),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], UpdateQuestionInlineInput.prototype, "points", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { nullable: true }),
+    (0, class_validator_1.IsInt)(),
+    __metadata("design:type", Number)
+], UpdateQuestionInlineInput.prototype, "correctAnswer", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateQuestionInlineInput.prototype, "difficulty", void 0);
+exports.UpdateQuestionInlineInput = UpdateQuestionInlineInput = __decorate([
+    (0, graphql_1.InputType)()
+], UpdateQuestionInlineInput);
 let AnswerInput = class AnswerInput {
     questionId;
     answer;
@@ -157,6 +222,27 @@ let AssessmentsResolver = class AssessmentsResolver {
     }
     async submitAssessmentAttempt(attemptId, answers, user) {
         return this.assessmentsService.submitAttempt(attemptId, user.id, answers);
+    }
+    async myAttemptHistory(assessmentId, user) {
+        return this.assessmentsService.getAttemptHistory(assessmentId, user.id);
+    }
+    async assessmentReport(assessmentId, user) {
+        return this.assessmentsService.getAssessmentReport(assessmentId, user.id);
+    }
+    async publishAssessment(assessmentId, user) {
+        return this.assessmentsService.publishAssessment(assessmentId, user.id);
+    }
+    async unpublishAssessment(assessmentId, user) {
+        return this.assessmentsService.unpublishAssessment(assessmentId, user.id);
+    }
+    async autoBalancePoints(assessmentId, user) {
+        return this.assessmentsService.autoBalancePoints(assessmentId, user.id);
+    }
+    async updateQuestionInline(questionId, input, user) {
+        return this.assessmentsService.updateQuestionInline(questionId, user.id, input);
+    }
+    async generateAiExamQuestions(assessmentId, questionCount, bankId, setCode, user) {
+        return this.assessmentsService.generateAiExamQuestions(assessmentId, user.id, bankId, questionCount, setCode);
     }
 };
 exports.AssessmentsResolver = AssessmentsResolver;
@@ -236,6 +322,79 @@ __decorate([
     __metadata("design:paramtypes", [String, Array, Object]),
     __metadata("design:returntype", Promise)
 ], AssessmentsResolver.prototype, "submitAssessmentAttempt", null);
+__decorate([
+    (0, graphql_1.Query)(() => [assessment_entity_1.AssessmentAttempt], { name: 'myAttemptHistory' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "myAttemptHistory", null);
+__decorate([
+    (0, graphql_1.Query)(() => assessment_entity_1.AssessmentReport, { name: 'assessmentReport' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "assessmentReport", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => assessment_entity_1.Assessment),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "publishAssessment", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => assessment_entity_1.Assessment),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "unpublishAssessment", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => assessment_entity_1.Assessment),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "autoBalancePoints", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => assessment_entity_1.AssessmentQuestion),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('questionId')),
+    __param(1, (0, graphql_1.Args)('input')),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, UpdateQuestionInlineInput, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "updateQuestionInline", null);
+__decorate([
+    (0, graphql_1.Mutation)(() => assessment_entity_1.Assessment),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, graphql_1.Args)('questionCount', { type: () => graphql_1.Int })),
+    __param(2, (0, graphql_1.Args)('bankId', { nullable: true })),
+    __param(3, (0, graphql_1.Args)('setCode', { defaultValue: 'SET_1' })),
+    __param(4, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Number, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "generateAiExamQuestions", null);
 exports.AssessmentsResolver = AssessmentsResolver = __decorate([
     (0, graphql_1.Resolver)(() => assessment_entity_1.Assessment),
     __metadata("design:paramtypes", [assessments_service_1.AssessmentsService])
