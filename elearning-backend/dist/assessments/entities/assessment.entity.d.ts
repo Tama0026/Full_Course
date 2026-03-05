@@ -20,6 +20,8 @@ export declare class Assessment {
     timeLimit: number;
     passingScore: number;
     numberOfSets: number;
+    maxAttempts: number;
+    maxViolations: number;
     isActive: boolean;
     creatorId: string;
     createdAt: Date;
@@ -36,5 +38,34 @@ export declare class AssessmentAttempt {
     score?: number;
     passed?: boolean;
     isInvalid: boolean;
+    violationCount: number;
+    status: string;
     questions?: ShuffledQuestion[];
+}
+export declare class ViolationResult {
+    violationCount: number;
+    remaining: number;
+    maxViolations: number;
+    voided: boolean;
+}
+export declare class AttemptWithUser {
+    id: string;
+    userId: string;
+    userName?: string;
+    userEmail?: string;
+    setCode: string;
+    startedAt: Date;
+    completedAt?: Date;
+    score?: number;
+    passed?: boolean;
+    isInvalid: boolean;
+    violationCount: number;
+    status: string;
+}
+export declare class AssessmentReport {
+    totalAttempts: number;
+    avgScore: number;
+    passRate: number;
+    voidedCount: number;
+    attempts: AttemptWithUser[];
 }

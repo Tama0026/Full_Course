@@ -79,6 +79,8 @@ type Assessment {
   description: String!
   id: ID!
   isActive: Boolean!
+  maxAttempts: Int!
+  maxViolations: Int!
   numberOfSets: Int!
   passingScore: Float!
   questions: [AssessmentQuestion]
@@ -97,7 +99,9 @@ type AssessmentAttempt {
   score: Float
   setCode: String!
   startedAt: DateTime!
+  status: String!
   userId: String!
+  violationCount: Int!
 }
 
 type AssessmentQuestion {
@@ -109,6 +113,29 @@ type AssessmentQuestion {
   order: Int!
   prompt: String!
   setCode: String!
+}
+
+type AssessmentReport {
+  attempts: [AttemptWithUser!]!
+  avgScore: Int!
+  passRate: Int!
+  totalAttempts: Int!
+  voidedCount: Int!
+}
+
+type AttemptWithUser {
+  completedAt: DateTime
+  id: ID!
+  isInvalid: Boolean!
+  passed: Boolean
+  score: Float
+  setCode: String!
+  startedAt: DateTime!
+  status: String!
+  userEmail: String
+  userId: String!
+  userName: String
+  violationCount: Int!
 }
 
 type AuthResponse {
@@ -253,6 +280,8 @@ type CourseStudentProgress {
 input CreateAssessmentInput {
   description: String!
   isActive: Boolean!
+  maxAttempts: Int! = 1
+  maxViolations: Int! = 5
   numberOfSets: Int! = 1
   passingScore: Float!
   timeLimit: Int!
@@ -417,6 +446,7 @@ type Mutation {
   assessSkill: String!
   chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
   claimCertificate(courseId: String!): Certificate!
+  completeReviewItem(itemId: String!): ReviewPathItem!
   createAssessment(input: CreateAssessmentInput!): Assessment!
   createAssessmentQuestion(assessmentId: String!, input: CreateQuestionInput!): AssessmentQuestion!
   createCategory(input: CreateCategoryInput!): Category!
@@ -503,6 +533,7 @@ type Query {
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
   assessment(id: String!): Assessment!
+  assessmentReport(assessmentId: String!): AssessmentReport!
   assessments: [Assessment!]!
   categories: [Category!]!
   certificateByCode(code: String!): Certificate
@@ -520,6 +551,7 @@ type Query {
   lessonNotes(lessonId: String!): [Note!]!
   me: User!
   myAchievementStats: AchievementStats!
+  myAttemptHistory(assessmentId: String!): [AssessmentAttempt!]!
   myBadges: [BadgeType!]!
   myCertificates: [Certificate!]!
   myCourses: [Course!]!
@@ -528,6 +560,7 @@ type Query {
   myLoginStreak: LoginStreakType!
   myOrders: [Order!]!
   myPoints: Int!
+  myRemediations: [RemediationReport!]!
   order(id: String!): Order!
   suggestCourses(query: String!): String!
   topStudents(limit: Int! = 10): [LeaderboardEntry!]!
@@ -569,6 +602,34 @@ input RegisterInput {
   email: String!
   password: String!
   role: Role = STUDENT
+}
+
+type RemediationReport {
+  aiAnalysis: String!
+  assessmentId: String!
+  attemptId: String!
+  createdAt: DateTime!
+  id: ID!
+  isResolved: Boolean!
+  pathItems: [ReviewPathItem]
+  scorePercent: Float!
+  severity: String!
+  totalQuestions: Int!
+  updatedAt: DateTime!
+  userId: String!
+  wrongCount: Int!
+}
+
+type ReviewPathItem {
+  completedAt: DateTime
+  createdAt: DateTime!
+  id: ID!
+  isCompleted: Boolean!
+  lessonId: String!
+  lessonTitle: String!
+  priority: Int!
+  reason: String!
+  reportId: String!
 }
 
 """User roles for RBAC"""

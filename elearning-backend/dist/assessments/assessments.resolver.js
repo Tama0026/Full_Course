@@ -30,6 +30,8 @@ let CreateAssessmentInput = class CreateAssessmentInput {
     passingScore;
     isActive;
     numberOfSets;
+    maxAttempts;
+    maxViolations;
 };
 exports.CreateAssessmentInput = CreateAssessmentInput;
 __decorate([
@@ -65,6 +67,18 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], CreateAssessmentInput.prototype, "numberOfSets", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 1 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "maxAttempts", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int, { defaultValue: 5 }),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreateAssessmentInput.prototype, "maxViolations", void 0);
 exports.CreateAssessmentInput = CreateAssessmentInput = __decorate([
     (0, graphql_1.InputType)()
 ], CreateAssessmentInput);
@@ -158,6 +172,12 @@ let AssessmentsResolver = class AssessmentsResolver {
     async submitAssessmentAttempt(attemptId, answers, user) {
         return this.assessmentsService.submitAttempt(attemptId, user.id, answers);
     }
+    async myAttemptHistory(assessmentId, user) {
+        return this.assessmentsService.getAttemptHistory(assessmentId, user.id);
+    }
+    async assessmentReport(assessmentId, user) {
+        return this.assessmentsService.getAssessmentReport(assessmentId, user.id);
+    }
 };
 exports.AssessmentsResolver = AssessmentsResolver;
 __decorate([
@@ -236,6 +256,25 @@ __decorate([
     __metadata("design:paramtypes", [String, Array, Object]),
     __metadata("design:returntype", Promise)
 ], AssessmentsResolver.prototype, "submitAssessmentAttempt", null);
+__decorate([
+    (0, graphql_1.Query)(() => [assessment_entity_1.AssessmentAttempt], { name: 'myAttemptHistory' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "myAttemptHistory", null);
+__decorate([
+    (0, graphql_1.Query)(() => assessment_entity_1.AssessmentReport, { name: 'assessmentReport' }),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('assessmentId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AssessmentsResolver.prototype, "assessmentReport", null);
 exports.AssessmentsResolver = AssessmentsResolver = __decorate([
     (0, graphql_1.Resolver)(() => assessment_entity_1.Assessment),
     __metadata("design:paramtypes", [assessments_service_1.AssessmentsService])

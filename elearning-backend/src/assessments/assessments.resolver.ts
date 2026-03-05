@@ -21,6 +21,7 @@ import {
   Assessment,
   AssessmentQuestion,
   AssessmentAttempt,
+  AssessmentReport,
 } from './entities/assessment.entity';
 
 import {
@@ -60,6 +61,16 @@ export class CreateAssessmentInput {
   @IsInt()
   @Min(1)
   numberOfSets: number;
+
+  @Field(() => Int, { defaultValue: 1 })
+  @IsInt()
+  @Min(1)
+  maxAttempts: number;
+
+  @Field(() => Int, { defaultValue: 5 })
+  @IsInt()
+  @Min(1)
+  maxViolations: number;
 }
 
 @InputType()
@@ -176,6 +187,25 @@ export class AssessmentsResolver {
     @CurrentUser() user: { id: string; role: string },
   ) {
     return this.assessmentsService.submitAttempt(attemptId, user.id, answers);
+  }
+
+  @Query(() => [AssessmentAttempt], { name: 'myAttemptHistory' })
+  @UseGuards(JwtAuthGuard)
+  async myAttemptHistory(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.getAttemptHistory(assessmentId, user.id);
+  }
+
+  @Query(() => AssessmentReport, { name: 'assessmentReport' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async assessmentReport(
+    @Args('assessmentId') assessmentId: string,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.assessmentsService.getAssessmentReport(assessmentId, user.id);
   }
 }
 

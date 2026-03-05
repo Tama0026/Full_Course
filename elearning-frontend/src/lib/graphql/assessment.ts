@@ -45,6 +45,8 @@ export const GET_ASSESSMENT_DETAIL = gql`
       timeLimit
       passingScore
       numberOfSets
+      maxAttempts
+      maxViolations
       isActive
       questions {
         id
@@ -103,7 +105,50 @@ export const SUBMIT_ASSESSMENT_ATTEMPT = gql`
       score
       passed
       isInvalid
+      violationCount
+      status
       completedAt
+    }
+  }
+`;
+
+export const MY_ATTEMPT_HISTORY = gql`
+  query MyAttemptHistory($assessmentId: String!) {
+    myAttemptHistory(assessmentId: $assessmentId) {
+      id
+      setCode
+      startedAt
+      completedAt
+      score
+      passed
+      isInvalid
+      violationCount
+      status
+    }
+  }
+`;
+
+export const ASSESSMENT_REPORT = gql`
+  query AssessmentReport($assessmentId: String!) {
+    assessmentReport(assessmentId: $assessmentId) {
+      totalAttempts
+      avgScore
+      passRate
+      voidedCount
+      attempts {
+        id
+        userId
+        userName
+        userEmail
+        setCode
+        startedAt
+        completedAt
+        score
+        passed
+        isInvalid
+        violationCount
+        status
+      }
     }
   }
 `;

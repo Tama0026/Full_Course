@@ -6,6 +6,8 @@ export declare class CreateAssessmentInput {
     passingScore: number;
     isActive: boolean;
     numberOfSets: number;
+    maxAttempts: number;
+    maxViolations: number;
 }
 export declare class CreateQuestionInput {
     setCode: string;
@@ -26,69 +28,77 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         title: string;
-        isActive: boolean;
-        creatorId: string;
+        description: string;
         timeLimit: number;
         passingScore: number;
         numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            options: string;
-            content: string;
-            correctAnswer: number;
-            setCode: string;
             assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
         }[];
     } & {
-        description: string;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         title: string;
-        isActive: boolean;
-        creatorId: string;
+        description: string;
         timeLimit: number;
         passingScore: number;
         numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }) | null>;
     createAssessment(input: CreateAssessmentInput, user: {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         title: string;
-        isActive: boolean;
-        creatorId: string;
+        description: string;
         timeLimit: number;
         passingScore: number;
         numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     deleteAssessment(id: string, user: {
         id: string;
         role: string;
     }): Promise<{
-        description: string;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
         title: string;
-        isActive: boolean;
-        creatorId: string;
+        description: string;
         timeLimit: number;
         passingScore: number;
         numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     createAssessmentQuestion(assessmentId: string, input: CreateQuestionInput, user: {
         id: string;
@@ -97,11 +107,11 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        options: string;
-        content: string;
-        correctAnswer: number;
-        setCode: string;
         assessmentId: string;
+        setCode: string;
+        content: string;
+        options: string;
+        correctAnswer: number;
     }>;
     deleteAssessmentQuestion(id: string, user: {
         id: string;
@@ -110,11 +120,11 @@ export declare class AssessmentsResolver {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        options: string;
-        content: string;
-        correctAnswer: number;
-        setCode: string;
         assessmentId: string;
+        setCode: string;
+        content: string;
+        options: string;
+        correctAnswer: number;
     }>;
     startAssessmentAttempt(assessmentId: string, user: {
         id: string;
@@ -126,28 +136,94 @@ export declare class AssessmentsResolver {
             options: any[];
         }[];
         id: string;
-        userId: string;
-        completedAt: Date | null;
-        score: number | null;
-        setCode: string;
         assessmentId: string;
+        setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
+        violationCount: number;
+        status: string;
+        answers: string | null;
         startedAt: Date;
+        completedAt: Date | null;
+        userId: string;
     }>;
     submitAssessmentAttempt(attemptId: string, answers: AnswerInput[], user: {
         id: string;
         role: string;
     }): Promise<{
         id: string;
-        userId: string;
-        completedAt: Date | null;
-        score: number | null;
-        setCode: string;
         assessmentId: string;
+        setCode: string;
+        score: number | null;
         passed: boolean;
         isInvalid: boolean;
+        violationCount: number;
+        status: string;
+        answers: string | null;
         startedAt: Date;
+        completedAt: Date | null;
+        userId: string;
+    }>;
+    myAttemptHistory(assessmentId: string, user: {
+        id: string;
+        role: string;
+    }): Promise<({
+        assessment: {
+            title: string;
+            passingScore: number;
+            maxAttempts: number;
+        };
+    } & {
+        id: string;
+        assessmentId: string;
+        setCode: string;
+        score: number | null;
+        passed: boolean;
+        isInvalid: boolean;
+        violationCount: number;
+        status: string;
+        answers: string | null;
+        startedAt: Date;
+        completedAt: Date | null;
+        userId: string;
+    })[]>;
+    assessmentReport(assessmentId: string, user: {
+        id: string;
+        role: string;
+    }): Promise<{
+        assessment: {
+            id: string;
+            title: string;
+            description: string;
+            timeLimit: number;
+            passingScore: number;
+            numberOfSets: number;
+            maxAttempts: number;
+            maxViolations: number;
+            isActive: boolean;
+            creatorId: string;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+        totalAttempts: number;
+        avgScore: number;
+        passRate: number;
+        voidedCount: number;
+        attempts: {
+            id: any;
+            userId: any;
+            userName: any;
+            userEmail: any;
+            setCode: any;
+            startedAt: any;
+            completedAt: any;
+            score: any;
+            passed: any;
+            isInvalid: any;
+            violationCount: any;
+            status: any;
+        }[];
     }>;
 }
 export declare class AssessmentQuestionResolver {

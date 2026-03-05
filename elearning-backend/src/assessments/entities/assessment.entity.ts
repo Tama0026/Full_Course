@@ -59,6 +59,12 @@ export class Assessment {
   @Field(() => Int)
   numberOfSets: number;
 
+  @Field(() => Int)
+  maxAttempts: number;
+
+  @Field(() => Int)
+  maxViolations: number;
+
   @Field()
   isActive: boolean;
 
@@ -104,6 +110,84 @@ export class AssessmentAttempt {
   @Field()
   isInvalid: boolean;
 
+  @Field(() => Int)
+  violationCount: number;
+
+  @Field()
+  status: string;
+
   @Field(() => [ShuffledQuestion], { nullable: 'itemsAndList' })
   questions?: ShuffledQuestion[];
+}
+
+@ObjectType()
+export class ViolationResult {
+  @Field(() => Int)
+  violationCount: number;
+
+  @Field(() => Int)
+  remaining: number;
+
+  @Field(() => Int)
+  maxViolations: number;
+
+  @Field()
+  voided: boolean;
+}
+
+@ObjectType()
+export class AttemptWithUser {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  userId: string;
+
+  @Field({ nullable: true })
+  userName?: string;
+
+  @Field({ nullable: true })
+  userEmail?: string;
+
+  @Field()
+  setCode: string;
+
+  @Field()
+  startedAt: Date;
+
+  @Field({ nullable: true })
+  completedAt?: Date;
+
+  @Field(() => Float, { nullable: true })
+  score?: number;
+
+  @Field({ nullable: true })
+  passed?: boolean;
+
+  @Field()
+  isInvalid: boolean;
+
+  @Field(() => Int)
+  violationCount: number;
+
+  @Field()
+  status: string;
+}
+
+@ObjectType()
+export class AssessmentReport {
+  @Field(() => Int)
+  totalAttempts: number;
+
+  @Field(() => Int)
+  avgScore: number;
+
+  @Field(() => Int)
+  passRate: number;
+
+  @Field(() => Int)
+  voidedCount: number;
+
+  @Field(() => [AttemptWithUser])
+  attempts: AttemptWithUser[];
 }

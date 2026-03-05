@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssessmentAttempt = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
+exports.AssessmentReport = exports.AttemptWithUser = exports.ViolationResult = exports.AssessmentAttempt = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
 const graphql_1 = require("@nestjs/graphql");
 let ShuffledQuestion = class ShuffledQuestion {
     id;
@@ -85,6 +85,8 @@ let Assessment = class Assessment {
     timeLimit;
     passingScore;
     numberOfSets;
+    maxAttempts;
+    maxViolations;
     isActive;
     creatorId;
     createdAt;
@@ -116,6 +118,14 @@ __decorate([
     (0, graphql_1.Field)(() => graphql_1.Int),
     __metadata("design:type", Number)
 ], Assessment.prototype, "numberOfSets", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], Assessment.prototype, "maxAttempts", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], Assessment.prototype, "maxViolations", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)
@@ -149,6 +159,8 @@ let AssessmentAttempt = class AssessmentAttempt {
     score;
     passed;
     isInvalid;
+    violationCount;
+    status;
     questions;
 };
 exports.AssessmentAttempt = AssessmentAttempt;
@@ -189,10 +201,141 @@ __decorate([
     __metadata("design:type", Boolean)
 ], AssessmentAttempt.prototype, "isInvalid", void 0);
 __decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AssessmentAttempt.prototype, "violationCount", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AssessmentAttempt.prototype, "status", void 0);
+__decorate([
     (0, graphql_1.Field)(() => [ShuffledQuestion], { nullable: 'itemsAndList' }),
     __metadata("design:type", Array)
 ], AssessmentAttempt.prototype, "questions", void 0);
 exports.AssessmentAttempt = AssessmentAttempt = __decorate([
     (0, graphql_1.ObjectType)()
 ], AssessmentAttempt);
+let ViolationResult = class ViolationResult {
+    violationCount;
+    remaining;
+    maxViolations;
+    voided;
+};
+exports.ViolationResult = ViolationResult;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], ViolationResult.prototype, "violationCount", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], ViolationResult.prototype, "remaining", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], ViolationResult.prototype, "maxViolations", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], ViolationResult.prototype, "voided", void 0);
+exports.ViolationResult = ViolationResult = __decorate([
+    (0, graphql_1.ObjectType)()
+], ViolationResult);
+let AttemptWithUser = class AttemptWithUser {
+    id;
+    userId;
+    userName;
+    userEmail;
+    setCode;
+    startedAt;
+    completedAt;
+    score;
+    passed;
+    isInvalid;
+    violationCount;
+    status;
+};
+exports.AttemptWithUser = AttemptWithUser;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.ID),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "id", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "userId", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "userName", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "userEmail", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "setCode", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Date)
+], AttemptWithUser.prototype, "startedAt", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], AttemptWithUser.prototype, "completedAt", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float, { nullable: true }),
+    __metadata("design:type", Number)
+], AttemptWithUser.prototype, "score", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Boolean)
+], AttemptWithUser.prototype, "passed", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], AttemptWithUser.prototype, "isInvalid", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AttemptWithUser.prototype, "violationCount", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AttemptWithUser.prototype, "status", void 0);
+exports.AttemptWithUser = AttemptWithUser = __decorate([
+    (0, graphql_1.ObjectType)()
+], AttemptWithUser);
+let AssessmentReport = class AssessmentReport {
+    totalAttempts;
+    avgScore;
+    passRate;
+    voidedCount;
+    attempts;
+};
+exports.AssessmentReport = AssessmentReport;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AssessmentReport.prototype, "totalAttempts", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AssessmentReport.prototype, "avgScore", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AssessmentReport.prototype, "passRate", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Int),
+    __metadata("design:type", Number)
+], AssessmentReport.prototype, "voidedCount", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [AttemptWithUser]),
+    __metadata("design:type", Array)
+], AssessmentReport.prototype, "attempts", void 0);
+exports.AssessmentReport = AssessmentReport = __decorate([
+    (0, graphql_1.ObjectType)()
+], AssessmentReport);
 //# sourceMappingURL=assessment.entity.js.map

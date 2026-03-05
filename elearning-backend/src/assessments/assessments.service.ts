@@ -2,8 +2,10 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RemediationService } from '../remediation/remediation.service';
 
 @Injectable()
 export class AssessmentsService {
@@ -13,7 +15,10 @@ export class AssessmentsService {
     { questions: any[]; correctMap: Record<string, string> }
   >();
 
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private remediationService: RemediationService,
+  ) { }
 
   async getAssessments(userRole: string, userId: string) {
     if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
@@ -140,6 +145,16 @@ export class AssessmentsService {
     if (!assessment)
       throw new NotFoundException('Assessment not found or inactive');
 
+    // ---- Attempt limit guard ----
+    const existingAttempts = await this.prisma.assessmentAttempt.count({
+      where: { assessmentId, userId },
+    });
+    if (existingAttempts >= assessment.maxAttempts) {
+      throw new ForbiddenException(
+        `Bạn đã sử dụng hết ${assessment.maxAttempts} lượt thi cho bài này.`,
+      );
+    }
+
     // Filter questions by distinct setCodes
     const setCodes = [...new Set(assessment.questions.map((q) => q.setCode))];
     const pickedSetCode =
@@ -251,14 +266,150 @@ export class AssessmentsService {
 
     const passed = !isInvalid && score >= attempt.assessment.passingScore;
 
-    return this.prisma.assessmentAttempt.update({
+    const updatedAttempt = await this.prisma.assessmentAttempt.update({
       where: { id: attemptId },
       data: {
         completedAt: now,
         score,
         passed,
         isInvalid,
+        status: 'COMPLETED',
+        answers: JSON.stringify(answers),
       },
     });
+
+    // Fire-and-forget: AI gap analysis & remediation path generation
+    this.remediationService
+      .analyzeAttempt(attemptId, userId)
+      .catch((err) =>
+        console.error('[AssessmentsService] Remediation analysis failed:', err?.message),
+      );
+
+    return updatedAttempt;
+  }
+
+  // ============ VIOLATION TRACKING ============
+
+  async getAttemptForSocket(attemptId: string, userId: string) {
+    return this.prisma.assessmentAttempt.findFirst({
+      where: {
+        id: attemptId,
+        userId,
+        status: 'IN_PROGRESS',
+      },
+      include: {
+        assessment: { select: { maxViolations: true } },
+      },
+    });
+  }
+
+  async logViolation(attemptId: string, type: string) {
+    // Atomically increment violation count
+    const attempt = await this.prisma.assessmentAttempt.update({
+      where: { id: attemptId },
+      data: {
+        violationCount: { increment: 1 },
+      },
+      include: {
+        assessment: { select: { maxViolations: true } },
+      },
+    });
+
+    // Insert audit record
+    await this.prisma.violationRecord.create({
+      data: { attemptId, type },
+    });
+
+    const maxV = attempt.assessment.maxViolations;
+    const voided = attempt.violationCount >= maxV;
+
+    if (voided) {
+      // Auto-void the attempt
+      await this.prisma.assessmentAttempt.update({
+        where: { id: attemptId },
+        data: {
+          status: 'VOIDED',
+          isInvalid: true,
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    return {
+      violationCount: attempt.violationCount,
+      maxViolations: maxV,
+      remaining: Math.max(0, maxV - attempt.violationCount),
+      voided,
+    };
+  }
+
+  // ============ REPORTING ============
+
+  async getAttemptHistory(assessmentId: string, userId: string) {
+    return this.prisma.assessmentAttempt.findMany({
+      where: { assessmentId, userId },
+      orderBy: { startedAt: 'desc' },
+      include: {
+        assessment: {
+          select: { title: true, passingScore: true, maxAttempts: true },
+        },
+      },
+    });
+  }
+
+  async getAssessmentReport(assessmentId: string, creatorId: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+    });
+    if (!assessment || assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+
+    const attempts = await this.prisma.assessmentAttempt.findMany({
+      where: { assessmentId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        violations: { orderBy: { timestamp: 'asc' } },
+      },
+      orderBy: { startedAt: 'desc' },
+    });
+
+    // Compute summary stats
+    const completedAttempts = attempts.filter((a) => a.status === 'COMPLETED');
+    const scores = completedAttempts.map((a) => a.score || 0);
+    const avgScore =
+      scores.length > 0
+        ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+        : 0;
+    const passRate =
+      completedAttempts.length > 0
+        ? Math.round(
+          (completedAttempts.filter((a) => a.passed).length /
+            completedAttempts.length) *
+          100,
+        )
+        : 0;
+    const voidedCount = attempts.filter((a) => a.status === 'VOIDED').length;
+
+    return {
+      assessment,
+      totalAttempts: attempts.length,
+      avgScore,
+      passRate,
+      voidedCount,
+      attempts: attempts.map((a: any) => ({
+        id: a.id,
+        userId: a.userId,
+        userName: a.user?.name || 'N/A',
+        userEmail: a.user?.email || '',
+        setCode: a.setCode,
+        startedAt: a.startedAt,
+        completedAt: a.completedAt,
+        score: a.score,
+        passed: a.passed,
+        isInvalid: a.isInvalid,
+        violationCount: a.violationCount,
+        status: a.status,
+      })),
+    };
   }
 }

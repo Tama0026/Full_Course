@@ -27,6 +27,7 @@ const assessments_module_1 = require("./assessments/assessments.module");
 const email_module_1 = require("./email/email.module");
 const interview_module_1 = require("./interview/interview.module");
 const categories_module_1 = require("./categories/categories.module");
+const remediation_module_1 = require("./remediation/remediation.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -58,6 +59,7 @@ exports.AppModule = AppModule = __decorate([
             assessments_module_1.AssessmentsModule,
             interview_module_1.InterviewModule,
             categories_module_1.CategoriesModule,
+            remediation_module_1.RemediationModule,
         ],
     })
 ], AppModule);
