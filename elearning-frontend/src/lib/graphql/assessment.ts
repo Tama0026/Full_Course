@@ -126,6 +126,10 @@ export const MY_ATTEMPT_HISTORY = gql`
       isInvalid
       violationCount
       status
+      violations {
+        type
+        timestamp
+      }
     }
   }
 `;
@@ -225,6 +229,10 @@ export const ASSESSMENT_REPORT = gql`
         isInvalid
         violationCount
         status
+        violations {
+          type
+          timestamp
+        }
       }
     }
   }

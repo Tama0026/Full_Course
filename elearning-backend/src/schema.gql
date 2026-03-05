@@ -104,6 +104,7 @@ type AssessmentAttempt {
   status: String!
   userId: String!
   violationCount: Int!
+  violations: [ViolationRecord]
 }
 
 type AssessmentQuestion {
@@ -141,6 +142,7 @@ type AttemptWithUser {
   userId: String!
   userName: String
   violationCount: Int!
+  violations: [ViolationRecord]
 }
 
 type AuthResponse {
@@ -824,4 +826,11 @@ type VideoProgress {
   lessonId: String!
   updatedAt: DateTime!
   userId: String!
+}
+
+type ViolationRecord {
+  attemptId: String!
+  id: ID!
+  timestamp: DateTime!
+  type: String!
 }

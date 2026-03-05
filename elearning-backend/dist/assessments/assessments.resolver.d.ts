@@ -254,6 +254,7 @@ export declare class AssessmentsResolver {
             isInvalid: any;
             violationCount: any;
             status: any;
+            violations: any;
         }[];
     }>;
     publishAssessment(assessmentId: string, user: {

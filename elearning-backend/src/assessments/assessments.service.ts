@@ -415,7 +415,7 @@ export class AssessmentsService {
       attempts: attempts.map((a: any) => ({
         id: a.id,
         userId: a.userId,
-        userName: a.user?.name || 'N/A',
+        userName: a.user?.name || a.user?.email?.split('@')[0] || 'N/A',
         userEmail: a.user?.email || '',
         setCode: a.setCode,
         startedAt: a.startedAt,
@@ -425,6 +425,7 @@ export class AssessmentsService {
         isInvalid: a.isInvalid,
         violationCount: a.violationCount,
         status: a.status,
+        violations: a.violations || [],
       })),
     };
   }

@@ -97,6 +97,21 @@ export class Assessment {
 }
 
 @ObjectType()
+export class ViolationRecord {
+  @Field(() => ID)
+  id: string;
+
+  @Field()
+  attemptId: string;
+
+  @Field()
+  type: string;
+
+  @Field()
+  timestamp: Date;
+}
+
+@ObjectType()
 export class AssessmentAttempt {
   @Field(() => ID)
   id: string;
@@ -133,6 +148,9 @@ export class AssessmentAttempt {
 
   @Field(() => [ShuffledQuestion], { nullable: 'itemsAndList' })
   questions?: ShuffledQuestion[];
+
+  @Field(() => [ViolationRecord], { nullable: 'itemsAndList' })
+  violations?: ViolationRecord[];
 }
 
 @ObjectType()
@@ -187,6 +205,9 @@ export class AttemptWithUser {
 
   @Field()
   status: string;
+
+  @Field(() => [ViolationRecord], { nullable: 'itemsAndList' })
+  violations?: ViolationRecord[];
 }
 
 @ObjectType()

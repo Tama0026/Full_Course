@@ -236,6 +236,7 @@ export default function ExamAttemptPage({
 
     // ============ SEND VIOLATION VIA WEBSOCKET (DEBOUNCED) ============
     const lastViolationRef = useRef<number>(0);
+    const fullscreenExitTimeRef = useRef<number>(0);
 
     const emitViolation = useCallback((type: string) => {
         if (!attempt || isSubmittingExam || isVoided) return;
@@ -246,6 +247,13 @@ export default function ExamAttemptPage({
             console.log(`[AntiCheat] Debounced: ${type} (within 2s of last violation)`);
             return;
         }
+
+        // Suppress TAB_SWITCH that fires immediately after FULLSCREEN_EXIT
+        if (type === "TAB_SWITCH" && now - fullscreenExitTimeRef.current < 1500) {
+            console.log(`[AntiCheat] Suppressed TAB_SWITCH (caused by fullscreen exit)`);
+            return;
+        }
+
         lastViolationRef.current = now;
 
         console.log(`[AntiCheat] 🚨 Emitting violation: ${type}`);
@@ -263,6 +271,7 @@ export default function ExamAttemptPage({
             setIsFullscreen(!!document.fullscreenElement);
             if (!document.fullscreenElement) {
                 console.log("[AntiCheat] Fullscreen exited");
+                fullscreenExitTimeRef.current = Date.now();
                 emitViolation("FULLSCREEN_EXIT");
             }
         };

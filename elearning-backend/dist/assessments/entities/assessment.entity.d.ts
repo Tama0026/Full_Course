@@ -33,6 +33,12 @@ export declare class Assessment {
     updatedAt: Date;
     questions?: AssessmentQuestion[];
 }
+export declare class ViolationRecord {
+    id: string;
+    attemptId: string;
+    type: string;
+    timestamp: Date;
+}
 export declare class AssessmentAttempt {
     id: string;
     userId: string;
@@ -46,6 +52,7 @@ export declare class AssessmentAttempt {
     violationCount: number;
     status: string;
     questions?: ShuffledQuestion[];
+    violations?: ViolationRecord[];
 }
 export declare class ViolationResult {
     violationCount: number;
@@ -66,6 +73,7 @@ export declare class AttemptWithUser {
     isInvalid: boolean;
     violationCount: number;
     status: string;
+    violations?: ViolationRecord[];
 }
 export declare class AssessmentReport {
     totalAttempts: number;

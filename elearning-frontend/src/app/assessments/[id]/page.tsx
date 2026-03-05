@@ -165,9 +165,34 @@ export default function AssessmentDetailPage({
                                                                     {badge.icon} {badge.label}
                                                                 </span>
                                                                 {at.violationCount > 0 && (
-                                                                    <span className="text-xs text-red-500 font-medium">
-                                                                        {at.violationCount} vi phạm
-                                                                    </span>
+                                                                    <div className="relative inline-block">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const el = e.currentTarget.nextElementSibling;
+                                                                                if (el) el.classList.toggle("hidden");
+                                                                            }}
+                                                                            className="text-xs text-red-500 font-medium cursor-pointer hover:text-red-700 transition"
+                                                                        >
+                                                                            {at.violationCount} vi phạm ▾
+                                                                        </button>
+                                                                        <div className="hidden absolute z-50 left-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-3 text-left">
+                                                                            <p className="text-xs font-bold text-slate-700 mb-2">📋 Chi tiết vi phạm</p>
+                                                                            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                                                                {at.violations?.length > 0 ? at.violations.map((v: any, vi: number) => (
+                                                                                    <div key={vi} className="flex items-center gap-2 px-2.5 py-1.5 bg-red-50 rounded-lg text-xs">
+                                                                                        <span className="text-red-500 font-bold">#{vi + 1}</span>
+                                                                                        <span className="font-semibold text-slate-700">
+                                                                                            {v.type === "TAB_SWITCH" ? "🔀 Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "🖥️ Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "📡 Mất kết nối" : `⚠️ ${v.type}`}
+                                                                                        </span>
+                                                                                        <span className="ml-auto text-slate-400">{format(new Date(v.timestamp), "HH:mm:ss")}</span>
+                                                                                    </div>
+                                                                                )) : (
+                                                                                    <p className="text-xs text-slate-400 italic">Không có dữ liệu chi tiết</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                             <p className="text-xs text-slate-400 mt-1">

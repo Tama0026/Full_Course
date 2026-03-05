@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AssessmentReport = exports.AttemptWithUser = exports.ViolationResult = exports.AssessmentAttempt = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
+exports.AssessmentReport = exports.AttemptWithUser = exports.ViolationResult = exports.AssessmentAttempt = exports.ViolationRecord = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
 const graphql_1 = require("@nestjs/graphql");
 let ShuffledQuestion = class ShuffledQuestion {
     id;
@@ -174,6 +174,32 @@ __decorate([
 exports.Assessment = Assessment = __decorate([
     (0, graphql_1.ObjectType)()
 ], Assessment);
+let ViolationRecord = class ViolationRecord {
+    id;
+    attemptId;
+    type;
+    timestamp;
+};
+exports.ViolationRecord = ViolationRecord;
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.ID),
+    __metadata("design:type", String)
+], ViolationRecord.prototype, "id", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], ViolationRecord.prototype, "attemptId", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], ViolationRecord.prototype, "type", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Date)
+], ViolationRecord.prototype, "timestamp", void 0);
+exports.ViolationRecord = ViolationRecord = __decorate([
+    (0, graphql_1.ObjectType)()
+], ViolationRecord);
 let AssessmentAttempt = class AssessmentAttempt {
     id;
     userId;
@@ -187,6 +213,7 @@ let AssessmentAttempt = class AssessmentAttempt {
     violationCount;
     status;
     questions;
+    violations;
 };
 exports.AssessmentAttempt = AssessmentAttempt;
 __decorate([
@@ -237,6 +264,10 @@ __decorate([
     (0, graphql_1.Field)(() => [ShuffledQuestion], { nullable: 'itemsAndList' }),
     __metadata("design:type", Array)
 ], AssessmentAttempt.prototype, "questions", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [ViolationRecord], { nullable: 'itemsAndList' }),
+    __metadata("design:type", Array)
+], AssessmentAttempt.prototype, "violations", void 0);
 exports.AssessmentAttempt = AssessmentAttempt = __decorate([
     (0, graphql_1.ObjectType)()
 ], AssessmentAttempt);
@@ -279,6 +310,7 @@ let AttemptWithUser = class AttemptWithUser {
     isInvalid;
     violationCount;
     status;
+    violations;
 };
 exports.AttemptWithUser = AttemptWithUser;
 __decorate([
@@ -329,6 +361,10 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)
 ], AttemptWithUser.prototype, "status", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => [ViolationRecord], { nullable: 'itemsAndList' }),
+    __metadata("design:type", Array)
+], AttemptWithUser.prototype, "violations", void 0);
 exports.AttemptWithUser = AttemptWithUser = __decorate([
     (0, graphql_1.ObjectType)()
 ], AttemptWithUser);

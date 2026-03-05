@@ -273,6 +273,7 @@ export declare class AssessmentsService {
             isInvalid: any;
             violationCount: any;
             status: any;
+            violations: any;
         }[];
     }>;
     normalizePoints(questions: {

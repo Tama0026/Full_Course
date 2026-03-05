@@ -748,10 +748,35 @@ export default function AssessmentEditorPage() {
                                                             </td>
                                                             <td className="text-center px-3 py-4">
                                                                 {at.violationCount > 0 ? (
-                                                                    <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
-                                                                        <ShieldAlert className="w-3 h-3" />
-                                                                        {at.violationCount}
-                                                                    </span>
+                                                                    <div className="relative inline-block">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const el = e.currentTarget.nextElementSibling;
+                                                                                if (el) el.classList.toggle("hidden");
+                                                                            }}
+                                                                            className="inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-full cursor-pointer transition"
+                                                                        >
+                                                                            <ShieldAlert className="w-3 h-3" />
+                                                                            {at.violationCount} vi phạm ▾
+                                                                        </button>
+                                                                        <div className="hidden absolute z-50 right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-200 p-3 text-left">
+                                                                            <p className="text-xs font-bold text-slate-700 mb-2">📋 Chi tiết vi phạm</p>
+                                                                            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                                                                {at.violations?.length > 0 ? at.violations.map((v: any, vi: number) => (
+                                                                                    <div key={vi} className="flex items-center gap-2 px-2.5 py-1.5 bg-red-50 rounded-lg text-xs">
+                                                                                        <span className="text-red-500 font-bold">#{vi + 1}</span>
+                                                                                        <span className="font-semibold text-slate-700">
+                                                                                            {v.type === "TAB_SWITCH" ? "🔀 Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "🖥️ Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "📡 Mất kết nối" : `⚠️ ${v.type}`}
+                                                                                        </span>
+                                                                                        <span className="ml-auto text-slate-400">{format(new Date(v.timestamp), "HH:mm:ss")}</span>
+                                                                                    </div>
+                                                                                )) : (
+                                                                                    <p className="text-xs text-slate-400 italic">Không có dữ liệu chi tiết</p>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 ) : (
                                                                     <span className="text-xs text-slate-300">0</span>
                                                                 )}
