@@ -44,13 +44,13 @@ export declare class QuestionBankResolver {
             questions: number;
         };
     } & {
-        id: string;
+        category: string;
         name: string;
         description: string | null;
-        category: string;
-        userId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
     })[]>;
     getQuestionBank(id: string, user: {
         id: string;
@@ -58,90 +58,90 @@ export declare class QuestionBankResolver {
         questions: {
             id: string;
             createdAt: Date;
-            bankId: string;
-            content: string;
             options: string;
+            content: string;
             correctAnswer: number;
-            explanation: string | null;
             difficulty: string;
+            bankId: string;
+            explanation: string | null;
         }[];
     } & {
-        id: string;
+        category: string;
         name: string;
         description: string | null;
-        category: string;
-        userId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
     }>;
     createQuestionBank(input: CreateQuestionBankInput, user: {
         id: string;
     }): Promise<{
-        id: string;
+        category: string;
         name: string;
         description: string | null;
-        category: string;
-        userId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
     }>;
     updateQuestionBank(id: string, input: UpdateQuestionBankInput, user: {
         id: string;
     }): Promise<{
-        id: string;
+        category: string;
         name: string;
         description: string | null;
-        category: string;
-        userId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
     }>;
     deleteQuestionBank(id: string, user: {
         id: string;
     }): Promise<{
-        id: string;
+        category: string;
         name: string;
         description: string | null;
-        category: string;
-        userId: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
     }>;
     createBankQuestion(bankId: string, input: CreateBankQuestionInput, user: {
         id: string;
     }): Promise<{
         id: string;
         createdAt: Date;
-        bankId: string;
-        content: string;
         options: string;
+        content: string;
         correctAnswer: number;
-        explanation: string | null;
         difficulty: string;
+        bankId: string;
+        explanation: string | null;
     }>;
     deleteBankQuestion(id: string, user: {
         id: string;
     }): Promise<{
         id: string;
         createdAt: Date;
-        bankId: string;
-        content: string;
         options: string;
+        content: string;
         correctAnswer: number;
-        explanation: string | null;
         difficulty: string;
+        bankId: string;
+        explanation: string | null;
     }>;
     updateBankQuestion(id: string, input: UpdateBankQuestionInput, user: {
         id: string;
     }): Promise<{
         id: string;
         createdAt: Date;
-        bankId: string;
-        content: string;
         options: string;
+        content: string;
         correctAnswer: number;
-        explanation: string | null;
         difficulty: string;
+        bankId: string;
+        explanation: string | null;
     }>;
     bulkImportQuestions(bankId: string, questions: BulkImportQuestionInput[], user: {
         id: string;

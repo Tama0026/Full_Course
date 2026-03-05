@@ -9,11 +9,11 @@ export declare class RemediationResolver {
         pathItems: {
             id: string;
             createdAt: Date;
+            priority: number;
             lessonId: string;
             completedAt: Date | null;
             lessonTitle: string;
             reason: string;
-            priority: number;
             isCompleted: boolean;
             reportId: string;
         }[];
@@ -37,11 +37,11 @@ export declare class RemediationResolver {
     }): Promise<{
         id: string;
         createdAt: Date;
+        priority: number;
         lessonId: string;
         completedAt: Date | null;
         lessonTitle: string;
         reason: string;
-        priority: number;
         isCompleted: boolean;
         reportId: string;
     }>;

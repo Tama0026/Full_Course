@@ -13,7 +13,11 @@ export class AssessmentsService {
   // Cache to store the shuffled correct options mapping per attempt
   private attemptCache = new Map<
     string,
-    { questions: any[]; correctMap: Record<string, string> }
+    {
+      questions: any[];
+      correctMap: Record<string, string>;
+      currentAnswers?: { questionId: string; answer: string; rawIdx: string }[];
+    }
   >();
 
   constructor(
@@ -340,15 +344,44 @@ export class AssessmentsService {
     const voided = attempt.violationCount >= maxV;
 
     if (voided) {
-      // Auto-void the attempt
+      // Calculate score based on cached answers
+      let score = 0;
+      let finalAnswersStr = '[]';
+      const cached = this.attemptCache.get(attemptId);
+
+      if (cached && cached.currentAnswers) {
+        let correctCount = 0;
+        for (const ans of cached.currentAnswers) {
+          if (cached.correctMap[ans.questionId] === ans.answer) {
+            correctCount++;
+          }
+        }
+        score =
+          cached.questions.length > 0
+            ? (correctCount / cached.questions.length) * 100
+            : 0;
+
+        finalAnswersStr = JSON.stringify(
+          cached.currentAnswers.map((a) => ({ questionId: a.questionId, answer: a.rawIdx }))
+        );
+      }
+
+      // Auto-void the attempt but save the score
       await this.prisma.assessmentAttempt.update({
         where: { id: attemptId },
         data: {
           status: 'VOIDED',
           isInvalid: true,
           completedAt: new Date(),
+          score,
+          answers: finalAnswersStr,
         },
       });
+
+      // Clear cache
+      if (this.attemptCache.has(attemptId)) {
+        this.attemptCache.delete(attemptId);
+      }
     }
 
     return {
@@ -357,6 +390,36 @@ export class AssessmentsService {
       remaining: Math.max(0, maxV - attempt.violationCount),
       voided,
     };
+  }
+
+  async cacheAnswers(
+    attemptId: string,
+    userId: string,
+    answers: Record<string, string>,
+  ) {
+    const cached = this.attemptCache.get(attemptId);
+    if (!cached) return;
+
+    // Convert Record<string, string> to array format for storage
+    const answersArray = Object.entries(answers).map(([questionId, ansStr]) => {
+      const q = cached.questions.find((q) => q.id === questionId);
+      const answerIdx = parseInt(ansStr as string, 10);
+      const answerText = q ? q.options[answerIdx] : '';
+      return { questionId, answer: answerText, rawIdx: ansStr };
+    });
+
+    // Store in cache temporarily (or db if you want durability)
+    this.attemptCache.set(attemptId, {
+      ...cached,
+      currentAnswers: answersArray,
+    });
+  }
+
+  async getAttemptById(attemptId: string) {
+    return this.prisma.assessmentAttempt.findUnique({
+      where: { id: attemptId },
+      select: { id: true, status: true },
+    });
   }
 
   // ============ REPORTING ============
@@ -369,6 +432,7 @@ export class AssessmentsService {
         assessment: {
           select: { title: true, passingScore: true, maxAttempts: true },
         },
+        violations: { orderBy: { timestamp: 'asc' } },
       },
     });
   }

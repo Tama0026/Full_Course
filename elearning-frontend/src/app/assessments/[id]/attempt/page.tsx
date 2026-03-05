@@ -289,8 +289,9 @@ export default function ExamAttemptPage({
         const handleContextMenu = (e: MouseEvent) => e.preventDefault();
         const handleKeyDown = (e: KeyboardEvent) => {
             if (
-                (e.ctrlKey && ["c", "v", "p", "a", "s", "u"].includes(e.key.toLowerCase())) ||
+                (e.ctrlKey && ["c", "v", "p", "a", "s", "u", "r"].includes(e.key.toLowerCase())) ||
                 (e.ctrlKey && e.shiftKey && ["i", "j", "c"].includes(e.key.toLowerCase())) ||
+                e.key === "F5" ||
                 e.key === "F12" ||
                 (e.altKey && e.key === "Tab") ||
                 (e.metaKey)
@@ -336,7 +337,16 @@ export default function ExamAttemptPage({
 
     const handleAnswerSelect = (index: number) => {
         if (!currentQuestion || !attemptId) return;
-        setAnswer(attemptId, currentQuestion.id, index.toString());
+        const answerStr = index.toString();
+        setAnswer(attemptId, currentQuestion.id, answerStr);
+
+        // Emit to backend for tracking/partial score in case of void
+        if (socketRef.current?.connected) {
+            socketRef.current.emit("save-answer", {
+                attemptId,
+                answers: { ...currentAnswers, [currentQuestion.id]: answerStr }
+            });
+        }
     };
 
     const handleNext = () => currentIndex < questions.length - 1 && setCurrentIndex(currentIndex + 1);

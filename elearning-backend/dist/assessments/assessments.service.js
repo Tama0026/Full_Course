@@ -242,14 +242,35 @@ let AssessmentsService = class AssessmentsService {
         const maxV = attempt.assessment.maxViolations;
         const voided = attempt.violationCount >= maxV;
         if (voided) {
+            let score = 0;
+            let finalAnswersStr = '[]';
+            const cached = this.attemptCache.get(attemptId);
+            if (cached && cached.currentAnswers) {
+                let correctCount = 0;
+                for (const ans of cached.currentAnswers) {
+                    if (cached.correctMap[ans.questionId] === ans.answer) {
+                        correctCount++;
+                    }
+                }
+                score =
+                    cached.questions.length > 0
+                        ? (correctCount / cached.questions.length) * 100
+                        : 0;
+                finalAnswersStr = JSON.stringify(cached.currentAnswers.map((a) => ({ questionId: a.questionId, answer: a.rawIdx })));
+            }
             await this.prisma.assessmentAttempt.update({
                 where: { id: attemptId },
                 data: {
                     status: 'VOIDED',
                     isInvalid: true,
                     completedAt: new Date(),
+                    score,
+                    answers: finalAnswersStr,
                 },
             });
+            if (this.attemptCache.has(attemptId)) {
+                this.attemptCache.delete(attemptId);
+            }
         }
         return {
             violationCount: attempt.violationCount,
@@ -257,6 +278,27 @@ let AssessmentsService = class AssessmentsService {
             remaining: Math.max(0, maxV - attempt.violationCount),
             voided,
         };
+    }
+    async cacheAnswers(attemptId, userId, answers) {
+        const cached = this.attemptCache.get(attemptId);
+        if (!cached)
+            return;
+        const answersArray = Object.entries(answers).map(([questionId, ansStr]) => {
+            const q = cached.questions.find((q) => q.id === questionId);
+            const answerIdx = parseInt(ansStr, 10);
+            const answerText = q ? q.options[answerIdx] : '';
+            return { questionId, answer: answerText, rawIdx: ansStr };
+        });
+        this.attemptCache.set(attemptId, {
+            ...cached,
+            currentAnswers: answersArray,
+        });
+    }
+    async getAttemptById(attemptId) {
+        return this.prisma.assessmentAttempt.findUnique({
+            where: { id: attemptId },
+            select: { id: true, status: true },
+        });
     }
     async getAttemptHistory(assessmentId, userId) {
         return this.prisma.assessmentAttempt.findMany({
@@ -266,6 +308,7 @@ let AssessmentsService = class AssessmentsService {
                 assessment: {
                     select: { title: true, passingScore: true, maxAttempts: true },
                 },
+                violations: { orderBy: { timestamp: 'asc' } },
             },
         });
     }

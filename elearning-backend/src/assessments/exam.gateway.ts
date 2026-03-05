@@ -90,8 +90,14 @@ export class ExamGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     // If still disconnected after 30s, log a violation
                     const existing = this.connectedAttempts.get(attemptId);
                     if (existing && existing.socketId === client.id) {
-                        this.logger.warn(`Attempt ${attemptId}: no reconnection after 30s, logging violation`);
-                        await this.assessmentsService.logViolation(attemptId, 'DISCONNECT_TIMEOUT');
+                        // Check if attempt is still in-progress before logging violation
+                        const attempt = await this.assessmentsService.getAttemptById(attemptId);
+                        if (attempt && attempt.status === 'IN_PROGRESS') {
+                            this.logger.warn(`Attempt ${attemptId}: no reconnection after 30s, logging violation`);
+                            await this.assessmentsService.logViolation(attemptId, 'DISCONNECT_TIMEOUT');
+                        } else {
+                            this.logger.log(`Attempt ${attemptId}: already ${attempt?.status}, skipping disconnect violation`);
+                        }
                         this.connectedAttempts.delete(attemptId);
                     }
                 } catch (err) {
@@ -186,6 +192,21 @@ export class ExamGateway implements OnGatewayConnection, OnGatewayDisconnect {
             }
         } catch (err) {
             this.logger.error(`violation handler error: ${(err as Error).message}`);
+        }
+    }
+
+    @SubscribeMessage('save-answer')
+    async handleSaveAnswer(
+        @ConnectedSocket() client: AuthenticatedSocket,
+        @MessageBody() data: { attemptId: string; answers: Record<string, string> },
+    ) {
+        try {
+            if (!client.userId || !data.attemptId || !data.answers) return;
+            // Provide those intermediate answers to the service so it can be cached
+            await this.assessmentsService.cacheAnswers(data.attemptId, client.userId, data.answers);
+        } catch (err) {
+            // Ignore benign sync errors
+            this.logger.debug(`save-answer sync error: ${(err as Error).message}`);
         }
     }
 }

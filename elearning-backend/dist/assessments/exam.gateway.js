@@ -70,8 +70,14 @@ let ExamGateway = class ExamGateway {
                 try {
                     const existing = this.connectedAttempts.get(attemptId);
                     if (existing && existing.socketId === client.id) {
-                        this.logger.warn(`Attempt ${attemptId}: no reconnection after 30s, logging violation`);
-                        await this.assessmentsService.logViolation(attemptId, 'DISCONNECT_TIMEOUT');
+                        const attempt = await this.assessmentsService.getAttemptById(attemptId);
+                        if (attempt && attempt.status === 'IN_PROGRESS') {
+                            this.logger.warn(`Attempt ${attemptId}: no reconnection after 30s, logging violation`);
+                            await this.assessmentsService.logViolation(attemptId, 'DISCONNECT_TIMEOUT');
+                        }
+                        else {
+                            this.logger.log(`Attempt ${attemptId}: already ${attempt?.status}, skipping disconnect violation`);
+                        }
                         this.connectedAttempts.delete(attemptId);
                     }
                 }
@@ -145,6 +151,16 @@ let ExamGateway = class ExamGateway {
             this.logger.error(`violation handler error: ${err.message}`);
         }
     }
+    async handleSaveAnswer(client, data) {
+        try {
+            if (!client.userId || !data.attemptId || !data.answers)
+                return;
+            await this.assessmentsService.cacheAnswers(data.attemptId, client.userId, data.answers);
+        }
+        catch (err) {
+            this.logger.debug(`save-answer sync error: ${err.message}`);
+        }
+    }
 };
 exports.ExamGateway = ExamGateway;
 __decorate([
@@ -167,6 +183,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], ExamGateway.prototype, "handleViolation", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('save-answer'),
+    __param(0, (0, websockets_1.ConnectedSocket)()),
+    __param(1, (0, websockets_1.MessageBody)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], ExamGateway.prototype, "handleSaveAnswer", null);
 exports.ExamGateway = ExamGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

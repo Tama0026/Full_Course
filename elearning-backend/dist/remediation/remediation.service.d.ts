@@ -13,11 +13,11 @@ export declare class RemediationService {
         pathItems: {
             id: string;
             createdAt: Date;
+            priority: number;
             lessonId: string;
             completedAt: Date | null;
             lessonTitle: string;
             reason: string;
-            priority: number;
             isCompleted: boolean;
             reportId: string;
         }[];
@@ -38,11 +38,11 @@ export declare class RemediationService {
     completeReviewItem(itemId: string, userId: string): Promise<{
         id: string;
         createdAt: Date;
+        priority: number;
         lessonId: string;
         completedAt: Date | null;
         lessonTitle: string;
         reason: string;
-        priority: number;
         isCompleted: boolean;
         reportId: string;
     }>;

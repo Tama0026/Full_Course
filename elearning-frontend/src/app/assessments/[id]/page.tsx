@@ -151,7 +151,7 @@ export default function AssessmentDetailPage({
                                     <History className="w-5 h-5 text-blue-600" />
                                     Lịch sử làm bài
                                 </h3>
-                                <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                                <div className="border border-slate-200 rounded-2xl">
                                     <div className="divide-y divide-slate-100">
                                         {attempts.map((at, idx) => {
                                             const badge = getStatusBadge(at);

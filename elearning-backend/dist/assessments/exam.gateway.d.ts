@@ -24,5 +24,9 @@ export declare class ExamGateway implements OnGatewayConnection, OnGatewayDiscon
         attemptId: string;
         type: string;
     }): Promise<void>;
+    handleSaveAnswer(client: AuthenticatedSocket, data: {
+        attemptId: string;
+        answers: Record<string, string>;
+    }): Promise<void>;
 }
 export {};
