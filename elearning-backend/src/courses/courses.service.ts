@@ -622,8 +622,7 @@ export class CoursesService {
 
     // Trigger Notification Notification
     const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') ||
-      'http://localhost:3000';
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const courseUrl = `${frontendUrl}/courses/${courseId}`;
 
     await this.emailService.sendEnrollmentApprovedEmail(
@@ -632,7 +631,9 @@ export class CoursesService {
       course.title,
       courseUrl,
     );
-    console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
+    console.log(
+      `[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`,
+    );
 
     return true;
   }
@@ -691,17 +692,7 @@ export class CoursesService {
     if (!enrollment)
       throw new NotFoundException('Học viên chưa đăng ký khóa học này');
 
-    // Check Rate Limit (24 hours) - Use 24h interval
-    if (enrollment.lastRemindedAt) {
-      const timeSinceLastReminder =
-        new Date().getTime() - enrollment.lastRemindedAt.getTime();
-      const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
-      if (hoursSince < 24) {
-        throw new BadRequestException(
-          'Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.',
-        );
-      }
-    }
+    // Removed Rate Limit for testing
 
     await this.prisma.enrollment.update({
       where: { id: enrollment.id },
@@ -710,10 +701,20 @@ export class CoursesService {
 
     const studentName = enrollment.user.name || 'Bạn';
     const instName = course.instructor.name || 'Giảng viên';
-    console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
-    console.log(
-      `[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`,
+
+    // Trigger Notification Email
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const courseUrl = `${frontendUrl}/courses/${courseId}`;
+
+    await this.emailService.sendLearningReminderEmail(
+      enrollment.user.email,
+      studentName,
+      course.title,
+      instName,
+      courseUrl,
     );
+    console.log(`[EMAIL SEND] Đã gửi nhắc nhở tới: ${enrollment.user.email}`);
 
     return true;
   }
@@ -725,7 +726,10 @@ export class CoursesService {
    */
   async generateUniqueEnrollCode(category?: string): Promise<string> {
     const prefix = category
-      ? category.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X')
+      ? category
+        .substring(0, 3)
+        .toUpperCase()
+        .replace(/[^A-Z]/g, 'X')
       : 'CRS';
     const year = new Date().getFullYear();
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous 0/O/1/I
@@ -760,7 +764,9 @@ export class CoursesService {
     });
 
     if (!course) {
-      throw new NotFoundException('Mã khóa học không hợp lệ hoặc không tồn tại.');
+      throw new NotFoundException(
+        'Mã khóa học không hợp lệ hoặc không tồn tại.',
+      );
     }
 
     // Check if already enrolled
@@ -833,7 +839,11 @@ export class CoursesService {
       include: {
         instructor: { select: { id: true, email: true, name: true } },
         sections: {
-          include: { lessons: { select: { id: true, title: true, order: true, duration: true } } },
+          include: {
+            lessons: {
+              select: { id: true, title: true, order: true, duration: true },
+            },
+          },
           orderBy: { order: 'asc' },
         },
         _count: { select: { enrollments: true } },

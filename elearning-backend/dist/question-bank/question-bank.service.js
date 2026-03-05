@@ -22,10 +22,10 @@ let QuestionBankService = class QuestionBankService {
             where: { userId },
             include: {
                 _count: {
-                    select: { questions: true }
-                }
+                    select: { questions: true },
+                },
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
         });
     }
     async getQuestionBank(id, userId) {
@@ -33,9 +33,9 @@ let QuestionBankService = class QuestionBankService {
             where: { id },
             include: {
                 questions: {
-                    orderBy: { createdAt: 'desc' }
-                }
-            }
+                    orderBy: { createdAt: 'desc' },
+                },
+            },
         });
         if (!bank || bank.userId !== userId)
             throw new common_1.NotFoundException('Question Bank not found.');
@@ -45,8 +45,8 @@ let QuestionBankService = class QuestionBankService {
         return this.prisma.questionBank.create({
             data: {
                 ...data,
-                userId
-            }
+                userId,
+            },
         });
     }
     async updateQuestionBank(id, userId, data) {
@@ -55,7 +55,7 @@ let QuestionBankService = class QuestionBankService {
             throw new common_1.NotFoundException();
         return this.prisma.questionBank.update({
             where: { id },
-            data
+            data,
         });
     }
     async deleteQuestionBank(id, userId) {
@@ -65,7 +65,9 @@ let QuestionBankService = class QuestionBankService {
         return this.prisma.questionBank.delete({ where: { id } });
     }
     async createBankQuestion(userId, data) {
-        const bank = await this.prisma.questionBank.findUnique({ where: { id: data.bankId } });
+        const bank = await this.prisma.questionBank.findUnique({
+            where: { id: data.bankId },
+        });
         if (!bank || bank.userId !== userId)
             throw new common_1.NotFoundException();
         return this.prisma.bankQuestion.create({
@@ -75,14 +77,14 @@ let QuestionBankService = class QuestionBankService {
                 options: JSON.stringify(data.options),
                 correctAnswer: data.correctAnswer,
                 explanation: data.explanation,
-                difficulty: data.difficulty
-            }
+                difficulty: data.difficulty,
+            },
         });
     }
     async updateBankQuestion(userId, id, data) {
         const question = await this.prisma.bankQuestion.findUnique({
             where: { id },
-            include: { bank: true }
+            include: { bank: true },
         });
         if (!question || question.bank.userId !== userId)
             throw new common_1.NotFoundException();
@@ -91,7 +93,7 @@ let QuestionBankService = class QuestionBankService {
             updateData.options = JSON.stringify(data.options);
         const updatedBq = await this.prisma.bankQuestion.update({
             where: { id },
-            data: updateData
+            data: updateData,
         });
         const syncData = {};
         if (data.content !== undefined)
@@ -109,10 +111,10 @@ let QuestionBankService = class QuestionBankService {
                 where: {
                     bankQuestionId: id,
                     assessment: {
-                        isPublished: false
-                    }
+                        isPublished: false,
+                    },
                 },
-                data: syncData
+                data: syncData,
             });
         }
         return updatedBq;
@@ -120,39 +122,44 @@ let QuestionBankService = class QuestionBankService {
     async deleteBankQuestion(id, userId) {
         const question = await this.prisma.bankQuestion.findUnique({
             where: { id },
-            include: { bank: true }
+            include: { bank: true },
         });
         if (!question || question.bank.userId !== userId)
             throw new common_1.NotFoundException();
         return this.prisma.bankQuestion.delete({ where: { id } });
     }
     async bulkImportQuestions(userId, bankId, questions) {
-        const bank = await this.prisma.questionBank.findUnique({ where: { id: bankId } });
+        const bank = await this.prisma.questionBank.findUnique({
+            where: { id: bankId },
+        });
         if (!bank || bank.userId !== userId)
             throw new common_1.NotFoundException();
         if (!Array.isArray(questions) || questions.length === 0) {
             throw new common_1.BadRequestException('Invalid input. Must be a non-empty array of questions.');
         }
         const payload = questions.map((q, index) => {
-            if (!q.content || !Array.isArray(q.options) || q.options.length < 2 || typeof q.correctAnswer !== 'number') {
+            if (!q.content ||
+                !Array.isArray(q.options) ||
+                q.options.length < 2 ||
+                typeof q.correctAnswer !== 'number') {
                 throw new common_1.BadRequestException(`Invalid question format at index ${index}. Must have content, at least 2 options, and correctAnswer index.`);
             }
             return {
                 bankId,
                 content: String(q.content).trim(),
-                options: JSON.stringify(q.options.map(opt => String(opt).trim())),
+                options: JSON.stringify(q.options.map((opt) => String(opt).trim())),
                 correctAnswer: q.correctAnswer,
                 difficulty: q.difficulty || 'MEDIUM',
-                explanation: q.explanation || null
+                explanation: q.explanation || null,
             };
         });
         const result = await this.prisma.bankQuestion.createMany({
             data: payload,
-            skipDuplicates: true
+            skipDuplicates: true,
         });
         return {
             success: true,
-            count: result.count
+            count: result.count,
         };
     }
 };

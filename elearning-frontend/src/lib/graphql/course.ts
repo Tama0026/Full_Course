@@ -165,8 +165,8 @@ export const GENERATE_LESSON_CONTENT = gql`
 `;
 
 export const GENERATE_LESSON_CONTENT_WITH_QUIZ = gql`
-  mutation GenerateLessonContentWithQuiz($title: String!, $lessonId: String!, $quizCount: Int = 5) {
-    generateLessonContentWithQuiz(title: $title, lessonId: $lessonId, quizCount: $quizCount)
+  mutation GenerateLessonContentWithQuiz($title: String!, $courseTitle: String!, $lessonId: String!, $quizCount: Int = 5) {
+    generateLessonContentWithQuiz(title: $title, courseTitle: $courseTitle, lessonId: $lessonId, quizCount: $quizCount)
   }
 `;
 

@@ -5,8 +5,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AiModule } from '../ai/ai.module';
 
 @Module({
-    imports: [PrismaModule, AiModule],
-    providers: [RemediationService, RemediationResolver],
-    exports: [RemediationService],
+  imports: [PrismaModule, AiModule],
+  providers: [RemediationService, RemediationResolver],
+  exports: [RemediationService],
 })
-export class RemediationModule { }
+export class RemediationModule {}

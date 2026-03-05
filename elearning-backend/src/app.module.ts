@@ -59,5 +59,4 @@ import { QuestionBankModule } from './question-bank/question-bank.module';
     QuestionBankModule,
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

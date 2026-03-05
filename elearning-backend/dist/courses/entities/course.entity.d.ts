@@ -40,4 +40,5 @@ export declare class CourseStudent {
     lastRemindedAt?: Date;
     enrolledAt?: Date;
     status?: string;
+    requestedAt?: Date;
 }

@@ -694,10 +694,11 @@ Only return the JSON object.
             console.log(`[AiService] getAiRecommendations for userId: ${userId}`);
             const text = await this.generateWithFallback(prompt);
             console.log(`[AiService] getAiRecommendations done — ${text.length} chars`);
-            return text || JSON.stringify({
-                motivation: 'Hãy khám phá các khóa học mới!',
-                recommendations: [],
-            });
+            return (text ||
+                JSON.stringify({
+                    motivation: 'Hãy khám phá các khóa học mới!',
+                    recommendations: [],
+                }));
         }
         catch (error) {
             const msg = error?.message || '';

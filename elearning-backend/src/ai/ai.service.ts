@@ -556,18 +556,29 @@ Không trả về định dạng markdown hay bất kỳ text nào khác ngoài 
       const questions = JSON.parse(cleaned);
 
       if (!Array.isArray(questions) || questions.length !== questionCount) {
-        throw new Error(`Invalid output format or question count mismatch (expected ${questionCount}, got ${questions?.length}).`);
+        throw new Error(
+          `Invalid output format or question count mismatch (expected ${questionCount}, got ${questions?.length}).`,
+        );
       }
 
-      console.log(`[AiService] AI Exam generation done: ${questions.length} questions`);
+      console.log(
+        `[AiService] AI Exam generation done: ${questions.length} questions`,
+      );
       return questions;
     } catch (error: any) {
       const msg = error?.message || '';
-      console.error(`[AiService] generateExamFromBank error:`, msg.slice(0, 200));
+      console.error(
+        `[AiService] generateExamFromBank error:`,
+        msg.slice(0, 200),
+      );
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-        throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.');
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.',
+        );
       }
-      throw new InternalServerErrorException('Lỗi khi nhờ AI tạo Đề thi. Vui lòng thử lại.');
+      throw new InternalServerErrorException(
+        'Lỗi khi nhờ AI tạo Đề thi. Vui lòng thử lại.',
+      );
     }
   }
   /**
@@ -601,7 +612,9 @@ ${rawText}
     `;
 
     try {
-      console.log(`[AiService] Parsing raw text for Magic Import (${rawText.length} chars)...`);
+      console.log(
+        `[AiService] Parsing raw text for Magic Import (${rawText.length} chars)...`,
+      );
       const text = await this.generateWithFallback(prompt);
       const cleaned = text
         .replace(/```json\n?/gi, '')
@@ -613,15 +626,21 @@ ${rawText}
         throw new Error('Kết quả trả về không phải là mảng JSON.');
       }
 
-      console.log(`[AiService] Magic Import parsed ${questions.length} questions successfully`);
+      console.log(
+        `[AiService] Magic Import parsed ${questions.length} questions successfully`,
+      );
       return questions;
     } catch (error: any) {
       const msg = error?.message || '';
       console.error(`[AiService] parseRawQuestions error:`, msg.slice(0, 200));
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-        throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.');
+        throw new InternalServerErrorException(
+          'RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.',
+        );
       }
-      throw new InternalServerErrorException('Lỗi khi nhờ định dạng câu hỏi. Đảm bảo văn bản đầu vào rõ ràng.');
+      throw new InternalServerErrorException(
+        'Lỗi khi nhờ định dạng câu hỏi. Đảm bảo văn bản đầu vào rõ ràng.',
+      );
     }
   }
 
@@ -935,13 +954,19 @@ Only return the JSON object.
         `[AiService] getAiRecommendations done — ${text.length} chars`,
       );
 
-      return text || JSON.stringify({
-        motivation: 'Hãy khám phá các khóa học mới!',
-        recommendations: [],
-      });
+      return (
+        text ||
+        JSON.stringify({
+          motivation: 'Hãy khám phá các khóa học mới!',
+          recommendations: [],
+        })
+      );
     } catch (error: any) {
       const msg: string = error?.message || '';
-      console.error(`[AiService] getAiRecommendations error:`, msg.slice(0, 200));
+      console.error(
+        `[AiService] getAiRecommendations error:`,
+        msg.slice(0, 200),
+      );
 
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
         throw new InternalServerErrorException(

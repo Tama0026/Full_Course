@@ -301,6 +301,7 @@ type CourseStudent {
   name: String!
   progressPercent: Float!
   progressTimeline: [CourseStudentProgress!]!
+  requestedAt: DateTime
   status: String
 }
 

@@ -17,7 +17,12 @@ exports.QuestionBankModule = QuestionBankModule;
 exports.QuestionBankModule = QuestionBankModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        providers: [question_bank_service_1.QuestionBankService, question_bank_resolver_1.QuestionBankResolver, question_bank_resolver_1.QuestionBankFieldResolver, question_bank_resolver_1.BankQuestionResolver],
+        providers: [
+            question_bank_service_1.QuestionBankService,
+            question_bank_resolver_1.QuestionBankResolver,
+            question_bank_resolver_1.QuestionBankFieldResolver,
+            question_bank_resolver_1.BankQuestionResolver,
+        ],
         exports: [question_bank_service_1.QuestionBankService],
     })
 ], QuestionBankModule);

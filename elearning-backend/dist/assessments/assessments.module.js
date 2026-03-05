@@ -21,8 +21,19 @@ let AssessmentsModule = class AssessmentsModule {
 exports.AssessmentsModule = AssessmentsModule;
 exports.AssessmentsModule = AssessmentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, remediation_module_1.RemediationModule, ai_module_1.AiModule, config_1.ConfigModule, jwt_1.JwtModule.register({})],
-        providers: [assessments_resolver_1.AssessmentsResolver, assessments_resolver_1.AssessmentQuestionResolver, assessments_service_1.AssessmentsService, exam_gateway_1.ExamGateway],
+        imports: [
+            prisma_module_1.PrismaModule,
+            remediation_module_1.RemediationModule,
+            ai_module_1.AiModule,
+            config_1.ConfigModule,
+            jwt_1.JwtModule.register({}),
+        ],
+        providers: [
+            assessments_resolver_1.AssessmentsResolver,
+            assessments_resolver_1.AssessmentQuestionResolver,
+            assessments_service_1.AssessmentsService,
+            exam_gateway_1.ExamGateway,
+        ],
         exports: [assessments_service_1.AssessmentsService],
     })
 ], AssessmentsModule);

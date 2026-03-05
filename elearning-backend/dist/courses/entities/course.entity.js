@@ -161,6 +161,7 @@ let CourseStudent = class CourseStudent {
     lastRemindedAt;
     enrolledAt;
     status;
+    requestedAt;
 };
 exports.CourseStudent = CourseStudent;
 __decorate([
@@ -203,6 +204,10 @@ __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)
 ], CourseStudent.prototype, "status", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", Date)
+], CourseStudent.prototype, "requestedAt", void 0);
 exports.CourseStudent = CourseStudent = __decorate([
     (0, graphql_1.ObjectType)()
 ], CourseStudent);

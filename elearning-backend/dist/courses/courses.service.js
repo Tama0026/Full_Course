@@ -429,8 +429,7 @@ let CoursesService = class CoursesService {
             where: { id: enrollment.id },
             data: { status: 'APPROVED', enrolledAt: new Date() },
         });
-        const frontendUrl = this.configService.get('FRONTEND_URL') ||
-            'http://localhost:3000';
+        const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
         const courseUrl = `${frontendUrl}/courses/${courseId}`;
         await this.emailService.sendEnrollmentApprovedEmail(enrollment.user.email, enrollment.user.name || 'Học viên', course.title, courseUrl);
         console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
@@ -472,26 +471,24 @@ let CoursesService = class CoursesService {
         });
         if (!enrollment)
             throw new common_1.NotFoundException('Học viên chưa đăng ký khóa học này');
-        if (enrollment.lastRemindedAt) {
-            const timeSinceLastReminder = new Date().getTime() - enrollment.lastRemindedAt.getTime();
-            const hoursSince = timeSinceLastReminder / (1000 * 60 * 60);
-            if (hoursSince < 24) {
-                throw new common_1.BadRequestException('Chưa đủ 24h kể từ lần gửi trước. Mỗi học viên chỉ nhận 1 nhắc nhở/ngày.');
-            }
-        }
         await this.prisma.enrollment.update({
             where: { id: enrollment.id },
             data: { lastRemindedAt: new Date() },
         });
         const studentName = enrollment.user.name || 'Bạn';
         const instName = course.instructor.name || 'Giảng viên';
-        console.log(`[EMAIL SEND] Tới: ${enrollment.user.email}`);
-        console.log(`[EMAIL CONTENT] Chào ${studentName}, giảng viên ${instName} nhận thấy bạn đang dừng lại... Hãy tiếp tục hành trình nhé!`);
+        const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+        const courseUrl = `${frontendUrl}/courses/${courseId}`;
+        await this.emailService.sendLearningReminderEmail(enrollment.user.email, studentName, course.title, instName, courseUrl);
+        console.log(`[EMAIL SEND] Đã gửi nhắc nhở tới: ${enrollment.user.email}`);
         return true;
     }
     async generateUniqueEnrollCode(category) {
         const prefix = category
-            ? category.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X')
+            ? category
+                .substring(0, 3)
+                .toUpperCase()
+                .replace(/[^A-Z]/g, 'X')
             : 'CRS';
         const year = new Date().getFullYear();
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -572,7 +569,11 @@ let CoursesService = class CoursesService {
             include: {
                 instructor: { select: { id: true, email: true, name: true } },
                 sections: {
-                    include: { lessons: { select: { id: true, title: true, order: true, duration: true } } },
+                    include: {
+                        lessons: {
+                            select: { id: true, title: true, order: true, duration: true },
+                        },
+                    },
                     orderBy: { order: 'asc' },
                 },
                 _count: { select: { enrollments: true } },

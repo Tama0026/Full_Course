@@ -173,6 +173,8 @@ export default function CourseStudentsPage() {
                                                         <div className="text-xs text-slate-600 font-medium">
                                                             {format(new Date(st.enrolledAt), "dd/MM/yyyy HH:mm", { locale: vi })}
                                                         </div>
+                                                    ) : st.status === 'APPROVED' ? (
+                                                        <span className="text-xs text-emerald-600 font-medium">Đã duyệt</span>
                                                     ) : (
                                                         <span className="text-xs text-amber-500 italic font-medium">Chưa tham gia (Chờ duyệt)</span>
                                                     )}
@@ -205,9 +207,9 @@ export default function CourseStudentsPage() {
                                                         )}
                                                         <button
                                                             onClick={() => handleSendReminder(st)}
-                                                            disabled={!canRemind || sendingId === st.id || sending || isCompleted || st.status === 'PENDING'}
+                                                            disabled={sendingId === st.id || sending || isCompleted || st.status === 'PENDING'}
                                                             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-indigo-600 disabled:hover:text-slate-700 shadow-sm"
-                                                            title={!canRemind ? "Mỗi học viên chỉ nhận 1 mail nhắc nhở mỗi ngày" : isCompleted ? "Học viên đã hoàn thành khóa học" : "Gửi email nhắc nhở học viên"}
+                                                            title={isCompleted ? "Học viên đã hoàn thành khóa học" : "Gửi email nhắc nhở học viên"}
                                                         >
                                                             {sendingId === st.id ? (
                                                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

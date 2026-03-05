@@ -24,7 +24,7 @@ export class AssessmentsService {
     private prisma: PrismaService,
     private remediationService: RemediationService,
     private aiService: AiService,
-  ) { }
+  ) {}
 
   async getAssessments(userRole: string, userId: string) {
     if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
@@ -129,7 +129,9 @@ export class AssessmentsService {
     if (!assessment || assessment.creatorId !== creatorId)
       throw new NotFoundException();
     if (assessment.isPublished)
-      throw new ForbiddenException('Bài thi đã được công bố. Không thể thêm câu hỏi.');
+      throw new ForbiddenException(
+        'Bài thi đã được công bố. Không thể thêm câu hỏi.',
+      );
 
     return this.prisma.assessmentQuestion.create({
       data: {
@@ -152,7 +154,9 @@ export class AssessmentsService {
     if (!question || question.assessment.creatorId !== creatorId)
       throw new NotFoundException();
     if (question.assessment.isPublished)
-      throw new ForbiddenException('Bài thi đã được công bố. Không thể xoá câu hỏi.');
+      throw new ForbiddenException(
+        'Bài thi đã được công bố. Không thể xoá câu hỏi.',
+      );
 
     return this.prisma.assessmentQuestion.delete({ where: { id } });
   }
@@ -302,7 +306,10 @@ export class AssessmentsService {
     this.remediationService
       .analyzeAttempt(attemptId, userId)
       .catch((err) =>
-        console.error('[AssessmentsService] Remediation analysis failed:', err?.message),
+        console.error(
+          '[AssessmentsService] Remediation analysis failed:',
+          err?.message,
+        ),
       );
 
     return updatedAttempt;
@@ -362,7 +369,10 @@ export class AssessmentsService {
             : 0;
 
         finalAnswersStr = JSON.stringify(
-          cached.currentAnswers.map((a) => ({ questionId: a.questionId, answer: a.rawIdx }))
+          cached.currentAnswers.map((a) => ({
+            questionId: a.questionId,
+            answer: a.rawIdx,
+          })),
         );
       }
 
@@ -463,10 +473,10 @@ export class AssessmentsService {
     const passRate =
       completedAttempts.length > 0
         ? Math.round(
-          (completedAttempts.filter((a) => a.passed).length /
-            completedAttempts.length) *
-          100,
-        )
+            (completedAttempts.filter((a) => a.passed).length /
+              completedAttempts.length) *
+              100,
+          )
         : 0;
     const voidedCount = attempts.filter((a) => a.status === 'VOIDED').length;
 
@@ -509,7 +519,8 @@ export class AssessmentsService {
       (sum, q) => sum + (WEIGHT[q.difficulty] || 2),
       0,
     );
-    if (weightedSum === 0) return questions.map((q) => ({ id: q.id, points: 0 }));
+    if (weightedSum === 0)
+      return questions.map((q) => ({ id: q.id, points: 0 }));
 
     const basePoint = totalPoints / weightedSum;
     const result = questions.map((q) => ({
@@ -555,11 +566,14 @@ export class AssessmentsService {
       throw new BadRequestException('Chưa có câu hỏi nào.');
 
     // Group questions by setCode
-    const questionsBySet = assessment.questions.reduce((acc, q) => {
-      if (!acc[q.setCode]) acc[q.setCode] = [];
-      acc[q.setCode].push(q);
-      return acc;
-    }, {} as Record<string, typeof assessment.questions>);
+    const questionsBySet = assessment.questions.reduce(
+      (acc, q) => {
+        if (!acc[q.setCode]) acc[q.setCode] = [];
+        acc[q.setCode].push(q);
+        return acc;
+      },
+      {} as Record<string, typeof assessment.questions>,
+    );
 
     const updates: any[] = [];
 
@@ -575,7 +589,7 @@ export class AssessmentsService {
           this.prisma.assessmentQuestion.update({
             where: { id: n.id },
             data: { points: n.points },
-          })
+          }),
         );
       }
     }
@@ -604,11 +618,14 @@ export class AssessmentsService {
       throw new BadRequestException('Cần ít nhất 1 câu hỏi.');
 
     // Group questions by setCode
-    const questionsBySet = assessment.questions.reduce((acc, q) => {
-      if (!acc[q.setCode]) acc[q.setCode] = [];
-      acc[q.setCode].push(q);
-      return acc;
-    }, {} as Record<string, typeof assessment.questions>);
+    const questionsBySet = assessment.questions.reduce(
+      (acc, q) => {
+        if (!acc[q.setCode]) acc[q.setCode] = [];
+        acc[q.setCode].push(q);
+        return acc;
+      },
+      {} as Record<string, typeof assessment.questions>,
+    );
 
     for (const [setCode, setQuestions] of Object.entries(questionsBySet)) {
       const pointsSum = setQuestions.reduce((s, q) => s + q.points, 0);

@@ -44,6 +44,9 @@ const INSTRUCTOR_NAV = [
 
 const ADMIN_NAV = [
     { href: "/admin", icon: LayoutDashboard, label: "Admin Dashboard", exact: true },
+    { href: "/admin/categories", icon: Database, label: "Quản lý danh mục", exact: false },
+    { href: "/admin/courses", icon: BookOpen, label: "Quản lý khóa học", exact: false },
+    { href: "/admin/badges", icon: Award, label: "Hệ thống Huy hiệu", exact: false },
 ];
 
 /**

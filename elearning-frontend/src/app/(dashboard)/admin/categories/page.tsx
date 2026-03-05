@@ -29,14 +29,17 @@ export default function AdminCategoriesPage() {
 
     async function handleCreate(e: React.FormEvent) {
         e.preventDefault();
-        if (!newName.trim()) return;
+        if (!newName.trim()) {
+            toast.error("Vui lòng nhập tên danh mục");
+            return;
+        }
         setAdding(true);
         setError(null);
         try {
             await createCategory({ variables: { input: { name: newName.trim() } } });
             setNewName("");
             await refetch();
-            toast.success("Tạo danh mục thành công ✅");
+            toast.success("Tạo danh mục thành công");
         } catch (err: any) {
             setError(err.message || "Có lỗi xảy ra");
         } finally {
@@ -88,7 +91,7 @@ export default function AdminCategoriesPage() {
                 </div>
                 <button
                     type="submit"
-                    disabled={adding || !newName.trim()}
+                    disabled={adding}
                     className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-emerald-700 transition-colors disabled:opacity-50"
                 >
                     {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}

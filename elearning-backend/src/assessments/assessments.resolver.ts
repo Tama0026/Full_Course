@@ -149,7 +149,7 @@ export class AnswerInput {
 
 @Resolver(() => Assessment)
 export class AssessmentsResolver {
-  constructor(private readonly assessmentsService: AssessmentsService) { }
+  constructor(private readonly assessmentsService: AssessmentsService) {}
 
   @Query(() => [Assessment], { name: 'assessments' })
   @UseGuards(JwtAuthGuard)
@@ -281,7 +281,11 @@ export class AssessmentsResolver {
     @Args('input') input: UpdateQuestionInlineInput,
     @CurrentUser() user: { id: string; role: string },
   ) {
-    return this.assessmentsService.updateQuestionInline(questionId, user.id, input);
+    return this.assessmentsService.updateQuestionInline(
+      questionId,
+      user.id,
+      input,
+    );
   }
 
   @Mutation(() => Assessment)

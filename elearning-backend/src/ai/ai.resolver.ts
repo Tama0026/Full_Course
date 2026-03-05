@@ -13,7 +13,7 @@ export class AiResolver {
   constructor(
     private readonly aiService: AiService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   @Query(() => String, { name: 'suggestCourses' })
   async searchCourses(@Args('query') query: string): Promise<string> {
@@ -140,9 +140,7 @@ export class AiResolver {
   @Mutation(() => String, { name: 'parseRawQuestions' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.INSTRUCTOR, Role.ADMIN)
-  async parseRawQuestions(
-    @Args('rawText') rawText: string,
-  ): Promise<string> {
+  async parseRawQuestions(@Args('rawText') rawText: string): Promise<string> {
     console.log(`[AiResolver] parseRawQuestions length: ${rawText.length}`);
     const questions = await this.aiService.parseRawQuestions(rawText);
     return JSON.stringify(questions);

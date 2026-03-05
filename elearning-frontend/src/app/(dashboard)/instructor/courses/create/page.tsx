@@ -149,6 +149,7 @@ export default function CreateCoursePage() {
         const e: Record<string, string> = {};
         if (!title.trim()) e.title = "Tên khóa học là bắt buộc";
         if (!description.trim()) e.description = "Mô tả là bắt buộc";
+        if (!category.trim()) e.category = "Chuyên mục là bắt buộc";
         const priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum < 0) e.price = "Giá phải là số >= 0";
         setErrors(e);
@@ -386,9 +387,11 @@ export default function CreateCoursePage() {
                                         onChange={(e) => setCategory(e.target.value)}
                                         className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 bg-white"
                                     >
-                                        {categories.length === 0 && <option value="">Đang tải...</option>}
+                                        <option value="" disabled>-- Chọn chuyên mục --</option>
+                                        {categories.length === 0 && <option value="" disabled>Đang tải...</option>}
                                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                     </select>
+                                    {errors.category && <p className="mt-1 text-xs text-red-500">{errors.category}</p>}
                                 </div>
                             </div>
 

@@ -256,7 +256,10 @@ let AssessmentsService = class AssessmentsService {
                     cached.questions.length > 0
                         ? (correctCount / cached.questions.length) * 100
                         : 0;
-                finalAnswersStr = JSON.stringify(cached.currentAnswers.map((a) => ({ questionId: a.questionId, answer: a.rawIdx })));
+                finalAnswersStr = JSON.stringify(cached.currentAnswers.map((a) => ({
+                    questionId: a.questionId,
+                    answer: a.rawIdx,
+                })));
             }
             await this.prisma.assessmentAttempt.update({
                 where: { id: attemptId },

@@ -236,7 +236,10 @@ let QuestionBankResolver = class QuestionBankResolver {
         return this.questionBankService.deleteQuestionBank(id, user.id);
     }
     createBankQuestion(bankId, input, user) {
-        return this.questionBankService.createBankQuestion(user.id, { bankId, ...input });
+        return this.questionBankService.createBankQuestion(user.id, {
+            bankId,
+            ...input,
+        });
     }
     deleteBankQuestion(id, user) {
         return this.questionBankService.deleteBankQuestion(id, user.id);

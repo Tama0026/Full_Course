@@ -33,8 +33,7 @@ let ExamGateway = class ExamGateway {
     }
     async handleConnection(client) {
         try {
-            const token = client.handshake.auth?.token ||
-                client.handshake.query?.token;
+            const token = client.handshake.auth?.token || client.handshake.query?.token;
             if (!token) {
                 this.logger.warn(`Client ${client.id} connected without token — disconnecting`);
                 client.emit('auth-error', { message: 'Token không hợp lệ' });
@@ -49,7 +48,9 @@ let ExamGateway = class ExamGateway {
             const payload = this.jwtService.verify(token, { secret });
             const userId = payload.sub || payload.id;
             if (!userId) {
-                client.emit('auth-error', { message: 'Token không chứa thông tin user' });
+                client.emit('auth-error', {
+                    message: 'Token không chứa thông tin user',
+                });
                 client.disconnect(true);
                 return;
             }
@@ -104,7 +105,9 @@ let ExamGateway = class ExamGateway {
             }
             const attempt = await this.assessmentsService.getAttemptForSocket(attemptId, client.userId);
             if (!attempt) {
-                client.emit('error', { message: 'Không tìm thấy bài thi hoặc bài thi đã kết thúc' });
+                client.emit('error', {
+                    message: 'Không tìm thấy bài thi hoặc bài thi đã kết thúc',
+                });
                 return;
             }
             const existing = this.connectedAttempts.get(attemptId);
