@@ -11,6 +11,9 @@ export declare class AssessmentQuestion {
     options: string[];
     correctAnswer: string;
     explanation: string;
+    points: number;
+    difficulty: string;
+    isAiGenerated: boolean;
     order: number;
 }
 export declare class Assessment {
@@ -22,6 +25,8 @@ export declare class Assessment {
     numberOfSets: number;
     maxAttempts: number;
     maxViolations: number;
+    totalPoints: number;
+    isPublished: boolean;
     isActive: boolean;
     creatorId: string;
     createdAt: Date;

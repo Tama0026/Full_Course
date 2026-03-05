@@ -512,6 +512,120 @@ Note: 'correctAnswer' is the 0-based index of the correct option in the 'options
   }
 
   /**
+   * AI Exam Generation with Question Bank Context and Difficulty
+   */
+  async generateExamFromBank(
+    title: string,
+    description: string,
+    bankContext: string,
+    questionCount: number,
+    totalPoints: number,
+  ): Promise<any[]> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
+    }
+
+    let prompt = `System Instruction:\nDựa trên các câu hỏi mẫu sau đây (nếu có), hãy tạo ra ${questionCount} câu hỏi mới. Tuyệt đối không copy 100%, hãy tạo biến thể (Variation).\n`;
+
+    if (bankContext) {
+      prompt += `\n[Sample Questions - Context]:\n${bankContext}\n`;
+    }
+
+    prompt += `
+\nGán difficulty (EASY|MEDIUM|HARD) cho từng câu. Phân bổ points ban đầu theo tỉ lệ trọng số 1:2:3.
+Kết quả trả về bắt buộc là mảng JSON hợp lệ theo schema:
+[
+  {
+    "content": "Question content?",
+    "options": ["A", "B", "C", "D"],
+    "correctAnswer": 0, // 0-based index of correct option
+    "explanation": "Brief explanation",
+    "difficulty": "EASY", // or MEDIUM or HARD
+    "points": 1 // or 2, 3 etc. corresponding to difficulty
+  }
+]
+Không trả về định dạng markdown hay bất kỳ text nào khác ngoài mảng JSON.`;
+
+    try {
+      console.log(`[AiService] Generating ${questionCount} exam questions...`);
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const questions = JSON.parse(cleaned);
+
+      if (!Array.isArray(questions) || questions.length !== questionCount) {
+        throw new Error(`Invalid output format or question count mismatch (expected ${questionCount}, got ${questions?.length}).`);
+      }
+
+      console.log(`[AiService] AI Exam generation done: ${questions.length} questions`);
+      return questions;
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] generateExamFromBank error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.');
+      }
+      throw new InternalServerErrorException('Lỗi khi nhờ AI tạo Đề thi. Vui lòng thử lại.');
+    }
+  }
+  /**
+   * Magic Import: Parse Raw Text to valid BankQuestion JSON array
+   */
+  async parseRawQuestions(rawText: string): Promise<any[]> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
+    }
+
+    const prompt = `
+Bạn là một chuyên gia số hóa tài liệu giáo dục. Hãy trích xuất danh sách câu hỏi từ đoạn văn bản thô sau đây.
+Quy tắc bóc tách: Xác định content, mảng options (ít nhất 2), correctAnswer (chỉ số index 0-based), difficulty (EASY|MEDIUM|HARD), và explanation.
+Nếu văn bản không chỉ rõ đáp án đúng, hãy dựa trên kiến thức của bạn để tự chọn đáp án đúng nhất.
+Nếu văn bản không có độ khó, hãy tự đánh giá dựa trên độ phức tạp của câu hỏi.
+Trả về duy nhất một mảng JSON array. Không kèm theo văn bản giải thích nào khác. Cấu trúc yêu cầu:
+[
+  {
+    "content": "Nội dung câu hỏi?",
+    "options": ["Đáp án A", "Đáp án B", "Đáp án C", "Đáp án D"],
+    "correctAnswer": 0, // 0-based index
+    "difficulty": "MEDIUM",
+    "explanation": "Giải thích chi tiết"
+  }
+]
+
+Văn bản gốc:
+"""
+${rawText}
+"""
+    `;
+
+    try {
+      console.log(`[AiService] Parsing raw text for Magic Import (${rawText.length} chars)...`);
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const questions = JSON.parse(cleaned);
+
+      if (!Array.isArray(questions)) {
+        throw new Error('Kết quả trả về không phải là mảng JSON.');
+      }
+
+      console.log(`[AiService] Magic Import parsed ${questions.length} questions successfully`);
+      return questions;
+    } catch (error: any) {
+      const msg = error?.message || '';
+      console.error(`[AiService] parseRawQuestions error:`, msg.slice(0, 200));
+      if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+        throw new InternalServerErrorException('RATE_LIMIT: AI đang bị giới hạn, hãy thử lại sau.');
+      }
+      throw new InternalServerErrorException('Lỗi khi nhờ định dạng câu hỏi. Đảm bảo văn bản đầu vào rõ ràng.');
+    }
+  }
+
+  /**
    * AI Tutor — answers a student's question using the lesson content as context.
    */
   async askTutor(question: string, lessonId: string): Promise<string> {
@@ -526,23 +640,23 @@ Note: 'correctAnswer' is the 0-based index of the correct option in the 'options
     });
 
     const lessonContext = lesson?.body
-      ? `Tên bài học: ${lesson.title}\n\nNội dung bài học:\n${lesson.body.slice(0, 3000)}`
+      ? `Tên bài học: ${lesson.title}\n\nNội dung bài học: \n${lesson.body.slice(0, 3000)}`
       : lesson
-        ? `Tên bài học: ${lesson.title} (Bài học dạng video, không có nội dung văn bản.)`
+        ? `Tên bài học: ${lesson.title}(Bài học dạng video, không có nội dung văn bản.)`
         : 'Không tìm thấy nội dung bài học.';
 
     const prompt = `
 Bạn là một AI Tutor thân thiện, chuyên hỗ trợ học viên học lập trình.
 
 Ngữ cảnh bài học mà học viên đang học:
----
-${lessonContext}
+        ---
+        ${lessonContext}
 ---
 
-Câu hỏi của học viên: "${question}"
+        Câu hỏi của học viên: "${question}"
 
 Hướng dẫn:
-- Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu (tối đa 300 từ).
+        - Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu(tối đa 300 từ).
 - Trả lời DỰA VÀO nội dung bài học ở trên làm nền tảng.
 - Nếu câu hỏi nằm ngoài phạm vi bài học, trả lời nhẹ nhàng và hướng học viên về đúng chủ đề.
 - Nếu cần dùng code ví dụ, dùng markdown code block.
@@ -557,7 +671,7 @@ Hướng dẫn:
       return text || 'Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.';
     } catch (error: any) {
       const msg = error?.message || '';
-      console.error(`[AiService] askTutor error:`, msg.slice(0, 200));
+      console.error(`[AiService] askTutor error: `, msg.slice(0, 200));
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
         throw new InternalServerErrorException(
           'RATE_LIMIT: AI đang bận. Vui lòng chờ vài giây.',
@@ -592,29 +706,29 @@ Hướng dẫn:
     }
 
     const prompt = `
-Bạn là một nhà tuyển dụng công nghệ (Tech Recruiter) chuyên nghiệp, đang phỏng vấn một ứng viên.
+Bạn là một nhà tuyển dụng công nghệ(Tech Recruiter) chuyên nghiệp, đang phỏng vấn một ứng viên.
 
 Kiến thức của ứng viên dựa trên khóa học sau:
----
-${courseContext.slice(0, 4000)}
+        ---
+        ${courseContext.slice(0, 4000)}
 ---
 
-Tên khóa học: "${courseName}"
+        Tên khóa học: "${courseName}"
 ${conversationHistory}
 
 Tin nhắn mới từ ứng viên: "${userMessage}"
 
 Hướng dẫn phỏng vấn:
-- Hỏi các câu hỏi kỹ thuật liên quan đến nội dung khóa học trên.
+        - Hỏi các câu hỏi kỹ thuật liên quan đến nội dung khóa học trên.
 - Bắt đầu từ câu hỏi dễ, sau đó tăng dần độ khó.
 - Nếu ứng viên trả lời đúng, khen ngợi ngắn gọn rồi hỏi câu tiếp theo khó hơn.
 - Nếu ứng viên trả lời sai hoặc thiếu, giải thích ngắn gọn đáp án đúng rồi chuyển sang câu khác.
-- Nếu đây là tin nhắn đầu tiên (chưa có lịch sử), hãy chào hỏi chuyên nghiệp và bắt đầu với câu hỏi đầu tiên.
+- Nếu đây là tin nhắn đầu tiên(chưa có lịch sử), hãy chào hỏi chuyên nghiệp và bắt đầu với câu hỏi đầu tiên.
 - Giữ phong cách chuyên nghiệp nhưng thân thiện.
 - Trả lời bằng tiếng Việt, tối đa 200 từ.
 - Tự động đánh giá ứng viên đạt hoặc không đạt sau khi kết thúc phỏng vấn.
 - Hỏi số lượng câu hỏi vừa đủ để đánh giá
-- Dùng Markdown nếu cần format code.
+      - Dùng Markdown nếu cần format code.
         `;
 
     try {
@@ -625,7 +739,7 @@ Hướng dẫn phỏng vấn:
       return text || 'Xin lỗi, tôi không thể xử lý câu trả lời lúc này.';
     } catch (error: any) {
       const msg = error?.message || '';
-      console.error(`[AiService] conductInterview error:`, msg.slice(0, 200));
+      console.error(`[AiService] conductInterview error: `, msg.slice(0, 200));
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
         throw new InternalServerErrorException(
           'RATE_LIMIT: AI đang bị giới hạn. Vui lòng chờ vài phút.',
@@ -649,7 +763,7 @@ Hướng dẫn phỏng vấn:
       );
     }
 
-    const prompt = `Bạn là chuyên gia thiết kế khóa học. Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5-8 mục tiêu học tập (string). Mỗi mục bắt đầu bằng động từ hành động. Chỉ trả về JSON, không giải thích.`;
+    const prompt = `Bạn là chuyên gia thiết kế khóa học.Dựa trên tiêu đề '${title}' và mô tả '${description}', hãy trả về duy nhất một JSON array chứa 5 - 8 mục tiêu học tập(string).Mỗi mục bắt đầu bằng động từ hành động.Chỉ trả về JSON, không giải thích.`;
 
     try {
       console.log(
@@ -657,7 +771,7 @@ Hướng dẫn phỏng vấn:
       );
       const text = await this.generateWithFallback(prompt);
       const cleaned = text
-        .replace(/```json\n?/gi, '')
+        .replace(/```json\n ?/gi, '')
         .replace(/```\n?/g, '')
         .trim();
       const outcomes = JSON.parse(cleaned);

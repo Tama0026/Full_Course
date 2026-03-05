@@ -5,10 +5,11 @@ import { AssessmentsService } from './assessments.service';
 import { AssessmentsResolver, AssessmentQuestionResolver } from './assessments.resolver';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RemediationModule } from '../remediation/remediation.module';
+import { AiModule } from '../ai/ai.module';
 import { ExamGateway } from './exam.gateway';
 
 @Module({
-  imports: [PrismaModule, RemediationModule, ConfigModule, JwtModule.register({})],
+  imports: [PrismaModule, RemediationModule, AiModule, ConfigModule, JwtModule.register({})],
   providers: [AssessmentsResolver, AssessmentQuestionResolver, AssessmentsService, ExamGateway],
   exports: [AssessmentsService],
 })

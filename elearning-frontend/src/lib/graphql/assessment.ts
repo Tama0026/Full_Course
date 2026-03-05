@@ -47,6 +47,8 @@ export const GET_ASSESSMENT_DETAIL = gql`
       numberOfSets
       maxAttempts
       maxViolations
+      totalPoints
+      isPublished
       isActive
       questions {
         id
@@ -124,6 +126,81 @@ export const MY_ATTEMPT_HISTORY = gql`
       isInvalid
       violationCount
       status
+    }
+  }
+`;
+
+// ================= NEW EXAM MODULE MUTATIONS =================
+
+export const PUBLISH_ASSESSMENT = gql`
+  mutation PublishAssessment($assessmentId: String!) {
+    publishAssessment(assessmentId: $assessmentId) {
+      id
+      isPublished
+      questions {
+        id
+        points
+      }
+    }
+  }
+`;
+
+export const UNPUBLISH_ASSESSMENT = gql`
+  mutation UnpublishAssessment($assessmentId: String!) {
+    unpublishAssessment(assessmentId: $assessmentId) {
+      id
+      isPublished
+    }
+  }
+`;
+
+export const AUTO_BALANCE_POINTS = gql`
+  mutation AutoBalancePoints($assessmentId: String!) {
+    autoBalancePoints(assessmentId: $assessmentId) {
+      id
+      questions {
+        id
+        points
+      }
+    }
+  }
+`;
+
+export const UPDATE_QUESTION_INLINE = gql`
+  mutation UpdateQuestionInline($questionId: String!, $input: UpdateQuestionInlineInput!) {
+    updateQuestionInline(questionId: $questionId, input: $input) {
+      id
+      points
+      correctAnswer
+      difficulty
+    }
+  }
+`;
+
+export const GENERATE_AI_EXAM_QUESTIONS = gql`
+  mutation GenerateAiExamQuestions(
+    $assessmentId: String!
+    $questionCount: Int!
+    $bankId: String
+    $setCode: String
+  ) {
+    generateAiExamQuestions(
+      assessmentId: $assessmentId
+      questionCount: $questionCount
+      bankId: $bankId
+      setCode: $setCode
+    ) {
+      id
+      questions {
+        id
+        setCode
+        prompt
+        options
+        correctAnswer
+        points
+        difficulty
+        isAiGenerated
+      }
     }
   }
 `;

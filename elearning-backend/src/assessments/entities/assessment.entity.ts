@@ -35,6 +35,15 @@ export class AssessmentQuestion {
   @Field()
   explanation: string;
 
+  @Field(() => Float)
+  points: number;
+
+  @Field()
+  difficulty: string;
+
+  @Field()
+  isAiGenerated: boolean;
+
   @Field(() => Int)
   order: number;
 }
@@ -64,6 +73,12 @@ export class Assessment {
 
   @Field(() => Int)
   maxViolations: number;
+
+  @Field(() => Float)
+  totalPoints: number;
+
+  @Field()
+  isPublished: boolean;
 
   @Field()
   isActive: boolean;

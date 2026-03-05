@@ -79,6 +79,7 @@ type Assessment {
   description: String!
   id: ID!
   isActive: Boolean!
+  isPublished: Boolean!
   maxAttempts: Int!
   maxViolations: Int!
   numberOfSets: Int!
@@ -86,6 +87,7 @@ type Assessment {
   questions: [AssessmentQuestion]
   timeLimit: Int!
   title: String!
+  totalPoints: Float!
   updatedAt: DateTime!
 }
 
@@ -107,10 +109,13 @@ type AssessmentAttempt {
 type AssessmentQuestion {
   assessmentId: String!
   correctAnswer: String!
+  difficulty: String!
   explanation: String!
   id: ID!
+  isAiGenerated: Boolean!
   options: [String!]!
   order: Int!
+  points: Float!
   prompt: String!
   setCode: String!
 }
@@ -171,6 +176,30 @@ type BadgeWithStatus {
   id: String!
   name: String!
   threshold: Int!
+}
+
+type BankQuestion {
+  bankId: String!
+  content: String!
+  correctAnswer: Int!
+  createdAt: DateTime!
+  difficulty: String!
+  explanation: String
+  id: ID!
+  options: [String!]!
+}
+
+input BulkImportQuestionInput {
+  content: String!
+  correctAnswer: Int!
+  difficulty: String = "MEDIUM"
+  explanation: String
+  options: [String!]!
+}
+
+type BulkImportResult {
+  count: Int!
+  success: Boolean!
 }
 
 type Category {
@@ -280,12 +309,14 @@ type CourseStudentProgress {
 input CreateAssessmentInput {
   description: String!
   isActive: Boolean!
+  isPublished: Boolean! = false
   maxAttempts: Int! = 1
   maxViolations: Int! = 5
   numberOfSets: Int! = 1
   passingScore: Float!
   timeLimit: Int!
   title: String!
+  totalPoints: Float! = 10
 }
 
 input CreateBadgeInput {
@@ -294,6 +325,14 @@ input CreateBadgeInput {
   description: String!
   icon: String! = "🏅"
   name: String!
+}
+
+input CreateBankQuestionInput {
+  content: String!
+  correctAnswer: Int!
+  difficulty: String! = "MEDIUM"
+  explanation: String
+  options: [String!]!
 }
 
 input CreateCategoryInput {
@@ -340,11 +379,19 @@ input CreateOrderInput {
   courseId: String!
 }
 
+input CreateQuestionBankInput {
+  category: String!
+  description: String
+  name: String!
+}
+
 input CreateQuestionInput {
   correctAnswer: String!
+  difficulty: String
   explanation: String!
   options: [String!]!
   order: Int!
+  points: Float
   prompt: String!
   setCode: String!
 }
@@ -444,11 +491,14 @@ type Mutation {
   approveEnrollment(courseId: String!, studentId: String!): Boolean!
   askTutor(lessonId: String!, question: String!): String!
   assessSkill: String!
+  autoBalancePoints(assessmentId: String!): Assessment!
+  bulkImportQuestions(bankId: String!, questions: [BulkImportQuestionInput!]!): BulkImportResult!
   chatInterview(courseId: String!, history: [ChatMessageInput!]! = [], message: String!): InterviewResponse!
   claimCertificate(courseId: String!): Certificate!
   completeReviewItem(itemId: String!): ReviewPathItem!
   createAssessment(input: CreateAssessmentInput!): Assessment!
   createAssessmentQuestion(assessmentId: String!, input: CreateQuestionInput!): AssessmentQuestion!
+  createBankQuestion(bankId: String!, input: CreateBankQuestionInput!): BankQuestion!
   createCategory(input: CreateCategoryInput!): Category!
   createComment(input: CreateCommentInput!): Comment!
   createCourse(input: CreateCourseInput!): Course!
@@ -456,21 +506,27 @@ type Mutation {
   createLesson(input: CreateLessonInput!): Lesson!
   createNote(input: CreateNoteInput!): Note!
   createOrder(input: CreateOrderInput!): Order!
+  createQuestionBank(input: CreateQuestionBankInput!): QuestionBank!
   createSection(input: CreateSectionInput!): Section!
   deleteAssessment(id: String!): Assessment!
   deleteAssessmentQuestion(id: String!): AssessmentQuestion!
+  deleteBankQuestion(id: String!): BankQuestion!
   deleteCategory(id: String!): Category!
   deleteComment(id: String!): Comment!
   deleteCourse(id: String!): Course!
   deleteCourseBadge(badgeId: String!): Boolean!
   deleteLesson(id: String!): Lesson!
   deleteNote(id: String!): Note!
+  deleteQuestionBank(id: String!): QuestionBank!
   deleteSection(id: String!): Section!
+  generateAiExamQuestions(assessmentId: String!, bankId: String, questionCount: Int!, setCode: String! = "SET_1"): Assessment!
   generateLessonContent(courseTitle: String!, nonce: Float, title: String!): String!
   generateLessonContentWithQuiz(courseTitle: String!, lessonId: String!, quizCount: Int! = 5, title: String!): String!
   generateQuizWithAI(count: Int! = 5, lessonId: String!): Quiz!
   login(input: LoginInput!): AuthResponse!
   markLessonComplete(lessonId: String!): Progress!
+  parseRawQuestions(rawText: String!): String!
+  publishAssessment(assessmentId: String!): Assessment!
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
   rejectEnrollment(courseId: String!, studentId: String!): Boolean!
@@ -480,11 +536,15 @@ type Mutation {
   submitQuiz(answers: [QuizAnswerInput!]!, lessonId: String!): SubmitQuizResponse!
   suggestLearningOutcomes(description: String!, title: String!): [String!]!
   toggleCourseStatus(id: String!): Course!
+  unpublishAssessment(assessmentId: String!): Assessment!
+  updateBankQuestion(id: String!, input: UpdateBankQuestionInput!): BankQuestion!
   updateCourse(id: String!, input: UpdateCourseInput!): Course!
   updateCourseBadge(badgeId: String!, input: UpdateBadgeInput!): BadgeType!
   updateCurriculum(id: String!, input: UpdateCurriculumInput!): Course!
   updateNote(id: String!, input: UpdateNoteInput!): Note!
   updateProfile(input: UpdateProfileInput!): User!
+  updateQuestionBank(id: String!, input: UpdateQuestionBankInput!): QuestionBank!
+  updateQuestionInline(input: UpdateQuestionInlineInput!, questionId: String!): AssessmentQuestion!
   updateQuiz(input: UpdateQuizInput!): Quiz!
   updateVideoProgress(currentTime: Float!, lessonId: String!): VideoProgress!
 }
@@ -560,8 +620,10 @@ type Query {
   myLoginStreak: LoginStreakType!
   myOrders: [Order!]!
   myPoints: Int!
+  myQuestionBanks: [QuestionBank!]!
   myRemediations: [RemediationReport!]!
   order(id: String!): Order!
+  questionBank(id: String!): QuestionBank!
   suggestCourses(query: String!): String!
   topStudents(limit: Int! = 10): [LeaderboardEntry!]!
   uploadSignature: CloudinarySignature!
@@ -576,6 +638,18 @@ type Question {
   options: String!
   quizId: String!
   updatedAt: DateTime!
+}
+
+type QuestionBank {
+  category: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  name: String!
+  questionCount: Int!
+  questions: [BankQuestion]
+  updatedAt: DateTime!
+  userId: String!
 }
 
 input QuestionInput {
@@ -678,6 +752,14 @@ input UpdateBadgeInput {
   threshold: Int
 }
 
+input UpdateBankQuestionInput {
+  content: String
+  correctAnswer: Int
+  difficulty: String
+  explanation: String
+  options: [String!]
+}
+
 input UpdateCourseInput {
   category: String
   description: String
@@ -704,6 +786,18 @@ input UpdateProfileInput {
   bio: String
   headline: String
   name: String
+}
+
+input UpdateQuestionBankInput {
+  category: String
+  description: String
+  name: String
+}
+
+input UpdateQuestionInlineInput {
+  correctAnswer: Int
+  difficulty: String
+  points: Float
 }
 
 input UpdateQuizInput {

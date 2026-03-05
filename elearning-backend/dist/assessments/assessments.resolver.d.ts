@@ -8,6 +8,8 @@ export declare class CreateAssessmentInput {
     numberOfSets: number;
     maxAttempts: number;
     maxViolations: number;
+    totalPoints: number;
+    isPublished: boolean;
 }
 export declare class CreateQuestionInput {
     setCode: string;
@@ -16,6 +18,13 @@ export declare class CreateQuestionInput {
     correctAnswer: string;
     explanation: string;
     order: number;
+    points?: number;
+    difficulty?: string;
+}
+export declare class UpdateQuestionInlineInput {
+    points?: number;
+    correctAnswer?: number;
+    difficulty?: string;
 }
 export declare class AnswerInput {
     questionId: string;
@@ -36,6 +45,8 @@ export declare class AssessmentsResolver {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -51,6 +62,10 @@ export declare class AssessmentsResolver {
             content: string;
             options: string;
             correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
         }[];
     } & {
         id: string;
@@ -61,6 +76,8 @@ export declare class AssessmentsResolver {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -78,6 +95,8 @@ export declare class AssessmentsResolver {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -95,6 +114,8 @@ export declare class AssessmentsResolver {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -112,6 +133,10 @@ export declare class AssessmentsResolver {
         content: string;
         options: string;
         correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
     }>;
     deleteAssessmentQuestion(id: string, user: {
         id: string;
@@ -125,6 +150,10 @@ export declare class AssessmentsResolver {
         content: string;
         options: string;
         correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
     }>;
     startAssessmentAttempt(assessmentId: string, user: {
         id: string;
@@ -201,6 +230,8 @@ export declare class AssessmentsResolver {
             numberOfSets: number;
             maxAttempts: number;
             maxViolations: number;
+            totalPoints: number;
+            isPublished: boolean;
             isActive: boolean;
             creatorId: string;
             createdAt: Date;
@@ -225,6 +256,144 @@ export declare class AssessmentsResolver {
             status: any;
         }[];
     }>;
+    publishAssessment(assessmentId: string, user: {
+        id: string;
+        role: string;
+    }): Promise<{
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    unpublishAssessment(assessmentId: string, user: {
+        id: string;
+        role: string;
+    }): Promise<{
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    autoBalancePoints(assessmentId: string, user: {
+        id: string;
+        role: string;
+    }): Promise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }) | null>;
+    updateQuestionInline(questionId: string, input: UpdateQuestionInlineInput, user: {
+        id: string;
+        role: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        assessmentId: string;
+        setCode: string;
+        content: string;
+        options: string;
+        correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
+    }>;
+    generateAiExamQuestions(assessmentId: string, questionCount: number, bankId: string, setCode: string, user: {
+        id: string;
+        role: string;
+    }): Promise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }) | null>;
 }
 export declare class AssessmentQuestionResolver {
     prompt(question: {

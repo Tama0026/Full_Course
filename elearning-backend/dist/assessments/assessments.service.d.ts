@@ -1,10 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { RemediationService } from '../remediation/remediation.service';
+import { AiService } from '../ai/ai.service';
 export declare class AssessmentsService {
     private prisma;
     private remediationService;
+    private aiService;
     private attemptCache;
-    constructor(prisma: PrismaService, remediationService: RemediationService);
+    constructor(prisma: PrismaService, remediationService: RemediationService, aiService: AiService);
     getAssessments(userRole: string, userId: string): Promise<{
         id: string;
         title: string;
@@ -14,6 +16,8 @@ export declare class AssessmentsService {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -29,6 +33,10 @@ export declare class AssessmentsService {
             content: string;
             options: string;
             correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
         }[];
     } & {
         id: string;
@@ -39,6 +47,8 @@ export declare class AssessmentsService {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -51,6 +61,9 @@ export declare class AssessmentsService {
         passingScore: number;
         numberOfSets: number;
         isActive: boolean;
+        maxAttempts?: number;
+        maxViolations?: number;
+        totalPoints?: number;
     }): Promise<{
         id: string;
         title: string;
@@ -60,6 +73,8 @@ export declare class AssessmentsService {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -72,6 +87,9 @@ export declare class AssessmentsService {
         passingScore: number;
         numberOfSets: number;
         isActive: boolean;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
     }>): Promise<{
         id: string;
         title: string;
@@ -81,6 +99,8 @@ export declare class AssessmentsService {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -95,6 +115,8 @@ export declare class AssessmentsService {
         numberOfSets: number;
         maxAttempts: number;
         maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
         isActive: boolean;
         creatorId: string;
         createdAt: Date;
@@ -107,6 +129,8 @@ export declare class AssessmentsService {
         correctAnswer: string;
         explanation: string;
         order: number;
+        points?: number;
+        difficulty?: string;
     }): Promise<{
         id: string;
         createdAt: Date;
@@ -116,6 +140,10 @@ export declare class AssessmentsService {
         content: string;
         options: string;
         correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
     }>;
     deleteQuestion(id: string, creatorId: string): Promise<{
         id: string;
@@ -126,6 +154,10 @@ export declare class AssessmentsService {
         content: string;
         options: string;
         correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
     }>;
     startAttempt(assessmentId: string, userId: string): Promise<{
         questions: {
@@ -217,6 +249,8 @@ export declare class AssessmentsService {
             numberOfSets: number;
             maxAttempts: number;
             maxViolations: number;
+            totalPoints: number;
+            isPublished: boolean;
             isActive: boolean;
             creatorId: string;
             createdAt: Date;
@@ -241,4 +275,138 @@ export declare class AssessmentsService {
             status: any;
         }[];
     }>;
+    normalizePoints(questions: {
+        id: string;
+        difficulty: string;
+    }[], totalPoints: number): {
+        id: string;
+        points: number;
+    }[];
+    autoBalancePoints(assessmentId: string, creatorId: string): Promise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }) | null>;
+    publishAssessment(assessmentId: string, creatorId: string): Promise<{
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    unpublishAssessment(assessmentId: string, creatorId: string): Promise<{
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    updateQuestionInline(questionId: string, creatorId: string, data: {
+        points?: number;
+        correctAnswer?: number;
+        difficulty?: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        assessmentId: string;
+        setCode: string;
+        content: string;
+        options: string;
+        correctAnswer: number;
+        points: number;
+        difficulty: string;
+        isAiGenerated: boolean;
+        bankQuestionId: string | null;
+    }>;
+    generateAiExamQuestions(assessmentId: string, creatorId: string, bankId: string | null, questionCount: number, setCode?: string): Promise<({
+        questions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            assessmentId: string;
+            setCode: string;
+            content: string;
+            options: string;
+            correctAnswer: number;
+            points: number;
+            difficulty: string;
+            isAiGenerated: boolean;
+            bankQuestionId: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        description: string;
+        timeLimit: number;
+        passingScore: number;
+        numberOfSets: number;
+        maxAttempts: number;
+        maxViolations: number;
+        totalPoints: number;
+        isPublished: boolean;
+        isActive: boolean;
+        creatorId: string;
+        createdAt: Date;
+        updatedAt: Date;
+    }) | null>;
 }

@@ -62,6 +62,7 @@ model User {
   createdAssessments   Assessment[]          @relation("AssessmentCreator")
   assessmentAttempts   AssessmentAttempt[]
   remediationReports   RemediationReport[]
+  questionBanks        QuestionBank[]        @relation("QuestionBankOwner")
 }
 
 model Course {
@@ -325,6 +326,8 @@ model Assessment {
   numberOfSets  Int      @default(1)
   maxAttempts   Int      @default(1)  // Max number of attempts per student
   maxViolations Int      @default(5)  // Auto-void threshold
+  totalPoints   Float    @default(10) // Total exam points
+  isPublished   Boolean  @default(false) // Draft = false, Locked = true
   isActive      Boolean  @default(true)
   creatorId     String
   createdAt     DateTime @default(now())
@@ -336,14 +339,18 @@ model Assessment {
 }
 
 model AssessmentQuestion {
-  id            String   @id @default(uuid())
-  assessmentId  String
-  setCode       String   @default("SET_1")
-  content       String
-  options       String // JSON string
-  correctAnswer Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  assessmentId    String
+  setCode         String   @default("SET_1")
+  content         String
+  options         String // JSON string
+  correctAnswer   Int
+  points          Float    @default(1)     // Per-question points
+  difficulty      String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  isAiGenerated   Boolean  @default(false) // Audit trail for AI content
+  bankQuestionId  String?                  // FK to BankQuestion origin
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
@@ -375,6 +382,34 @@ model ViolationRecord {
   timestamp DateTime @default(now())
 
   attempt AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+// ==================== QUESTION BANK ====================
+
+model QuestionBank {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  category    String   // e.g. "Math", "Programming", "English"
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User           @relation("QuestionBankOwner", fields: [userId], references: [id])
+  questions BankQuestion[]
+}
+
+model BankQuestion {
+  id            String   @id @default(uuid())
+  bankId        String
+  content       String
+  options       String   // JSON string
+  correctAnswer Int
+  explanation   String?
+  difficulty    String   @default("MEDIUM") // EASY | MEDIUM | HARD
+  createdAt     DateTime @default(now())
+
+  bank QuestionBank @relation(fields: [bankId], references: [id], onDelete: Cascade)
 }
 
 // ==================== REMEDIATION ====================

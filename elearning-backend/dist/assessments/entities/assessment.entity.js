@@ -40,6 +40,9 @@ let AssessmentQuestion = class AssessmentQuestion {
     options;
     correctAnswer;
     explanation;
+    points;
+    difficulty;
+    isAiGenerated;
     order;
 };
 exports.AssessmentQuestion = AssessmentQuestion;
@@ -72,6 +75,18 @@ __decorate([
     __metadata("design:type", String)
 ], AssessmentQuestion.prototype, "explanation", void 0);
 __decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], AssessmentQuestion.prototype, "points", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", String)
+], AssessmentQuestion.prototype, "difficulty", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], AssessmentQuestion.prototype, "isAiGenerated", void 0);
+__decorate([
     (0, graphql_1.Field)(() => graphql_1.Int),
     __metadata("design:type", Number)
 ], AssessmentQuestion.prototype, "order", void 0);
@@ -87,6 +102,8 @@ let Assessment = class Assessment {
     numberOfSets;
     maxAttempts;
     maxViolations;
+    totalPoints;
+    isPublished;
     isActive;
     creatorId;
     createdAt;
@@ -126,6 +143,14 @@ __decorate([
     (0, graphql_1.Field)(() => graphql_1.Int),
     __metadata("design:type", Number)
 ], Assessment.prototype, "maxViolations", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => graphql_1.Float),
+    __metadata("design:type", Number)
+], Assessment.prototype, "totalPoints", void 0);
+__decorate([
+    (0, graphql_1.Field)(),
+    __metadata("design:type", Boolean)
+], Assessment.prototype, "isPublished", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)

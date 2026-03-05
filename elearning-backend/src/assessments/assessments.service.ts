@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RemediationService } from '../remediation/remediation.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class AssessmentsService {
@@ -18,6 +19,7 @@ export class AssessmentsService {
   constructor(
     private prisma: PrismaService,
     private remediationService: RemediationService,
+    private aiService: AiService,
   ) { }
 
   async getAssessments(userRole: string, userId: string) {
@@ -53,6 +55,9 @@ export class AssessmentsService {
       passingScore: number;
       numberOfSets: number;
       isActive: boolean;
+      maxAttempts?: number;
+      maxViolations?: number;
+      totalPoints?: number;
     },
   ) {
     return this.prisma.assessment.create({
@@ -73,6 +78,9 @@ export class AssessmentsService {
       passingScore: number;
       numberOfSets: number;
       isActive: boolean;
+      maxAttempts: number;
+      maxViolations: number;
+      totalPoints: number;
     }>,
   ) {
     const assessment = await this.prisma.assessment.findUnique({
@@ -107,6 +115,8 @@ export class AssessmentsService {
       correctAnswer: string;
       explanation: string;
       order: number;
+      points?: number;
+      difficulty?: string;
     },
   ) {
     const assessment = await this.prisma.assessment.findUnique({
@@ -114,6 +124,8 @@ export class AssessmentsService {
     });
     if (!assessment || assessment.creatorId !== creatorId)
       throw new NotFoundException();
+    if (assessment.isPublished)
+      throw new ForbiddenException('Bài thi đã được công bố. Không thể thêm câu hỏi.');
 
     return this.prisma.assessmentQuestion.create({
       data: {
@@ -122,6 +134,8 @@ export class AssessmentsService {
         content: data.prompt,
         options: JSON.stringify(data.options),
         correctAnswer: parseInt(data.correctAnswer) || 0,
+        points: data.points || 1,
+        difficulty: data.difficulty || 'MEDIUM',
       },
     });
   }
@@ -133,6 +147,8 @@ export class AssessmentsService {
     });
     if (!question || question.assessment.creatorId !== creatorId)
       throw new NotFoundException();
+    if (question.assessment.isPublished)
+      throw new ForbiddenException('Bài thi đã được công bố. Không thể xoá câu hỏi.');
 
     return this.prisma.assessmentQuestion.delete({ where: { id } });
   }
@@ -411,5 +427,258 @@ export class AssessmentsService {
         status: a.status,
       })),
     };
+  }
+
+  // ============ POINT ALLOCATION ============
+
+  /**
+   * Normalize points for all questions based on difficulty weights.
+   * EASY=1x, MEDIUM=2x, HARD=3x. Remainder goes to hardest question.
+   */
+  normalizePoints(
+    questions: { id: string; difficulty: string }[],
+    totalPoints: number,
+  ): { id: string; points: number }[] {
+    const WEIGHT: Record<string, number> = { EASY: 1, MEDIUM: 2, HARD: 3 };
+    const weightedSum = questions.reduce(
+      (sum, q) => sum + (WEIGHT[q.difficulty] || 2),
+      0,
+    );
+    if (weightedSum === 0) return questions.map((q) => ({ id: q.id, points: 0 }));
+
+    const basePoint = totalPoints / weightedSum;
+    const result = questions.map((q) => ({
+      id: q.id,
+      points: parseFloat((basePoint * (WEIGHT[q.difficulty] || 2)).toFixed(2)),
+    }));
+
+    // Remainder correction: add diff to the hardest question
+    const currentSum = result.reduce((s, r) => s + r.points, 0);
+    const diff = parseFloat((totalPoints - currentSum).toFixed(2));
+    if (diff !== 0) {
+      // Find the hardest question (highest weight)
+      let hardestIdx = 0;
+      let maxWeight = 0;
+      questions.forEach((q, i) => {
+        const w = WEIGHT[q.difficulty] || 2;
+        if (w > maxWeight) {
+          maxWeight = w;
+          hardestIdx = i;
+        }
+      });
+      result[hardestIdx].points = parseFloat(
+        (result[hardestIdx].points + diff).toFixed(2),
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Auto-balance points for all questions in an assessment.
+   */
+  async autoBalancePoints(assessmentId: string, creatorId: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { questions: true },
+    });
+    if (!assessment || assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+    if (assessment.isPublished)
+      throw new ForbiddenException('Bài thi đã công bố.');
+    if (assessment.questions.length === 0)
+      throw new BadRequestException('Chưa có câu hỏi nào.');
+
+    // Group questions by setCode
+    const questionsBySet = assessment.questions.reduce((acc, q) => {
+      if (!acc[q.setCode]) acc[q.setCode] = [];
+      acc[q.setCode].push(q);
+      return acc;
+    }, {} as Record<string, typeof assessment.questions>);
+
+    const updates: any[] = [];
+
+    for (const setCode of Object.keys(questionsBySet)) {
+      const setQuestions = questionsBySet[setCode];
+      const normalized = this.normalizePoints(
+        setQuestions.map((q) => ({ id: q.id, difficulty: q.difficulty })),
+        assessment.totalPoints,
+      );
+
+      for (const n of normalized) {
+        updates.push(
+          this.prisma.assessmentQuestion.update({
+            where: { id: n.id },
+            data: { points: n.points },
+          })
+        );
+      }
+    }
+
+    // Update each question's points using Prisma.$transaction
+    await this.prisma.$transaction(updates);
+
+    return this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { questions: { orderBy: { createdAt: 'asc' } } },
+    });
+  }
+
+  // ============ PUBLISH / LOCK ============
+
+  async publishAssessment(assessmentId: string, creatorId: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { questions: true },
+    });
+    if (!assessment || assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+    if (assessment.isPublished)
+      throw new BadRequestException('Bài thi đã được công bố.');
+    if (assessment.questions.length === 0)
+      throw new BadRequestException('Cần ít nhất 1 câu hỏi.');
+
+    // Group questions by setCode
+    const questionsBySet = assessment.questions.reduce((acc, q) => {
+      if (!acc[q.setCode]) acc[q.setCode] = [];
+      acc[q.setCode].push(q);
+      return acc;
+    }, {} as Record<string, typeof assessment.questions>);
+
+    for (const [setCode, setQuestions] of Object.entries(questionsBySet)) {
+      const pointsSum = setQuestions.reduce((s, q) => s + q.points, 0);
+      const diff = Math.abs(pointsSum - assessment.totalPoints);
+
+      if (diff > 0.01) {
+        throw new BadRequestException(
+          `Tổng điểm của Mã đề ${setCode} (${pointsSum}) không khớp totalPoints (${assessment.totalPoints}). Vui lòng chạy Auto-balance trước.`,
+        );
+      }
+    }
+
+    return this.prisma.assessment.update({
+      where: { id: assessmentId },
+      data: { isPublished: true },
+      include: { questions: { orderBy: { createdAt: 'asc' } } },
+    });
+  }
+
+  async unpublishAssessment(assessmentId: string, creatorId: string) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+    });
+    if (!assessment || assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+
+    return this.prisma.assessment.update({
+      where: { id: assessmentId },
+      data: { isPublished: false },
+    });
+  }
+
+  // ============ INLINE EDIT (DRAFT ONLY) ============
+
+  async updateQuestionInline(
+    questionId: string,
+    creatorId: string,
+    data: { points?: number; correctAnswer?: number; difficulty?: string },
+  ) {
+    const question = await this.prisma.assessmentQuestion.findUnique({
+      where: { id: questionId },
+      include: { assessment: true },
+    });
+    if (!question || question.assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+    if (question.assessment.isPublished)
+      throw new ForbiddenException('Bài thi đã công bố. Không thể chỉnh sửa.');
+
+    return this.prisma.assessmentQuestion.update({
+      where: { id: questionId },
+      data: {
+        ...(data.points !== undefined && { points: data.points }),
+        ...(data.correctAnswer !== undefined && {
+          correctAnswer: data.correctAnswer,
+        }),
+        ...(data.difficulty !== undefined && { difficulty: data.difficulty }),
+      },
+    });
+  }
+
+  // ============ AI EXAM GENERATION ============
+
+  async generateAiExamQuestions(
+    assessmentId: string,
+    creatorId: string,
+    bankId: string | null,
+    questionCount: number,
+    setCode: string = 'SET_1',
+  ) {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+    });
+    if (!assessment || assessment.creatorId !== creatorId)
+      throw new NotFoundException();
+    if (assessment.isPublished)
+      throw new ForbiddenException('Bài thi đã công bố.');
+
+    // Retrieve bank questions as context (if bankId provided)
+    let bankContext = '';
+    if (bankId) {
+      const bank = await this.prisma.questionBank.findUnique({
+        where: { id: bankId },
+        include: { questions: true },
+      });
+      if (bank && bank.questions.length > 0) {
+        bankContext = bank.questions
+          .slice(0, 30) // Limit context to avoid token overflow
+          .map(
+            (q, i) =>
+              `${i + 1}. [${q.difficulty}] ${q.content} | Options: ${q.options} | Answer: ${q.correctAnswer}`,
+          )
+          .join('\n');
+      }
+    }
+
+    // Call AI to generate questions
+    const aiQuestions = await this.aiService.generateExamFromBank(
+      assessment.title,
+      assessment.description,
+      bankContext,
+      questionCount,
+      assessment.totalPoints,
+    );
+
+    // Normalize points with difficulty weights
+    const normalized = this.normalizePoints(
+      aiQuestions.map((q: any, i: number) => ({
+        id: `temp-${i}`,
+        difficulty: q.difficulty || 'MEDIUM',
+      })),
+      assessment.totalPoints,
+    );
+
+    // Save to database
+    const created = [];
+    for (let i = 0; i < aiQuestions.length; i++) {
+      const q = aiQuestions[i];
+      const record = await this.prisma.assessmentQuestion.create({
+        data: {
+          assessmentId,
+          setCode,
+          content: q.content,
+          options: JSON.stringify(q.options),
+          correctAnswer: q.correctAnswer,
+          points: normalized[i].points,
+          difficulty: q.difficulty || 'MEDIUM',
+          isAiGenerated: true,
+        },
+      });
+      created.push(record);
+    }
+
+    return this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { questions: { orderBy: { createdAt: 'asc' } } },
+    });
   }
 }
