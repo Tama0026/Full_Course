@@ -10,6 +10,8 @@ export const GET_INSTRUCTOR_ASSESSMENTS = gql`
       passingScore
       numberOfSets
       isActive
+      type
+      enrollCode
       createdAt
     }
   }
@@ -38,6 +40,8 @@ export const CREATE_ASSESSMENT = gql`
       timeLimit
       passingScore
       numberOfSets
+      type
+      enrollCode
       isActive
     }
   }
@@ -65,6 +69,8 @@ export const GET_ASSESSMENT_DETAIL = gql`
       totalPoints
       isPublished
       isActive
+      type
+      enrollCode
       questions {
         id
         setCode

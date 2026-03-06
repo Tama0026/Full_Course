@@ -62,7 +62,7 @@ export default function AiTutorWidget({ lessonId, lessonTitle, inline = false }:
             const errMsg = err?.message || "";
             const reply = errMsg.includes("RATE_LIMIT")
                 ? "⏳ AI đang bận, vui lòng thử lại sau vài giây."
-                : "❌ Có lỗi xảy ra. Vui lòng thử lại.";
+                : "Có lỗi xảy ra. Vui lòng thử lại.";
             setMessages((prev) => [...prev, { role: "ai", text: reply }]);
         }
     }

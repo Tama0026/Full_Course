@@ -65,7 +65,7 @@ export default function AchievementsPage() {
     const allBadges = badgesData?.allBadgesWithStatus || [];
     const streak = streakData?.myLoginStreak;
 
-    // 🎉 Confetti celebration for newly earned badges
+    // Confetti celebration for newly earned badges
     const [celebratedIds, setCelebratedIds] = useState<Set<string>>(new Set());
     useEffect(() => {
         const earnedBadges = allBadges.filter((b: any) => b.earned);
@@ -74,7 +74,7 @@ export default function AchievementsPage() {
             // Only celebrate if this isn't the first load
             confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
             newOnes.forEach((b: any) => {
-                toast.success(`✨ Chúc mừng! Bạn đã nhận huy hiệu: ${b.name}`, { duration: 5000 });
+                toast.success(`Chúc mừng! Bạn đã nhận huy hiệu: ${b.name}`, { duration: 5000 });
             });
         }
         if (earnedBadges.length > 0) {
@@ -243,7 +243,7 @@ export default function AchievementsPage() {
                             <Flame className="h-7 w-7" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900">Chuỗi đăng nhập: {streak.currentStreak} ngày 🔥</h3>
+                            <h3 className="text-lg font-bold text-slate-900">Chuỗi đăng nhập: {streak.currentStreak} ngày</h3>
                             <p className="text-sm text-slate-500">
                                 Kỷ lục: {streak.longestStreak} ngày
                                 {streak.lastLoginDate && ` • Lần cuối: ${new Date(streak.lastLoginDate).toLocaleDateString('vi-VN')}`}

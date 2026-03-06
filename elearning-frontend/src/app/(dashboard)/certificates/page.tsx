@@ -154,7 +154,7 @@ export default function CertificatesPage() {
                 <DialogContent className="max-w-4xl p-6 md:p-8 bg-zinc-900 border-zinc-800 text-white rounded-2xl shadow-2xl">
                     <DialogHeader className="mb-4">
                         <DialogTitle className="text-xl font-bold text-yellow-400">
-                            🎓 {selectedCert?.courseNameAtIssue || "Chứng chỉ"}
+                            {selectedCert?.courseNameAtIssue || "Chứng chỉ"}
                         </DialogTitle>
                     </DialogHeader>
 

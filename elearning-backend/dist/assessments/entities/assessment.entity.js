@@ -11,6 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssessmentReport = exports.AttemptWithUser = exports.ViolationResult = exports.AssessmentAttempt = exports.ViolationRecord = exports.Assessment = exports.AssessmentQuestion = exports.ShuffledQuestion = void 0;
 const graphql_1 = require("@nestjs/graphql");
+const client_1 = require("@prisma/client");
+(0, graphql_1.registerEnumType)(client_1.AssessmentType, {
+    name: 'AssessmentType',
+    description: 'Type of the assessment: MARKETPLACE (public) or PRIVATE (code-only)',
+});
 let ShuffledQuestion = class ShuffledQuestion {
     id;
     prompt;
@@ -105,6 +110,8 @@ let Assessment = class Assessment {
     totalPoints;
     isPublished;
     isActive;
+    type;
+    enrollCode;
     creatorId;
     createdAt;
     updatedAt;
@@ -155,6 +162,14 @@ __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", Boolean)
 ], Assessment.prototype, "isActive", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => client_1.AssessmentType),
+    __metadata("design:type", String)
+], Assessment.prototype, "type", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Assessment.prototype, "enrollCode", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     __metadata("design:type", String)

@@ -1,6 +1,6 @@
 "use client";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { BookOpen, DollarSign, Edit3, Eye, EyeOff, Loader2, Plus, Users, CheckCircle2 } from "lucide-react";
+import { BookOpen, DollarSign, Edit3, Eye, EyeOff, Loader2, Plus, Users, CheckCircle2, Key } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import { GET_MY_COURSES, GET_INSTRUCTOR_STATS, TOGGLE_COURSE_STATUS } from "@/lib/graphql/course";
 import Link from "next/link";
@@ -102,9 +102,20 @@ export default function InstructorCoursesPage() {
                                             {!course.isActive && (
                                                 <span className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200">Đã ẩn</span>
                                             )}
+                                            {course.type === "PRIVATE" && course.enrollCode && (
+                                                <div className="flex items-center gap-1.5 shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(course.enrollCode);
+                                                        toast.success("Đã copy mã ghi danh!");
+                                                    }}
+                                                    title="Click để copy mã ghi danh"
+                                                >
+                                                    <Key className="h-3 w-3" /> Mã: <span className="font-mono tracking-widest">{course.enrollCode}</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                                            <span className="flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> {formatPrice(course.price)}</span>
+                                            <span className="flex items-center gap-1">{course.type === "PRIVATE" ? "Private" : <><DollarSign className="h-3.5 w-3.5" />{formatPrice(course.price)}</>}</span>
                                             <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {course.sections?.reduce((s: number, sec: any) => s + (sec.lessons?.length || 0), 0) || 0} bài học</span>
                                             {stat && (
                                                 <>

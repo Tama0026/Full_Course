@@ -8,11 +8,13 @@ export declare class AssessmentsService {
     private attemptCache;
     constructor(prisma: PrismaService, remediationService: RemediationService, aiService: AiService);
     getAssessments(userRole: string, userId: string): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -39,11 +41,13 @@ export declare class AssessmentsService {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -60,16 +64,19 @@ export declare class AssessmentsService {
         timeLimit: number;
         passingScore: number;
         numberOfSets: number;
+        type: 'MARKETPLACE' | 'PRIVATE';
         isActive: boolean;
         maxAttempts?: number;
         maxViolations?: number;
         totalPoints?: number;
     }): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -91,11 +98,13 @@ export declare class AssessmentsService {
         maxViolations: number;
         totalPoints: number;
     }>): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -107,11 +116,13 @@ export declare class AssessmentsService {
         isPublished: boolean;
     }>;
     deleteAssessment(id: string, creatorId: string): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -122,6 +133,7 @@ export declare class AssessmentsService {
         maxViolations: number;
         isPublished: boolean;
     }>;
+    generateUniqueEnrollCode(): Promise<string>;
     createQuestion(assessmentId: string, creatorId: string, data: {
         setCode: string;
         prompt: string;
@@ -252,11 +264,13 @@ export declare class AssessmentsService {
     })[]>;
     getAssessmentReport(assessmentId: string, creatorId: string): Promise<{
         assessment: {
+            type: import("@prisma/client").$Enums.AssessmentType;
             description: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             title: string;
+            enrollCode: string | null;
             isActive: boolean;
             totalPoints: number;
             creatorId: string;
@@ -310,11 +324,13 @@ export declare class AssessmentsService {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -341,11 +357,13 @@ export declare class AssessmentsService {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -357,11 +375,13 @@ export declare class AssessmentsService {
         isPublished: boolean;
     }>;
     unpublishAssessment(assessmentId: string, creatorId: string): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -406,11 +426,13 @@ export declare class AssessmentsService {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;

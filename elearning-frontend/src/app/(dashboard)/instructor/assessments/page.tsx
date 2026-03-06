@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_INSTRUCTOR_ASSESSMENTS, CREATE_ASSESSMENT, DELETE_ASSESSMENT } from "@/lib/graphql/assessment";
-import { Loader2, Plus, Trash2, Edit, ClipboardList, Clock, ShieldAlert, RotateCcw } from "lucide-react";
+import { Loader2, Plus, Trash2, Edit, ClipboardList, Clock, ShieldAlert, RotateCcw, Key } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -25,6 +25,7 @@ export default function InstructorAssessmentsPage() {
         numberOfSets: 1,
         maxAttempts: 1,
         maxViolations: 5,
+        type: "MARKETPLACE",
         isActive: true
     });
     const [creating, setCreating] = useState(false);
@@ -47,7 +48,7 @@ export default function InstructorAssessmentsPage() {
             const newAssessmentId = (result.data as any)?.createAssessment?.id;
             toast.success("Tạo kỳ thi thành công! Vui lòng thêm câu hỏi.");
             setShowCreateForm(false);
-            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, totalPoints: 100, numberOfSets: 1, maxAttempts: 1, maxViolations: 5, isActive: true });
+            setFormData({ title: "", description: "", timeLimit: 30, passingScore: 80, totalPoints: 100, numberOfSets: 1, maxAttempts: 1, maxViolations: 5, type: "MARKETPLACE", isActive: true });
 
             if (newAssessmentId) {
                 router.push(`/instructor/assessments/${newAssessmentId}`);
@@ -146,7 +147,7 @@ export default function InstructorAssessmentsPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-1">
-                                    🌟 Tổng điểm (ví dụ: 10, 100)
+                                    Tổng điểm (ví dụ: 10, 100)
                                 </label>
                                 <input
                                     type="number"
@@ -210,6 +211,29 @@ export default function InstructorAssessmentsPage() {
                                 <label htmlFor="isActive" className="text-sm font-medium text-slate-700">Trạng thái Mở kỳ thi</label>
                             </div>
                         </div>
+                        <div className="flex flex-col gap-2 mt-4">
+                            <label className="block text-sm font-medium text-slate-700">Quyền riêng tư</label>
+                            <div className="flex gap-4">
+                                <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                                    <input
+                                        type="radio"
+                                        checked={formData.type === "MARKETPLACE"}
+                                        onChange={() => setFormData({ ...formData, type: "MARKETPLACE" })}
+                                        className="text-violet-600 focus:ring-violet-500"
+                                    />
+                                    <span className="text-sm font-medium text-slate-700">Công khai (Marketplace)</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                                    <input
+                                        type="radio"
+                                        checked={formData.type === "PRIVATE"}
+                                        onChange={() => setFormData({ ...formData, type: "PRIVATE" })}
+                                        className="text-violet-600 focus:ring-violet-500"
+                                    />
+                                    <span className="text-sm font-medium text-slate-700">Riêng tư (Cần mã)</span>
+                                </label>
+                            </div>
+                        </div>
                         <div className="flex justify-end gap-3 pt-4">
                             <button
                                 type="button"
@@ -250,7 +274,25 @@ export default function InstructorAssessmentsPage() {
                                 </span>
                             </div>
 
-                            <p className="text-sm text-slate-500 line-clamp-2 mb-6 flex-1">{ast.description}</p>
+                            <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">{ast.description}</p>
+
+                            {ast.type === 'PRIVATE' && ast.enrollCode && (
+                                <div className="flex items-center justify-between mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <Key className="w-4 h-4 text-slate-500" />
+                                        <span className="text-xs font-mono font-medium text-slate-700">Mã: {ast.enrollCode}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(ast.enrollCode);
+                                            toast.success('Đã copy mã ghi danh');
+                                        }}
+                                        className="text-[11px] text-violet-600 hover:text-violet-700 font-medium px-3 py-1 bg-violet-50 hover:bg-violet-100 rounded-md transition-colors"
+                                    >
+                                        Copy
+                                    </button>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
                                 <div className="space-y-2">
@@ -263,7 +305,7 @@ export default function InstructorAssessmentsPage() {
                                         Điểm đỗ: <span className="font-semibold text-slate-900 ml-1">{ast.passingScore}%</span>
                                     </div>
                                     <div className="flex items-center text-sm text-slate-600">
-                                        <span className="w-4 h-4 mr-2 flex justify-center items-center">💎</span>
+                                        <span className="w-4 h-4 mr-2 flex justify-center items-center"></span>
                                         Tổng điểm: <span className="font-semibold text-slate-900 ml-1">{ast.totalPoints}đ</span>
                                     </div>
                                 </div>

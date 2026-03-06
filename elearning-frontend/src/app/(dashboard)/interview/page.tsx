@@ -89,7 +89,7 @@ export default function InterviewPage() {
         } catch (err: any) {
             setMessages(prev => [
                 ...prev,
-                { role: "assistant", content: `❌ Lỗi: ${err.message}` },
+                { role: "assistant", content: `Lỗi: ${err.message}` },
             ]);
         }
     };

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_ASSESSMENT_DETAIL, CREATE_ASSESSMENT_QUESTION, DELETE_ASSESSMENT_QUESTION, ASSESSMENT_REPORT, PUBLISH_ASSESSMENT, UNPUBLISH_ASSESSMENT, AUTO_BALANCE_POINTS, GENERATE_AI_EXAM_QUESTIONS, UPDATE_QUESTION_INLINE } from "@/lib/graphql/assessment";
 import { GET_MY_QUESTION_BANKS } from "@/lib/graphql/question-bank";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Plus, Trash2, CheckCircle2, Copy, Users, BarChart3, ShieldAlert, Ban, XCircle, Sparkles, Scale, Lock, Unlock } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Trash2, CheckCircle2, Copy, Users, BarChart3, ShieldAlert, Ban, XCircle, Sparkles, Scale, Lock, Unlock, Key } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -267,14 +267,32 @@ export default function AssessmentEditorPage() {
                         {ast.isPublished ? "Khóa (Draft)" : "Công bố bài thi"}
                     </button>
                 </div>
-                <p className="text-slate-500">{ast.description}</p>
+                <p className="text-slate-500 mt-2">{ast.description}</p>
+                {ast.type === 'PRIVATE' && ast.enrollCode && (
+                    <div className="flex items-center gap-2 mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg w-fit">
+                        <Key className="w-5 h-5 text-slate-500" />
+                        <div>
+                            <p className="text-xs text-slate-500 font-medium mb-0.5">Mã ghi danh (Private)</p>
+                            <span className="text-sm font-mono font-bold text-slate-800 tracking-wide">{ast.enrollCode}</span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(ast.enrollCode);
+                                toast.success('Đã copy mã ghi danh');
+                            }}
+                            className="text-xs text-violet-600 hover:text-violet-700 font-medium px-3 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 rounded-md transition-colors ml-4"
+                        >
+                            Copy
+                        </button>
+                    </div>
+                )}
                 <div className="flex gap-3 mt-4 text-sm font-medium text-slate-600 flex-wrap">
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">⏱ Thời gian: {ast.timeLimit} phút</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">🎯 Điểm đỗ: {ast.passingScore}%</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">💎 Tổng điểm: {ast.totalPoints}đ</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">📝 Mã đề: {ast.numberOfSets}</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">🔄 Max lượt: {ast.maxAttempts || 1}</span>
-                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">🛡️ Ngưỡng VP: {ast.maxViolations || 5}</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Thời gian: {ast.timeLimit} phút</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Điểm đỗ: {ast.passingScore}%</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Tổng điểm: {ast.totalPoints}đ</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Mã đề: {ast.numberOfSets}</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Max lượt: {ast.maxAttempts || 1}</span>
+                    <span className="bg-white px-3 py-1 rounded shadow-sm border border-slate-200">Ngưỡng VP: {ast.maxViolations || 5}</span>
                 </div>
             </div>
 
@@ -323,7 +341,7 @@ export default function AssessmentEditorPage() {
                             {currentQuestions.length === 0 && (
                                 <div className="flex items-center gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-2">
                                     <p className="text-sm text-amber-800 font-medium flex-1 min-w-[200px]">
-                                        ⚠️ Mã đề {activeSet} chưa có câu hỏi. Copy từ mã đề khác:
+                                        Mã đề {activeSet} chưa có câu hỏi. Copy từ mã đề khác:
                                     </p>
                                     <div className="flex items-center gap-2">
                                         <select
@@ -767,7 +785,7 @@ export default function AssessmentEditorPage() {
                                                                                     <div key={vi} className="flex items-center gap-2 px-2.5 py-1.5 bg-red-50 rounded-lg text-xs">
                                                                                         <span className="text-red-500 font-bold">#{vi + 1}</span>
                                                                                         <span className="font-semibold text-slate-700">
-                                                                                            {v.type === "TAB_SWITCH" ? "🔀 Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "🖥️ Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "📡 Mất kết nối" : `⚠️ ${v.type}`}
+                                                                                            {v.type === "TAB_SWITCH" ? "Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "Mất kết nối" : `${v.type}`}
                                                                                         </span>
                                                                                         <span className="ml-auto text-slate-400">{format(new Date(v.timestamp), "HH:mm:ss")}</span>
                                                                                     </div>

@@ -599,7 +599,7 @@ export function LessonClientView({
                         </div>
                     )}
 
-                    {/* 🎉 Course Completion Banner */}
+                    {/* Course Completion Banner */}
                     {progress >= 100 && (
                         <div className="mt-8 relative overflow-hidden rounded-2xl border-2 border-yellow-300 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 p-6 md:p-8 shadow-lg">
                             <div className="absolute -top-6 -right-6 h-32 w-32 rounded-full bg-yellow-200/30 blur-2xl" />

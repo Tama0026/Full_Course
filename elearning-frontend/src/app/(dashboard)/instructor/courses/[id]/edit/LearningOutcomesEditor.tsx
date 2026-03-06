@@ -94,7 +94,7 @@ export default function LearningOutcomesEditor({
                 },
             });
             setOutcomes(filtered);
-            setSuccessMsg("✅ Đã lưu mục tiêu học tập!");
+            setSuccessMsg("Đã lưu mục tiêu học tập!");
             setTimeout(() => setSuccessMsg(null), 3000);
         } catch (err: any) {
             setErrorMsg(err?.message || "Có lỗi xảy ra khi lưu.");

@@ -23,6 +23,7 @@ import {
   AssessmentAttempt,
   AssessmentReport,
 } from './entities/assessment.entity';
+import { AssessmentType } from '@prisma/client';
 
 import {
   IsString,
@@ -53,6 +54,9 @@ export class CreateAssessmentInput {
   @IsNumber()
   @Min(0)
   passingScore: number;
+
+  @Field(() => AssessmentType, { defaultValue: 'MARKETPLACE' })
+  type: 'MARKETPLACE' | 'PRIVATE';
 
   @Field()
   @IsBoolean()
@@ -149,7 +153,7 @@ export class AnswerInput {
 
 @Resolver(() => Assessment)
 export class AssessmentsResolver {
-  constructor(private readonly assessmentsService: AssessmentsService) {}
+  constructor(private readonly assessmentsService: AssessmentsService) { }
 
   @Query(() => [Assessment], { name: 'assessments' })
   @UseGuards(JwtAuthGuard)

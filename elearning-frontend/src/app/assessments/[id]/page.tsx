@@ -183,7 +183,7 @@ export default function AssessmentDetailPage({
                                                                                     <div key={vi} className="flex items-center gap-2 px-2.5 py-1.5 bg-red-50 rounded-lg text-xs">
                                                                                         <span className="text-red-500 font-bold">#{vi + 1}</span>
                                                                                         <span className="font-semibold text-slate-700">
-                                                                                            {v.type === "TAB_SWITCH" ? "🔀 Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "🖥️ Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "📡 Mất kết nối" : `⚠️ ${v.type}`}
+                                                                                            {v.type === "TAB_SWITCH" ? "Chuyển tab" : v.type === "FULLSCREEN_EXIT" ? "Thoát toàn màn hình" : v.type === "DISCONNECT_TIMEOUT" ? "Mất kết nối" : `${v.type}`}
                                                                                         </span>
                                                                                         <span className="ml-auto text-slate-400">{format(new Date(v.timestamp), "HH:mm:ss")}</span>
                                                                                     </div>

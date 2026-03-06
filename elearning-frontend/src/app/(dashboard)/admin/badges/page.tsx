@@ -106,7 +106,7 @@ export default function AdminBadgesPage() {
             }
             await refetch();
             setShowModal(false);
-            toast.success(editingBadge ? "Cập nhật badge thành công ✅" : "Tạo badge mới thành công ✨");
+            toast.success(editingBadge ? "Cập nhật badge thành công" : "Tạo badge mới thành công");
         } catch (err: any) {
             toast.error(err.message || "Có lỗi xảy ra");
         } finally {
@@ -122,7 +122,7 @@ export default function AdminBadgesPage() {
         try {
             await deleteBadge({ variables: { badgeId: badge.id } });
             await refetch();
-            toast.success(`Đã xóa badge "${badge.name}" 🗑️`);
+            toast.success(`Đã xóa badge "${badge.name}"`);
         } catch (err: any) {
             toast.error(err.message || "Không thể xóa badge");
         }
