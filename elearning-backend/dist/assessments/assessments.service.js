@@ -24,21 +24,49 @@ let AssessmentsService = class AssessmentsService {
         this.remediationService = remediationService;
         this.aiService = aiService;
     }
-    async getAssessments(userRole, userId) {
+    async getAssessments(userRole, userId, take = 12, skip = 0, search) {
         if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
-            return this.prisma.assessment.findMany({
-                where: userRole === 'INSTRUCTOR' ? { creatorId: userId } : {},
-                include: {
-                    questions: { orderBy: { createdAt: 'asc' } },
-                    attempts: true,
-                },
-                orderBy: { createdAt: 'desc' },
-            });
+            const where = userRole === 'INSTRUCTOR' ? { creatorId: userId } : {};
+            if (search) {
+                where.title = { contains: search, mode: 'insensitive' };
+            }
+            const [items, totalCount] = await Promise.all([
+                this.prisma.assessment.findMany({
+                    where,
+                    include: {
+                        questions: { orderBy: { createdAt: 'asc' } },
+                        attempts: true,
+                    },
+                    orderBy: { createdAt: 'desc' },
+                    take,
+                    skip,
+                }),
+                this.prisma.assessment.count({ where }),
+            ]);
+            return {
+                items,
+                totalCount,
+                hasMore: skip + items.length < totalCount,
+            };
         }
-        return this.prisma.assessment.findMany({
-            where: { isActive: true },
-            orderBy: { createdAt: 'desc' },
-        });
+        const where = { isActive: true };
+        if (search) {
+            where.title = { contains: search, mode: 'insensitive' };
+        }
+        const [items, totalCount] = await Promise.all([
+            this.prisma.assessment.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.assessment.count({ where }),
+        ]);
+        return {
+            items,
+            totalCount,
+            hasMore: skip + items.length < totalCount,
+        };
     }
     async getAssessment(id) {
         return this.prisma.assessment.findUnique({

@@ -10,10 +10,14 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../common/guards/optional-jwt-auth.guard';
 import { EnrollmentGuard } from '../common/guards/enrollment.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PaginationArgs } from '../common/dto/pagination.args';
+import { createPaginatedResultType } from '../common/dto/paginated-result.factory';
+
+const PaginatedEnrollmentResult = createPaginatedResultType(Enrollment);
 
 @Resolver()
 export class LearningResolver {
-  constructor(private readonly learningService: LearningService) {}
+  constructor(private readonly learningService: LearningService) { }
 
   /**
    * Mark a lesson as complete.
@@ -50,14 +54,18 @@ export class LearningResolver {
   /**
    * Get all enrolled courses for the current user.
    */
-  @Query(() => [Enrollment], { name: 'myEnrollments' })
+  @Query(() => PaginatedEnrollmentResult, { name: 'myEnrollments' })
   @UseGuards(JwtAuthGuard)
   async getMyEnrollments(
     @CurrentUser() user: { id: string },
-  ): Promise<Enrollment[]> {
+    @Args() pagination: PaginationArgs,
+  ) {
     return this.learningService.getMyEnrollments(
       user.id,
-    ) as unknown as Enrollment[];
+      pagination.take,
+      pagination.skip,
+      pagination.search,
+    );
   }
 
   /**

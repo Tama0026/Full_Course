@@ -17,6 +17,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AssessmentsService } from './assessments.service';
+import { PaginationArgs } from '../common/dto/pagination.args';
+import { createPaginatedResultType } from '../common/dto/paginated-result.factory';
 import {
   Assessment,
   AssessmentQuestion,
@@ -34,6 +36,8 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
+
+const PaginatedAssessmentResult = createPaginatedResultType(Assessment);
 
 @InputType()
 export class CreateAssessmentInput {
@@ -155,10 +159,19 @@ export class AnswerInput {
 export class AssessmentsResolver {
   constructor(private readonly assessmentsService: AssessmentsService) { }
 
-  @Query(() => [Assessment], { name: 'assessments' })
+  @Query(() => PaginatedAssessmentResult, { name: 'assessments' })
   @UseGuards(JwtAuthGuard)
-  async getAssessments(@CurrentUser() user: { id: string; role: string }) {
-    return this.assessmentsService.getAssessments(user.role, user.id);
+  async getAssessments(
+    @CurrentUser() user: { id: string; role: string },
+    @Args() pagination: PaginationArgs,
+  ) {
+    return this.assessmentsService.getAssessments(
+      user.role,
+      user.id,
+      pagination.take,
+      pagination.skip,
+      pagination.search,
+    );
   }
 
   @Query(() => Assessment, { name: 'assessment' })

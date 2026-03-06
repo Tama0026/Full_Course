@@ -17,16 +17,30 @@ let QuestionBankService = class QuestionBankService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async getMyQuestionBanks(userId) {
-        return this.prisma.questionBank.findMany({
-            where: { userId },
-            include: {
-                _count: {
-                    select: { questions: true },
+    async getMyQuestionBanks(userId, take = 12, skip = 0, search) {
+        const where = { userId };
+        if (search) {
+            where.name = { contains: search, mode: 'insensitive' };
+        }
+        const [items, totalCount] = await Promise.all([
+            this.prisma.questionBank.findMany({
+                where,
+                include: {
+                    _count: {
+                        select: { questions: true },
+                    },
                 },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.questionBank.count({ where }),
+        ]);
+        return {
+            items,
+            totalCount,
+            hasMore: skip + items.length < totalCount,
+        };
     }
     async getQuestionBank(id, userId) {
         const bank = await this.prisma.questionBank.findUnique({

@@ -8,18 +8,39 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class QuestionBankService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getMyQuestionBanks(userId: string) {
-    return this.prisma.questionBank.findMany({
-      where: { userId },
-      include: {
-        _count: {
-          select: { questions: true },
+  async getMyQuestionBanks(
+    userId: string,
+    take: number = 12,
+    skip: number = 0,
+    search?: string,
+  ) {
+    const where: any = { userId };
+    if (search) {
+      where.name = { contains: search, mode: 'insensitive' };
+    }
+
+    const [items, totalCount] = await Promise.all([
+      this.prisma.questionBank.findMany({
+        where,
+        include: {
+          _count: {
+            select: { questions: true },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.questionBank.count({ where }),
+    ]);
+
+    return {
+      items,
+      totalCount,
+      hasMore: skip + items.length < totalCount,
+    };
   }
 
   async getQuestionBank(id: string, userId: string) {

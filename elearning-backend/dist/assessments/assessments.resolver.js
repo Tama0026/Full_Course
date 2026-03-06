@@ -21,9 +21,12 @@ const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const role_enum_1 = require("../common/enums/role.enum");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const assessments_service_1 = require("./assessments.service");
+const pagination_args_1 = require("../common/dto/pagination.args");
+const paginated_result_factory_1 = require("../common/dto/paginated-result.factory");
 const assessment_entity_1 = require("./entities/assessment.entity");
 const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
+const PaginatedAssessmentResult = (0, paginated_result_factory_1.createPaginatedResultType)(assessment_entity_1.Assessment);
 let CreateAssessmentInput = class CreateAssessmentInput {
     title;
     description;
@@ -205,8 +208,8 @@ let AssessmentsResolver = class AssessmentsResolver {
     constructor(assessmentsService) {
         this.assessmentsService = assessmentsService;
     }
-    async getAssessments(user) {
-        return this.assessmentsService.getAssessments(user.role, user.id);
+    async getAssessments(user, pagination) {
+        return this.assessmentsService.getAssessments(user.role, user.id, pagination.take, pagination.skip, pagination.search);
     }
     async getAssessment(id) {
         return this.assessmentsService.getAssessment(id);
@@ -253,11 +256,12 @@ let AssessmentsResolver = class AssessmentsResolver {
 };
 exports.AssessmentsResolver = AssessmentsResolver;
 __decorate([
-    (0, graphql_1.Query)(() => [assessment_entity_1.Assessment], { name: 'assessments' }),
+    (0, graphql_1.Query)(() => PaginatedAssessmentResult, { name: 'assessments' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, pagination_args_1.PaginationArgs]),
     __metadata("design:returntype", Promise)
 ], AssessmentsResolver.prototype, "getAssessments", null);
 __decorate([

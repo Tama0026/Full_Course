@@ -151,15 +151,40 @@ export class CoursesService {
 
   /**
    * Get ALL courses for Admin dashboard (no publish filter).
+   * Supports pagination and search.
    */
-  async getAllCoursesForAdmin() {
-    return this.prisma.course.findMany({
-      include: {
-        instructor: { select: { id: true, name: true, email: true } },
-        _count: { select: { enrollments: true, sections: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getAllCoursesForAdmin(
+    take: number = 12,
+    skip: number = 0,
+    search?: string,
+  ) {
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [items, totalCount] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        include: {
+          instructor: { select: { id: true, name: true, email: true } },
+          _count: { select: { enrollments: true, sections: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+
+    return {
+      items,
+      totalCount,
+      hasMore: skip + items.length < totalCount,
+    };
   }
 
   /**
@@ -817,7 +842,12 @@ export class CoursesService {
    * Get courses for the Explore/Discovery page.
    * PRIVATE courses have their sections/lessons stripped for security.
    */
-  async getDiscoveryCourses(search?: string, category?: string) {
+  async getDiscoveryCourses(
+    search?: string,
+    category?: string,
+    take: number = 12,
+    skip: number = 0,
+  ) {
     const where: any = {
       published: true,
       isActive: true,
@@ -834,26 +864,30 @@ export class CoursesService {
       where.category = category;
     }
 
-    const courses = await this.prisma.course.findMany({
-      where,
-      include: {
-        instructor: { select: { id: true, email: true, name: true } },
-        sections: {
-          include: {
-            lessons: {
-              select: { id: true, title: true, order: true, duration: true },
+    const [courses, totalCount] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        include: {
+          instructor: { select: { id: true, email: true, name: true } },
+          sections: {
+            include: {
+              lessons: {
+                select: { id: true, title: true, order: true, duration: true },
+              },
             },
+            orderBy: { order: 'asc' },
           },
-          orderBy: { order: 'asc' },
+          _count: { select: { enrollments: true } },
         },
-        _count: { select: { enrollments: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.course.count({ where }),
+    ]);
 
     // Strip lesson details for PRIVATE courses (API-level security)
-    return courses.map((course) => {
+    const items = courses.map((course) => {
       if (course.type === 'PRIVATE') {
         return {
           ...course,
@@ -862,5 +896,11 @@ export class CoursesService {
       }
       return course;
     });
+
+    return {
+      items,
+      totalCount,
+      hasMore: skip + items.length < totalCount,
+    };
   }
 }

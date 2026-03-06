@@ -2,19 +2,23 @@ import { PrismaService } from '../prisma/prisma.service';
 export declare class QuestionBankService {
     private prisma;
     constructor(prisma: PrismaService);
-    getMyQuestionBanks(userId: string): Promise<({
-        _count: {
-            questions: number;
-        };
-    } & {
-        category: string;
-        name: string;
-        description: string | null;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-    })[]>;
+    getMyQuestionBanks(userId: string, take?: number, skip?: number, search?: string): Promise<{
+        items: ({
+            _count: {
+                questions: number;
+            };
+        } & {
+            category: string;
+            name: string;
+            description: string | null;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+        })[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getQuestionBank(id: string, userId: string): Promise<{
         questions: {
             id: string;

@@ -55,7 +55,7 @@ export default function QuestionBankListPage() {
         }
     };
 
-    const banks = (data as any)?.myQuestionBanks || [];
+    const banks = (data as any)?.myQuestionBanks?.items || [];
 
     return (
         <div className="p-6 max-w-6xl mx-auto">

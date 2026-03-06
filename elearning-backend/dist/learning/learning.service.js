@@ -129,8 +129,46 @@ let LearningService = class LearningService {
             completedItems,
         };
     }
-    async getMyEnrollments(userId) {
-        return this.enrollmentRepository.findByUserId(userId);
+    async getMyEnrollments(userId, take = 12, skip = 0, search) {
+        const where = { userId, status: 'APPROVED' };
+        if (search) {
+            where.course = {
+                title: { contains: search, mode: 'insensitive' },
+            };
+        }
+        const [items, totalCount] = await Promise.all([
+            this.prisma.enrollment.findMany({
+                where,
+                include: {
+                    course: {
+                        include: {
+                            instructor: { select: { id: true, email: true } },
+                            sections: {
+                                include: {
+                                    lessons: {
+                                        select: { id: true, title: true, order: true },
+                                        orderBy: { order: 'asc' },
+                                    },
+                                },
+                                orderBy: { order: 'asc' },
+                            },
+                        },
+                    },
+                    progresses: {
+                        select: { id: true, lessonId: true, completedAt: true },
+                    },
+                },
+                orderBy: { requestedAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.enrollment.count({ where }),
+        ]);
+        return {
+            items,
+            totalCount,
+            hasMore: skip + items.length < totalCount,
+        };
     }
     async isEnrolled(userId, courseId) {
         const enrollment = await this.prisma.enrollment.findUnique({

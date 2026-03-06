@@ -233,23 +233,27 @@ export const REJECT_ENROLLMENT = gql`
 `;
 
 export const DISCOVERY_COURSES = gql`
-  query DiscoveryCourses($search: String, $category: String) {
-    discoveryCourses(search: $search, category: $category) {
-      id
-      title
-      description
-      price
-      type
-      thumbnail
-      category
-      averageRating
-      reviewCount
-      totalDuration
-      instructor { id email name }
-      sections {
-        id title
-        lessons { id title duration }
+  query DiscoveryCourses($search: String, $category: String, $take: Float, $skip: Float) {
+    discoveryCourses(search: $search, category: $category, take: $take, skip: $skip) {
+      items {
+        id
+        title
+        description
+        price
+        type
+        thumbnail
+        category
+        averageRating
+        reviewCount
+        totalDuration
+        instructor { id email name }
+        sections {
+          id title
+          lessons { id title duration }
+        }
       }
+      totalCount
+      hasMore
     }
   }
 `;

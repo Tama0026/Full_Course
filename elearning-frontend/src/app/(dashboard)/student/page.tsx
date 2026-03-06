@@ -111,7 +111,7 @@ export default function StudentDashboard() {
 
     const [claimCertificate, { loading: claiming }] = useMutation(CLAIM_CERTIFICATE);
 
-    const enrollments = data?.myEnrollments || [];
+    const enrollments = data?.myEnrollments?.items || [];
 
     const processedCourses = enrollments.map((enrollment: any) => {
         const course = enrollment.course;

@@ -1,32 +1,42 @@
 # 🎓 Full Course — Fullstack eLearning Platform
 
-A modern, full-featured eLearning platform built with **Next.js 16** and **NestJS 11**, featuring AI-powered content, gamification, and secure JWT authentication.
+A modern, full-featured eLearning platform built with **Next.js 16** and **NestJS 11**, featuring AI-powered content, gamification, standalone assessments, and secure JWT authentication.
 
 🌐 **Live Demo**: [https://full-course-eta.vercel.app](https://full-course-eta.vercel.app)
 
 ## 📸 Features Overview
 
 ### For Students
-- 📚 Browse & enroll in courses with category filtering
+- 📚 Browse & enroll in courses with category filtering & server-side pagination
 - 🎬 Video lessons with progress tracking & resume playback
 - 📝 Interactive quizzes (AI-generated from lesson content)
-- 💬 Comments & discussion on each lesson
+- 💬 Comments & threaded discussion on each lesson
 - 🗒️ Timestamped notes synced with video
 - 🏆 Gamification: points, badges, leaderboard, login streaks
-- 🎓 Certificates upon course completion
+- 🎓 Certificates upon course completion (auto-generated via Cloudinary)
 - 🤖 AI-powered learning assistant & skill assessment
+- 📋 Standalone exams with multiple set codes, question shuffling & anti-cheat
+- 🔑 Enroll in private courses/assessments via invite code
+- 📊 Remediation reports & AI-generated review paths after failed attempts
 
 ### For Instructors
 - 📋 Course creation with curriculum editor (sections & lessons)
 - 🎥 Video upload via Cloudinary
 - 📝 Markdown lesson editor with rich content support
 - ❓ Quiz management with AI auto-generation
-- 📊 Student progress tracking & enrollment approval
+- 📊 Student progress tracking & enrollment approval workflow
 - 🏅 Custom badge creation for courses
+- 🔒 Private courses with enroll codes & student approval
+- 📋 Standalone assessment creation with multiple set codes
+- 📦 Question Bank: reusable question pools with bulk import to exams
+- ⚙️ Configure max students, approval-required, and course visibility
+- 🔔 Real-time notifications when students request enrollment
+- 📧 Send learning reminders to inactive students
 
 ### For Admins
 - 👥 User & course management
 - 📊 Platform-wide analytics & oversight
+- 🏅 Global badge management (system-wide achievements)
 
 ## 🏗️ Architecture
 
@@ -42,6 +52,8 @@ A modern, full-featured eLearning platform built with **Next.js 16** and **NestJ
        │   Rewrite      │    Prisma ORM   │    Upload API  │
        │   /graphql ──► │ ◄──────────────►│                │
        │                │                 │                │
+       │   WebSocket    │                 │                │
+       │   /socket.io ► │                 │                │
 └──────┴────────────────┴─────────────────┴────────────────┘
 ```
 
@@ -60,6 +72,9 @@ A modern, full-featured eLearning platform built with **Next.js 16** and **NestJ
 | **Charts** | Recharts |
 | **Auth** | jose (JWT verify in middleware) |
 | **AI** | Google Generative AI |
+| **State** | Zustand |
+| **Real-time** | Socket.IO Client |
+| **Notifications** | Sonner (toast) |
 
 ### Backend (`elearning-backend`)
 | Category | Technology |
@@ -72,6 +87,8 @@ A modern, full-featured eLearning platform built with **Next.js 16** and **NestJ
 | **Media** | Cloudinary SDK |
 | **Email** | Nodemailer (SMTP) |
 | **AI** | Google Generative AI (Gemini) |
+| **Real-time** | Socket.IO (WebSocket Gateway) |
+| **Scheduling** | @nestjs/schedule (Cron jobs) |
 
 ## 📁 Project Structure
 
@@ -83,37 +100,48 @@ Full_Course/
 │       │   ├── (auth)/          # Login & Register pages
 │       │   ├── (marketing)/     # Public pages (home, courses, checkout)
 │       │   ├── (dashboard)/     # Protected dashboards
-│       │   │   ├── student/     # Student dashboard
+│       │   │   ├── dashboard/   # Role-aware main dashboard
+│       │   │   ├── student/     # Student dashboard & enrolled courses
 │       │   │   ├── instructor/  # Instructor dashboard
+│       │   │   │   ├── courses/ # Course management (CRUD, curriculum)
+│       │   │   │   ├── assessments/ # Standalone exam management
+│       │   │   │   ├── question-bank/ # Reusable question pools
+│       │   │   │   └── badges/  # Custom badge creation
 │       │   │   ├── admin/       # Admin dashboard
+│       │   │   ├── explore/     # Browse all courses
 │       │   │   ├── profile/     # User profile
 │       │   │   ├── interview/   # AI mock interview
 │       │   │   └── certificates/# Certificate viewer
 │       │   ├── (learning)/      # Course learning interface
-│       │   └── api/auth/        # Server-side auth API routes
+│       │   ├── assessments/     # Student assessment taking UI
+│       │   └── api/             # Server-side API routes
+│       │       └── auth/        # BFF auth endpoints
 │       ├── components/          # Reusable UI components
 │       ├── lib/                 # Apollo client, constants, GraphQL queries
 │       └── middleware.ts        # Route protection & RBAC
 │
 ├── elearning-backend/           # NestJS backend
 │   ├── prisma/
-│   │   ├── schema.prisma        # Database schema
+│   │   ├── schema.prisma        # Database schema (28 models)
 │   │   └── seed.ts              # Seed data
 │   └── src/
 │       ├── auth/                # Authentication (JWT, Passport)
-│       ├── courses/             # Course CRUD
+│       ├── courses/             # Course CRUD & enrollment management
 │       ├── learning/            # Enrollment, progress, certificates
 │       ├── quiz/                # Quiz management
-│       ├── comments/            # Lesson comments
+│       ├── comments/            # Lesson comments (threaded)
 │       ├── notes/               # Timestamped notes
 │       ├── orders/              # Course purchases
 │       ├── categories/          # Course categories
 │       ├── gamification/        # Points, badges, leaderboard, streaks
-│       ├── assessments/         # Standalone exams
+│       ├── assessments/         # Standalone exams (multi-set, anti-cheat)
+│       ├── question-bank/       # Reusable question bank management
+│       ├── remediation/         # AI remediation reports & review paths
 │       ├── ai/                  # AI services (quiz gen, assistant, rank)
 │       ├── interview/           # AI mock interview
 │       ├── cloudinary/          # Media upload & certificate generation
 │       ├── email/               # Email service (SMTP)
+│       ├── common/              # Guards, decorators, pipes
 │       └── prisma/              # Prisma service
 │
 └── README.md
@@ -150,6 +178,46 @@ The app uses a **BFF (Backend for Frontend)** pattern with **HttpOnly cookies**:
 - ✅ Short-lived access token (15 min) + long-lived refresh token (7 days)
 - ✅ bcrypt password hashing (10 rounds)
 - ✅ Role-based access control via middleware (STUDENT / INSTRUCTOR / ADMIN)
+- ✅ Enrollment guard for course content access
+
+## 📝 Assessment & Exam System
+
+The platform includes a full-featured **standalone assessment system**, independent from course quizzes:
+
+- **Multiple Set Codes** — Each exam can have multiple question sets (SET_1, SET_2, ...) to prevent cheating
+- **Question Shuffling** — Questions and answer options are randomized per attempt
+- **Anti-Cheat Monitoring** — Tracks tab switches, fullscreen exits, and window blur events; auto-voids after configurable violations
+- **Server-Synchronized Timer** — Countdown is validated server-side; auto-submits on expiry
+- **Private Assessments** — Instructors can create invite-only exams with unique enroll codes
+- **Configurable Settings** — Max attempts, passing score, total points, violation threshold
+- **AI Remediation** — Failed attempts trigger AI-generated gap analysis with recommended review paths linked to course lessons
+
+### Question Bank
+
+- 📦 Instructors maintain reusable **question banks** organized by category
+- 📥 Bulk import questions from banks into assessments
+- 🏷️ Questions tagged with difficulty levels (EASY / MEDIUM / HARD)
+- 📝 Optional explanations for each question
+
+## 📊 Enrollment & Approval Workflow
+
+```
+1. Student requests enrollment in a course
+   → status: PENDING, requestedAt: timestamp
+
+2. Instructor reviews enrollment requests
+   → Approve: status → APPROVED, enrolledAt: timestamp
+   → Reject: status → REJECTED
+
+3. For courses without approval required
+   → Auto-approve on enrollment → immediate access
+
+4. Private courses
+   → Student enters enroll code → auto-enrolled (or pending if approval required)
+
+5. Learning reminders
+   → Instructor can send email reminders to inactive students
+```
 
 ## 🚀 Getting Started
 

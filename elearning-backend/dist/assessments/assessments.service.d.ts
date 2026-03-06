@@ -7,24 +7,28 @@ export declare class AssessmentsService {
     private aiService;
     private attemptCache;
     constructor(prisma: PrismaService, remediationService: RemediationService, aiService: AiService);
-    getAssessments(userRole: string, userId: string): Promise<{
-        type: import("@prisma/client").$Enums.AssessmentType;
-        description: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        enrollCode: string | null;
-        isActive: boolean;
-        totalPoints: number;
-        creatorId: string;
-        timeLimit: number;
-        passingScore: number;
-        numberOfSets: number;
-        maxAttempts: number;
-        maxViolations: number;
-        isPublished: boolean;
-    }[]>;
+    getAssessments(userRole: string, userId: string, take?: number, skip?: number, search?: string): Promise<{
+        items: {
+            type: import("@prisma/client").$Enums.AssessmentType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            enrollCode: string | null;
+            isActive: boolean;
+            totalPoints: number;
+            creatorId: string;
+            timeLimit: number;
+            passingScore: number;
+            numberOfSets: number;
+            maxAttempts: number;
+            maxViolations: number;
+            isPublished: boolean;
+        }[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;

@@ -1,15 +1,19 @@
 import { gql } from '@apollo/client';
 
 export const GET_MY_QUESTION_BANKS = gql`
-  query GetMyQuestionBanks {
-    myQuestionBanks {
-      id
-      name
-      description
-      category
-      questionCount
-      createdAt
-      updatedAt
+  query GetMyQuestionBanks($take: Int, $skip: Int, $search: String) {
+    myQuestionBanks(take: $take, skip: $skip, search: $search) {
+      items {
+        id
+        name
+        description
+        category
+        questionCount
+        createdAt
+        updatedAt
+      }
+      totalCount
+      hasMore
     }
   }
 `;

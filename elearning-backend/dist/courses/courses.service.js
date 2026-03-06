@@ -95,14 +95,32 @@ let CoursesService = class CoursesService {
     async getPublishedCourses() {
         return this.courseRepository.findPublished();
     }
-    async getAllCoursesForAdmin() {
-        return this.prisma.course.findMany({
-            include: {
-                instructor: { select: { id: true, name: true, email: true } },
-                _count: { select: { enrollments: true, sections: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
+    async getAllCoursesForAdmin(take = 12, skip = 0, search) {
+        const where = {};
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        const [items, totalCount] = await Promise.all([
+            this.prisma.course.findMany({
+                where,
+                include: {
+                    instructor: { select: { id: true, name: true, email: true } },
+                    _count: { select: { enrollments: true, sections: true } },
+                },
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.course.count({ where }),
+        ]);
+        return {
+            items,
+            totalCount,
+            hasMore: skip + items.length < totalCount,
+        };
     }
     async getCourseById(id) {
         const course = await this.courseRepository.findByIdWithRelations(id);
@@ -550,7 +568,7 @@ let CoursesService = class CoursesService {
         });
         return enrollment;
     }
-    async getDiscoveryCourses(search, category) {
+    async getDiscoveryCourses(search, category, take = 12, skip = 0) {
         const where = {
             published: true,
             isActive: true,
@@ -564,24 +582,28 @@ let CoursesService = class CoursesService {
         if (category) {
             where.category = category;
         }
-        const courses = await this.prisma.course.findMany({
-            where,
-            include: {
-                instructor: { select: { id: true, email: true, name: true } },
-                sections: {
-                    include: {
-                        lessons: {
-                            select: { id: true, title: true, order: true, duration: true },
+        const [courses, totalCount] = await Promise.all([
+            this.prisma.course.findMany({
+                where,
+                include: {
+                    instructor: { select: { id: true, email: true, name: true } },
+                    sections: {
+                        include: {
+                            lessons: {
+                                select: { id: true, title: true, order: true, duration: true },
+                            },
                         },
+                        orderBy: { order: 'asc' },
                     },
-                    orderBy: { order: 'asc' },
+                    _count: { select: { enrollments: true } },
                 },
-                _count: { select: { enrollments: true } },
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 50,
-        });
-        return courses.map((course) => {
+                orderBy: { createdAt: 'desc' },
+                take,
+                skip,
+            }),
+            this.prisma.course.count({ where }),
+        ]);
+        const items = courses.map((course) => {
             if (course.type === 'PRIVATE') {
                 return {
                     ...course,
@@ -590,6 +612,11 @@ let CoursesService = class CoursesService {
             }
             return course;
         });
+        return {
+            items,
+            totalCount,
+            hasMore: skip + items.length < totalCount,
+        };
     }
 };
 exports.CoursesService = CoursesService;

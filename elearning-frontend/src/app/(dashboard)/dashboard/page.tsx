@@ -88,6 +88,7 @@ export default function DashboardHomePage() {
     const { user, isLoading: authLoading } = useAuth();
 
     const { data: enrollData, loading: enrollLoading } = useQuery<any>(GET_MY_ENROLLMENTS, {
+        variables: { take: 50 },
         fetchPolicy: "cache-and-network",
         skip: user?.role !== "STUDENT",
     });
@@ -106,7 +107,7 @@ export default function DashboardHomePage() {
     }
 
     // ── Courses stats ──
-    const enrollments = enrollData?.myEnrollments || [];
+    const enrollments = enrollData?.myEnrollments?.items || [];
     const totalCourses = enrollments.length;
     const completedCourses = enrollments.filter((e: any) => {
         const allLessons = e.course?.sections?.flatMap((s: any) => s.lessons) || [];
@@ -115,7 +116,7 @@ export default function DashboardHomePage() {
     }).length;
 
     // ── Assessment stats ──
-    const assessments = assessData?.assessments || [];
+    const assessments = assessData?.assessments?.items || [];
     const allAttempts = assessments.flatMap((a: any) => a.attempts || []);
     const averageScore =
         allAttempts.length > 0

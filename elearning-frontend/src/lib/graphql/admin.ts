@@ -89,26 +89,30 @@ export const ADMIN_DELETE_BADGE = gql`
 // ════════════════════════════════════════════════
 
 export const GET_ADMIN_ALL_COURSES = gql`
-  query GetAdminAllCourses {
-    adminAllCourses {
-      id
-      title
-      description
-      price
-      thumbnail
-      category
-      published
-      isActive
-      instructorId
-      instructor {
+  query GetAdminAllCourses($take: Int, $skip: Int, $search: String) {
+    adminAllCourses(take: $take, skip: $skip, search: $search) {
+      items {
         id
-        name
-        email
+        title
+        description
+        price
+        thumbnail
+        category
+        published
+        isActive
+        instructorId
+        instructor {
+          id
+          name
+          email
+        }
+        enrollmentCount
+        sectionCount
+        createdAt
+        updatedAt
       }
-      enrollmentCount
-      sectionCount
-      createdAt
-      updatedAt
+      totalCount
+      hasMore
     }
   }
 `;

@@ -36,6 +36,10 @@ const current_user_decorator_1 = require("../common/decorators/current-user.deco
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const role_enum_1 = require("../common/enums/role.enum");
 const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
+const pagination_args_1 = require("../common/dto/pagination.args");
+const paginated_result_factory_1 = require("../common/dto/paginated-result.factory");
+const PaginatedCourseResult = (0, paginated_result_factory_1.createPaginatedResultType)(course_entity_1.Course);
+const PaginatedAdminCourseResult = (0, paginated_result_factory_1.createPaginatedResultType)(admin_course_entity_1.AdminCourse);
 let LessonResolver = class LessonResolver {
     cloudinaryService;
     prisma;
@@ -251,13 +255,17 @@ let CoursesResolver = class CoursesResolver {
     async getInstructorStats(user) {
         return this.coursesService.getInstructorStats(user.id);
     }
-    async getAdminAllCourses() {
-        const courses = await this.coursesService.getAllCoursesForAdmin();
-        return courses.map((c) => ({
-            ...c,
-            enrollmentCount: c._count?.enrollments || 0,
-            sectionCount: c._count?.sections || 0,
-        }));
+    async getAdminAllCourses(pagination) {
+        const result = await this.coursesService.getAllCoursesForAdmin(pagination.take, pagination.skip, pagination.search);
+        return {
+            items: result.items.map((c) => ({
+                ...c,
+                enrollmentCount: c._count?.enrollments || 0,
+                sectionCount: c._count?.sections || 0,
+            })),
+            totalCount: result.totalCount,
+            hasMore: result.hasMore,
+        };
     }
     async getCourseStudents(courseId, user) {
         return this.coursesService.getCourseStudents(courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
@@ -271,8 +279,8 @@ let CoursesResolver = class CoursesResolver {
     async rejectEnrollment(studentId, courseId, user) {
         return this.coursesService.rejectEnrollment(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
     }
-    async getDiscoveryCourses(search, category) {
-        return this.coursesService.getDiscoveryCourses(search, category);
+    async getDiscoveryCourses(search, category, take, skip) {
+        return this.coursesService.getDiscoveryCourses(search, category, take, skip);
     }
     async enrollByCode(code, user) {
         await this.coursesService.enrollByCode(code, user.id);
@@ -413,11 +421,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "getInstructorStats", null);
 __decorate([
-    (0, graphql_1.Query)(() => [admin_course_entity_1.AdminCourse], { name: 'adminAllCourses' }),
+    (0, graphql_1.Query)(() => PaginatedAdminCourseResult, { name: 'adminAllCourses' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [pagination_args_1.PaginationArgs]),
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "getAdminAllCourses", null);
 __decorate([
@@ -464,12 +473,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "rejectEnrollment", null);
 __decorate([
-    (0, graphql_1.Query)(() => [course_entity_1.Course], { name: 'discoveryCourses' }),
+    (0, graphql_1.Query)(() => PaginatedCourseResult, { name: 'discoveryCourses' }),
     (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard),
     __param(0, (0, graphql_1.Args)('search', { type: () => String, nullable: true })),
     __param(1, (0, graphql_1.Args)('category', { type: () => String, nullable: true })),
+    __param(2, (0, graphql_1.Args)('take', { type: () => Number, defaultValue: 12, nullable: true })),
+    __param(3, (0, graphql_1.Args)('skip', { type: () => Number, defaultValue: 0, nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "getDiscoveryCourses", null);
 __decorate([

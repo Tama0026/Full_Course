@@ -18,37 +18,41 @@ export declare class CoursesService {
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
     deleteCourse(id: string): Promise<PrismaCourse>;
     getPublishedCourses(): Promise<PrismaCourse[]>;
-    getAllCoursesForAdmin(): Promise<({
-        _count: {
-            enrollments: number;
-            sections: number;
-        };
-        instructor: {
-            name: string | null;
+    getAllCoursesForAdmin(take?: number, skip?: number, search?: string): Promise<{
+        items: ({
+            _count: {
+                enrollments: number;
+                sections: number;
+            };
+            instructor: {
+                name: string | null;
+                id: string;
+                email: string;
+            };
+        } & {
+            category: string | null;
+            type: import("@prisma/client").$Enums.CourseType;
+            description: string;
             id: string;
-            email: string;
-        };
-    } & {
-        category: string | null;
-        type: import("@prisma/client").$Enums.CourseType;
-        description: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        price: number;
-        enrollCode: string | null;
-        thumbnail: string | null;
-        learningOutcomes: string;
-        averageRating: number;
-        reviewCount: number;
-        totalDuration: number;
-        published: boolean;
-        isActive: boolean;
-        maxStudents: number | null;
-        isApprovalRequired: boolean;
-        instructorId: string;
-    })[]>;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            price: number;
+            enrollCode: string | null;
+            thumbnail: string | null;
+            learningOutcomes: string;
+            averageRating: number;
+            reviewCount: number;
+            totalDuration: number;
+            published: boolean;
+            isActive: boolean;
+            maxStudents: number | null;
+            isApprovalRequired: boolean;
+            instructorId: string;
+        })[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getCourseById(id: string): Promise<PrismaCourse>;
     getMyCourses(instructorId: string): Promise<PrismaCourse[]>;
     createSection(input: CreateSectionInput): Promise<Section>;
@@ -199,49 +203,53 @@ export declare class CoursesService {
         enrolledAt: Date | null;
         lastRemindedAt: Date | null;
     }>;
-    getDiscoveryCourses(search?: string, category?: string): Promise<({
-        _count: {
-            enrollments: number;
-        };
-        instructor: {
-            name: string | null;
-            id: string;
-            email: string;
-        };
-        sections: ({
-            lessons: {
+    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number): Promise<{
+        items: ({
+            _count: {
+                enrollments: number;
+            };
+            instructor: {
+                name: string | null;
+                id: string;
+                email: string;
+            };
+            sections: ({
+                lessons: {
+                    order: number;
+                    id: string;
+                    title: string;
+                    duration: number | null;
+                }[];
+            } & {
                 order: number;
                 id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                courseId: string;
                 title: string;
-                duration: number | null;
-            }[];
+            })[];
         } & {
-            order: number;
+            category: string | null;
+            type: import("@prisma/client").$Enums.CourseType;
+            description: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            courseId: string;
             title: string;
+            price: number;
+            enrollCode: string | null;
+            thumbnail: string | null;
+            learningOutcomes: string;
+            averageRating: number;
+            reviewCount: number;
+            totalDuration: number;
+            published: boolean;
+            isActive: boolean;
+            maxStudents: number | null;
+            isApprovalRequired: boolean;
+            instructorId: string;
         })[];
-    } & {
-        category: string | null;
-        type: import("@prisma/client").$Enums.CourseType;
-        description: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        price: number;
-        enrollCode: string | null;
-        thumbnail: string | null;
-        learningOutcomes: string;
-        averageRating: number;
-        reviewCount: number;
-        totalDuration: number;
-        published: boolean;
-        isActive: boolean;
-        maxStudents: number | null;
-        isApprovalRequired: boolean;
-        instructorId: string;
-    })[]>;
+        totalCount: number;
+        hasMore: boolean;
+    }>;
 }

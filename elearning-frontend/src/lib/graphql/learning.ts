@@ -32,34 +32,38 @@ export const MARK_LESSON_COMPLETE = gql`
 `;
 
 export const GET_MY_ENROLLMENTS = gql`
-  query GetMyEnrollments {
-    myEnrollments {
-      id
-      status
-      requestedAt
-      enrolledAt
-      isFinished
-      course {
+  query GetMyEnrollments($take: Int, $skip: Int, $search: String) {
+    myEnrollments(take: $take, skip: $skip, search: $search) {
+      items {
         id
-        title
-        thumbnail
-        instructor { id email }
-        sections {
+        status
+        requestedAt
+        enrolledAt
+        isFinished
+        course {
           id
           title
-          order
-          lessons {
+          thumbnail
+          instructor { id email }
+          sections {
             id
             title
             order
+            lessons {
+              id
+              title
+              order
+            }
           }
         }
+        progresses {
+          id
+          lessonId
+          completedAt
+        }
       }
-      progresses {
-        id
-        lessonId
-        completedAt
-      }
+      totalCount
+      hasMore
     }
   }
 `;

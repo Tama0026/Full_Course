@@ -4,13 +4,13 @@ import { Course } from './entities/course.entity';
 import { Section } from './entities/section.entity';
 import { Lesson } from './entities/lesson.entity';
 import { InstructorStats } from './entities/instructor-stats.entity';
-import { AdminCourse } from './entities/admin-course.entity';
 import { CreateCourseInput } from './dto/create-course.input';
 import { UpdateCourseInput } from './dto/update-course.input';
 import { CreateSectionInput } from './dto/create-section.input';
 import { CreateLessonInput } from './dto/create-lesson.input';
 import { UpdateCurriculumInput } from './dto/update-curriculum.input';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { PaginationArgs } from '../common/dto/pagination.args';
 export declare class LessonResolver {
     private readonly cloudinaryService;
     private readonly prisma;
@@ -45,7 +45,11 @@ export declare class CoursesResolver {
     getInstructorStats(user: {
         id: string;
     }): Promise<InstructorStats>;
-    getAdminAllCourses(): Promise<AdminCourse[]>;
+    getAdminAllCourses(pagination: PaginationArgs): Promise<{
+        items: any[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getCourseStudents(courseId: string, user: any): Promise<{
         id: string;
         name: string;
@@ -66,7 +70,55 @@ export declare class CoursesResolver {
     sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;
     approveEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
     rejectEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
-    getDiscoveryCourses(search?: string, category?: string): Promise<Course[]>;
+    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number): Promise<{
+        items: ({
+            _count: {
+                enrollments: number;
+            };
+            instructor: {
+                name: string | null;
+                id: string;
+                email: string;
+            };
+            sections: ({
+                lessons: {
+                    order: number;
+                    id: string;
+                    title: string;
+                    duration: number | null;
+                }[];
+            } & {
+                order: number;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                courseId: string;
+                title: string;
+            })[];
+        } & {
+            category: string | null;
+            type: import("@prisma/client").$Enums.CourseType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            price: number;
+            enrollCode: string | null;
+            thumbnail: string | null;
+            learningOutcomes: string;
+            averageRating: number;
+            reviewCount: number;
+            totalDuration: number;
+            published: boolean;
+            isActive: boolean;
+            maxStudents: number | null;
+            isApprovalRequired: boolean;
+            instructorId: string;
+        })[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     enrollByCode(code: string, user: {
         id: string;
     }): Promise<boolean>;
