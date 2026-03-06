@@ -69,40 +69,43 @@ let EmailService = class EmailService {
         }
     }
     async sendCertificateEmail(to, studentName, courseName, certificateUrl) {
-        const subject = `🎉 Chúc mừng ${studentName} đã hoàn thành khóa học "${courseName}"!`;
+        const subject = `Chúc mừng ${studentName} đã hoàn thành khóa học "${courseName}"!`;
         const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7); padding: 40px 30px; text-align: center; color: white; }
-        .header h1 { margin: 0 0 8px; font-size: 28px; }
-        .header p { margin: 0; font-size: 16px; opacity: 0.9; }
-        .body { padding: 30px; }
-        .cert-image { width: 100%; border-radius: 12px; border: 2px solid #e2e8f0; margin: 20px 0; }
-        .btn { display: inline-block; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px; }
-        .footer { padding: 20px 30px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #f1f5f9; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .header { background: #0f172a; padding: 32px 30px; text-align: center; color: white; }
+        .header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .header p { margin: 0; font-size: 15px; color: #cbd5e1; }
+        .body { padding: 40px 30px; color: #334155; line-height: 1.6; }
+        .cert-image { width: 100%; border-radius: 6px; border: 1px solid #e2e8f0; margin: 20px 0; }
+        .btn { display: inline-block; background: #4f46e5; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin-top: 20px; transition: background-color 0.2s; }
+        .btn:hover { background: #4338ca; }
+        .footer { padding: 24px 30px; text-align: center; color: #64748b; font-size: 13px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎓 Chúc mừng!</h1>
+            <h1>Chúc mừng bạn!</h1>
             <p>Bạn đã hoàn thành xuất sắc khóa học</p>
         </div>
         <div class="body">
             <p>Xin chào <strong>${studentName}</strong>,</p>
             <p>Chúng tôi rất vui vì bạn đã hoàn thành khóa học <strong>"${courseName}"</strong>. Đây là chứng chỉ của bạn:</p>
             <img src="${certificateUrl}" alt="Certificate" class="cert-image"/>
-            <p>Bạn có thể tải chứng chỉ hoặc chia sẻ thành tựu này với mọi người!</p>
-            <a href="${certificateUrl}" class="btn">📥 Xem Chứng Chỉ</a>
-            <p style="margin-top: 24px; color: #64748b;">Tiếp tục hành trình học tập của bạn tại nền tảng của chúng tôi. Chúc bạn thành công!</p>
+            <p>Bạn có thể tải chứng chỉ hoặc chia sẻ thành tựu này với bạn bè và đồng nghiệp.</p>
+            <div style="text-align: center;">
+                <a href="${certificateUrl}" class="btn">Xem Chứng Chỉ</a>
+            </div>
+            <p style="margin-top: 32px; color: #64748b; font-size: 14px;">Tiếp tục hành trình học tập của bạn tại nền tảng của chúng tôi. Xin chúc mừng thành công của bạn!</p>
         </div>
         <div class="footer">
-            <p>E-Learning Platform • Email tự động</p>
+            <p>E-Learning Platform &bull; Hệ thống tự động</p>
         </div>
     </div>
 </body>
@@ -131,38 +134,41 @@ let EmailService = class EmailService {
         }
     }
     async sendEnrollmentApprovedEmail(to, studentName, courseName, courseUrl) {
-        const subject = `✅ Đơn đăng ký khóa học "${courseName}" của bạn đã được phê duyệt!`;
+        const subject = `Đơn đăng ký khóa học "${courseName}" của bạn đã được phê duyệt!`;
         const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #10b981, #3b82f6); padding: 40px 30px; text-align: center; color: white; }
-        .header h1 { margin: 0 0 8px; font-size: 28px; }
-        .header p { margin: 0; font-size: 16px; opacity: 0.9; }
-        .body { padding: 30px; }
-        .btn { display: inline-block; background: linear-gradient(135deg, #10b981, #3b82f6); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px; }
-        .footer { padding: 20px 30px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #f1f5f9; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .header { background: #0f172a; padding: 32px 30px; text-align: center; color: white; }
+        .header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .header p { margin: 0; font-size: 15px; color: #cbd5e1; }
+        .body { padding: 40px 30px; color: #334155; line-height: 1.6; }
+        .btn { display: inline-block; background: #4f46e5; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin-top: 20px; transition: background-color 0.2s; }
+        .btn:hover { background: #4338ca; }
+        .footer { padding: 24px 30px; text-align: center; color: #64748b; font-size: 13px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>Đăng ký thành công!</h1>
-            <p>Khóa học đã sẵn sàng</p>
+            <p>Khóa học hiện đã sẵn sàng</p>
         </div>
         <div class="body">
             <p>Xin chào <strong>${studentName}</strong>,</p>
-            <p>Tuyệt vời! Yêu cầu đăng ký khóa học <strong>"${courseName}"</strong> của bạn đã được giảng viên phê duyệt.</p>
-            <p>Bạn đã có thể bắt đầu quá trình học tập và hoàn thành các bài tập/kỳ thi ngay bây giờ.</p>
-            <a href="${courseUrl}" class="btn">🚀 Vào Học Ngay</a>
-            <p style="margin-top: 24px; color: #64748b;">Chúc bạn có những trải nghiệm học tập tuyệt vời khóa học này.</p>
+            <p>Chúng tôi xin thông báo yêu cầu tham gia khóa học <strong>"${courseName}"</strong> của bạn đã được giảng viên phê duyệt.</p>
+            <p>Ngay lúc này, bạn đã có thể truy cập đầy đủ bài giảng, tài liệu tham khảo và tham gia các bài kiểm tra.</p>
+            <div style="text-align: center;">
+                <a href="${courseUrl}" class="btn">Bắt Đầu Học Ngay</a>
+            </div>
+            <p style="margin-top: 32px; color: #64748b; font-size: 14px;">Chúc bạn có những trải nghiệm học tập thật hữu ích cùng khóa học này.</p>
         </div>
         <div class="footer">
-            <p>E-Learning Platform • Email tự động</p>
+            <p>E-Learning Platform &bull; Hệ thống tự động</p>
         </div>
     </div>
 </body>
@@ -190,38 +196,41 @@ let EmailService = class EmailService {
         }
     }
     async sendLearningReminderEmail(to, studentName, courseName, instructorName, courseUrl) {
-        const subject = `👋 Tiếp tục khóa học "${courseName}" nhé, ${studentName}!`;
+        const subject = `Tiếp tục khóa học "${courseName}" nhé, ${studentName}!`;
         const html = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .header { background: linear-gradient(135deg, #f59e0b, #ef4444); padding: 40px 30px; text-align: center; color: white; }
-        .header h1 { margin: 0 0 8px; font-size: 28px; }
-        .header p { margin: 0; font-size: 16px; opacity: 0.9; }
-        .body { padding: 30px; }
-        .btn { display: inline-block; background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 16px; margin-top: 16px; }
-        .footer { padding: 20px 30px; text-align: center; color: #94a3b8; font-size: 13px; border-top: 1px solid #f1f5f9; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+        .header { background: #0f172a; padding: 32px 30px; text-align: center; color: white; }
+        .header h1 { margin: 0 0 8px; font-size: 24px; font-weight: 600; }
+        .header p { margin: 0; font-size: 15px; color: #cbd5e1; }
+        .body { padding: 40px 30px; color: #334155; line-height: 1.6; }
+        .btn { display: inline-block; background: #4f46e5; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; margin-top: 20px; transition: background-color 0.2s; }
+        .btn:hover { background: #4338ca; }
+        .footer { padding: 24px 30px; text-align: center; color: #64748b; font-size: 13px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Đừng bỏ cuộc giữa chừng!</h1>
-            <p>Hành trình học tập đang chờ bạn</p>
+            <h1>Thông báo học tập</h1>
+            <p>Hành trình của bạn vẫn đang tiếp diễn</p>
         </div>
         <div class="body">
-            <p>Chào <strong>${studentName}</strong>,</p>
-            <p>Giảng viên <strong>${instructorName}</strong> nhận thấy đã một thời gian bạn chưa quay lại học khóa <strong>"${courseName}"</strong>. Bạn có đang gặp khó khăn gì không?</p>
-            <p>Việc học tập đều đặn mỗi ngày một chút sẽ mang lại kết quả bất ngờ. Hãy dành ra 15-30 phút hôm nay để hoàn thành bài học tiếp theo nhé!</p>
-            <a href="${courseUrl}" class="btn">🚀 Tiếp Tục Học Ngay</a>
-            <p style="margin-top: 24px; color: #64748b;">Mọi sự cố gắng và nỗ lực bền bỉ chắc chắn sẽ được đền đáp.</p>
+            <p>Xin chào <strong>${studentName}</strong>,</p>
+            <p>Giảng viên <strong>${instructorName}</strong> nhận thấy đã một thời gian bạn chưa quay lại học khóa học <strong>"${courseName}"</strong>. Bạn có đang gặp khó khăn gì trong quá trình tiếp thu kiến thức không?</p>
+            <p>Việc học tập đều đặn mỗi ngày một chút sẽ mang lại kết quả lâu dài. Hãy dành ra khoảng 15 đến 30 phút hôm nay để hoàn thành bài học tiếp theo nhé.</p>
+            <div style="text-align: center;">
+                <a href="${courseUrl}" class="btn">Tiếp Tục Học Ngay</a>
+            </div>
+            <p style="margin-top: 32px; color: #64748b; font-size: 14px;">Sự nỗ lực và kiên trì rèn luyện chuyên môn chắc chắn sẽ mang lại kết quả tốt.</p>
         </div>
         <div class="footer">
-            <p>E-Learning Platform • Email tự động</p>
+            <p>E-Learning Platform &bull; Hệ thống tự động</p>
         </div>
     </div>
 </body>

@@ -105,7 +105,7 @@ export default function CheckoutPage() {
                     <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
                         <CheckCircle2 className="h-10 w-10 text-green-600" />
                     </div>
-                    <h1 className="text-3xl font-bold text-slate-900">Chúc mừng! 🎉</h1>
+                    <h1 className="text-3xl font-bold text-slate-900">Chúc mừng!</h1>
                     <p className="mt-3 text-lg text-slate-600">
                         Bạn đã mua thành công khóa học
                     </p>

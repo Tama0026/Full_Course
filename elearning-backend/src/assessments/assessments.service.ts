@@ -24,7 +24,7 @@ export class AssessmentsService {
     private prisma: PrismaService,
     private remediationService: RemediationService,
     private aiService: AiService,
-  ) {}
+  ) { }
 
   async getAssessments(userRole: string, userId: string) {
     if (userRole === 'INSTRUCTOR' || userRole === 'ADMIN') {
@@ -58,15 +58,22 @@ export class AssessmentsService {
       timeLimit: number;
       passingScore: number;
       numberOfSets: number;
+      type: 'MARKETPLACE' | 'PRIVATE';
       isActive: boolean;
       maxAttempts?: number;
       maxViolations?: number;
       totalPoints?: number;
     },
   ) {
+    let enrollCode: string | undefined;
+    if (data.type === 'PRIVATE') {
+      enrollCode = await this.generateUniqueEnrollCode();
+    }
+
     return this.prisma.assessment.create({
       data: {
         ...data,
+        enrollCode,
         creatorId: userId,
       },
     });
@@ -107,6 +114,29 @@ export class AssessmentsService {
       throw new NotFoundException();
 
     return this.prisma.assessment.delete({ where: { id } });
+  }
+
+  async generateUniqueEnrollCode(): Promise<string> {
+    const prefix = 'EXAM';
+    const year = new Date().getFullYear();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      let suffix = '';
+      for (let i = 0; i < 4; i++) {
+        suffix += chars[Math.floor(Math.random() * chars.length)];
+      }
+      const code = `${prefix}-${year}-${suffix}`;
+
+      const existing = await this.prisma.assessment.findUnique({
+        where: { enrollCode: code },
+      });
+
+      if (!existing) {
+        return code;
+      }
+    }
+    throw new BadRequestException('Không thể tạo mã ghi danh duy nhất lúc này');
   }
 
   async createQuestion(
@@ -473,10 +503,10 @@ export class AssessmentsService {
     const passRate =
       completedAttempts.length > 0
         ? Math.round(
-            (completedAttempts.filter((a) => a.passed).length /
-              completedAttempts.length) *
-              100,
-          )
+          (completedAttempts.filter((a) => a.passed).length /
+            completedAttempts.length) *
+          100,
+        )
         : 0;
     const voidedCount = attempts.filter((a) => a.status === 'VOIDED').length;
 

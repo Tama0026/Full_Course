@@ -21,7 +21,7 @@ export default function ApprovalsPage() {
 
     const [approveEnrollment, { loading: appLoading }] = useMutation(APPROVE_ENROLLMENT, {
         onCompleted: () => {
-            toast.success("Đã phê duyệt và thông báo cho học viên ✨");
+            toast.success("Đã phê duyệt và thông báo cho học viên");
             refetch();
         },
         onError: (err: any) => toast.error(err.message),

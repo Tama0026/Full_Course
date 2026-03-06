@@ -77,6 +77,7 @@ type Assessment {
   createdAt: DateTime!
   creatorId: String!
   description: String!
+  enrollCode: String
   id: ID!
   isActive: Boolean!
   isPublished: Boolean!
@@ -88,6 +89,7 @@ type Assessment {
   timeLimit: Int!
   title: String!
   totalPoints: Float!
+  type: AssessmentType!
   updatedAt: DateTime!
 }
 
@@ -127,6 +129,12 @@ type AssessmentReport {
   passRate: Int!
   totalAttempts: Int!
   voidedCount: Int!
+}
+
+"""Type of the assessment: MARKETPLACE (public) or PRIVATE (code-only)"""
+enum AssessmentType {
+  MARKETPLACE
+  PRIVATE
 }
 
 type AttemptWithUser {
@@ -328,6 +336,7 @@ input CreateAssessmentInput {
   timeLimit: Int!
   title: String!
   totalPoints: Float! = 10
+  type: AssessmentType! = MARKETPLACE
 }
 
 input CreateBadgeInput {

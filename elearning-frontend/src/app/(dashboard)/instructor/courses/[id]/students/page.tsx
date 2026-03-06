@@ -42,7 +42,7 @@ export default function CourseStudentsPage() {
             await sendReminder({
                 variables: { studentId: student.id, courseId }
             });
-            toast.success(`Đã gửi nhắc nhở thành công tới ${student.name} ✨`, { id: toastId });
+            toast.success(`Đã gửi nhắc nhở thành công tới ${student.name}`, { id: toastId });
             refetch(); // Update lastRemindedAt status directly from server
         } catch (err: any) {
             toast.error(err?.message || "Lỗi khi gửi nhắc nhở", { id: toastId });

@@ -1,4 +1,10 @@
-import { ObjectType, Field, ID, Int, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int, Float, registerEnumType } from '@nestjs/graphql';
+import { AssessmentType } from '@prisma/client';
+
+registerEnumType(AssessmentType, {
+  name: 'AssessmentType',
+  description: 'Type of the assessment: MARKETPLACE (public) or PRIVATE (code-only)',
+});
 
 @ObjectType()
 export class ShuffledQuestion {
@@ -82,6 +88,12 @@ export class Assessment {
 
   @Field()
   isActive: boolean;
+
+  @Field(() => AssessmentType)
+  type: AssessmentType;
+
+  @Field({ nullable: true })
+  enrollCode?: string;
 
   @Field()
   creatorId: string;

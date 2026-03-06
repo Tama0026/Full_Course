@@ -1,3 +1,4 @@
+import { AssessmentType } from '@prisma/client';
 export declare class ShuffledQuestion {
     id: string;
     prompt: string;
@@ -28,6 +29,8 @@ export declare class Assessment {
     totalPoints: number;
     isPublished: boolean;
     isActive: boolean;
+    type: AssessmentType;
+    enrollCode?: string;
     creatorId: string;
     createdAt: Date;
     updatedAt: Date;

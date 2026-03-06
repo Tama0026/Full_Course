@@ -10,14 +10,14 @@ import {
     Loader2,
     Save,
     GraduationCap,
+    Key,
 } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
 import { GET_COURSE_DETAIL, UPDATE_COURSE, GET_MY_COURSES } from "@/lib/graphql/course";
 import CurriculumEditor from "./CurriculumEditor";
 import LearningOutcomesEditor from "./LearningOutcomesEditor";
 import CloudinaryUploader from "@/components/learning/CloudinaryUploader";
-
-
+import { toast } from "sonner";
 
 export default function EditCoursePage() {
     const params = useParams();
@@ -93,7 +93,7 @@ export default function EditCoursePage() {
                     },
                 },
             });
-            setSuccessMsg("✅ Cập nhật thành công!");
+            setSuccessMsg("Cập nhật thành công!");
             setTimeout(() => setSuccessMsg(null), 3000);
         } catch (err: any) {
             setSaveError(err?.message || "Có lỗi xảy ra khi lưu thông tin.");
@@ -136,6 +136,31 @@ export default function EditCoursePage() {
 
             {/* Form */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 lg:p-8 shadow-sm space-y-5">
+                {course.type === "PRIVATE" && course.enrollCode && (
+                    <div className="mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100/50">
+                                <Key className="h-5 w-5 text-amber-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-amber-800">Mã Ghi Danh Khóa Học (Private)</h3>
+                                <p className="text-sm text-amber-700/80">Chia sẻ mã này hoặc link khóa học kèm mã cho học viên để họ có thể đăng ký.</p>
+                            </div>
+                        </div>
+                        <div
+                            className="flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm ring-1 ring-inset ring-amber-200 cursor-pointer hover:bg-amber-100 transition-colors shrink-0 justify-center"
+                            onClick={() => {
+                                navigator.clipboard.writeText(course.enrollCode);
+                                toast.success("Đã copy mã ghi danh!");
+                            }}
+                            title="Click để copy mã ghi danh"
+                        >
+                            <span className="font-mono tracking-widest text-lg">{course.enrollCode}</span>
+                            <span className="text-xs text-amber-600/70 font-normal ml-1">Copy</span>
+                        </div>
+                    </div>
+                )}
+
                 {/* Title */}
                 <div>
                     <label className="mb-1.5 block text-sm font-semibold text-slate-700">

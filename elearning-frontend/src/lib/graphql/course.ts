@@ -33,6 +33,8 @@ export const GET_COURSE_DETAIL = gql`
       description
       price
       published
+      type
+      enrollCode
       thumbnail
       category
       learningOutcomes
@@ -62,6 +64,8 @@ export const GET_MY_COURSES = gql`
       price
       published
       isActive
+      type
+      enrollCode
       thumbnail
       category
       learningOutcomes
@@ -83,7 +87,7 @@ export const GET_MY_COURSES = gql`
 export const CREATE_COURSE = gql`
   mutation CreateCourse($input: CreateCourseInput!) {
     createCourse(input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
+      id title description price published isActive type enrollCode thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;
@@ -91,7 +95,7 @@ export const CREATE_COURSE = gql`
 export const UPDATE_COURSE = gql`
   mutation UpdateCourse($id: String!, $input: UpdateCourseInput!) {
     updateCourse(id: $id, input: $input) {
-      id title description price published isActive thumbnail category learningOutcomes maxStudents isApprovalRequired
+      id title description price published isActive type enrollCode thumbnail category learningOutcomes maxStudents isApprovalRequired
     }
   }
 `;

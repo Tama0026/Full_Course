@@ -143,7 +143,7 @@ export default function ExplorePage() {
         ENROLL_BY_CODE,
         {
             onCompleted: () => {
-                toast.success("Đăng ký khóa học thành công! 🎉");
+                toast.success("Đăng ký khóa học thành công!");
                 setEnrollCode("");
                 setShowCodeInput(false);
                 queryClient.invalidateQueries({ queryKey: ["my-enrollments"] });

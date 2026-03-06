@@ -55,7 +55,7 @@ export default function AdminCategoriesPage() {
         try {
             await deleteCategory({ variables: { id: cat.id } });
             await refetch();
-            toast.success(`Đã xóa danh mục "${cat.name}" 🗑️`);
+            toast.success(`Đã xóa danh mục "${cat.name}"`);
         } catch (err: any) {
             toast.error(err.message || "Không thể xóa danh mục");
         }

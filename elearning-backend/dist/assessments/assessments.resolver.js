@@ -22,12 +22,14 @@ const role_enum_1 = require("../common/enums/role.enum");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const assessments_service_1 = require("./assessments.service");
 const assessment_entity_1 = require("./entities/assessment.entity");
+const client_1 = require("@prisma/client");
 const class_validator_1 = require("class-validator");
 let CreateAssessmentInput = class CreateAssessmentInput {
     title;
     description;
     timeLimit;
     passingScore;
+    type;
     isActive;
     numberOfSets;
     maxAttempts;
@@ -58,6 +60,10 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], CreateAssessmentInput.prototype, "passingScore", void 0);
+__decorate([
+    (0, graphql_1.Field)(() => client_1.AssessmentType, { defaultValue: 'MARKETPLACE' }),
+    __metadata("design:type", String)
+], CreateAssessmentInput.prototype, "type", void 0);
 __decorate([
     (0, graphql_1.Field)(),
     (0, class_validator_1.IsBoolean)(),

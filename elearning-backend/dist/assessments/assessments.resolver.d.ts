@@ -4,6 +4,7 @@ export declare class CreateAssessmentInput {
     description: string;
     timeLimit: number;
     passingScore: number;
+    type: 'MARKETPLACE' | 'PRIVATE';
     isActive: boolean;
     numberOfSets: number;
     maxAttempts: number;
@@ -37,11 +38,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -68,11 +71,13 @@ export declare class AssessmentsResolver {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -87,11 +92,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -106,11 +113,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -228,11 +237,13 @@ export declare class AssessmentsResolver {
         role: string;
     }): Promise<{
         assessment: {
+            type: import("@prisma/client").$Enums.AssessmentType;
             description: string;
             id: string;
             createdAt: Date;
             updatedAt: Date;
             title: string;
+            enrollCode: string | null;
             isActive: boolean;
             totalPoints: number;
             creatorId: string;
@@ -282,11 +293,13 @@ export declare class AssessmentsResolver {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -301,11 +314,13 @@ export declare class AssessmentsResolver {
         id: string;
         role: string;
     }): Promise<{
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -335,11 +350,13 @@ export declare class AssessmentsResolver {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;
@@ -386,11 +403,13 @@ export declare class AssessmentsResolver {
             bankQuestionId: string | null;
         }[];
     } & {
+        type: import("@prisma/client").$Enums.AssessmentType;
         description: string;
         id: string;
         createdAt: Date;
         updatedAt: Date;
         title: string;
+        enrollCode: string | null;
         isActive: boolean;
         totalPoints: number;
         creatorId: string;

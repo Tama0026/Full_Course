@@ -47,9 +47,14 @@ let AssessmentsService = class AssessmentsService {
         });
     }
     async createAssessment(userId, data) {
+        let enrollCode;
+        if (data.type === 'PRIVATE') {
+            enrollCode = await this.generateUniqueEnrollCode();
+        }
         return this.prisma.assessment.create({
             data: {
                 ...data,
+                enrollCode,
                 creatorId: userId,
             },
         });
@@ -72,6 +77,25 @@ let AssessmentsService = class AssessmentsService {
         if (!assessment || assessment.creatorId !== creatorId)
             throw new common_1.NotFoundException();
         return this.prisma.assessment.delete({ where: { id } });
+    }
+    async generateUniqueEnrollCode() {
+        const prefix = 'EXAM';
+        const year = new Date().getFullYear();
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        for (let attempt = 0; attempt < 20; attempt++) {
+            let suffix = '';
+            for (let i = 0; i < 4; i++) {
+                suffix += chars[Math.floor(Math.random() * chars.length)];
+            }
+            const code = `${prefix}-${year}-${suffix}`;
+            const existing = await this.prisma.assessment.findUnique({
+                where: { enrollCode: code },
+            });
+            if (!existing) {
+                return code;
+            }
+        }
+        throw new common_1.BadRequestException('Không thể tạo mã ghi danh duy nhất lúc này');
     }
     async createQuestion(assessmentId, creatorId, data) {
         const assessment = await this.prisma.assessment.findUnique({
