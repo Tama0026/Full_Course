@@ -1,9 +1,9 @@
 import { LearningService } from './learning.service';
-import { Enrollment } from './entities/enrollment.entity';
 import { Progress } from './entities/progress.entity';
 import { CourseProgress } from './entities/course-progress.entity';
 import { Certificate } from './entities/certificate.entity';
 import { VideoProgress } from './entities/video-progress.entity';
+import { PaginationArgs } from '../common/dto/pagination.args';
 export declare class LearningResolver {
     private readonly learningService;
     constructor(learningService: LearningService);
@@ -15,7 +15,68 @@ export declare class LearningResolver {
     } | null): Promise<CourseProgress>;
     getMyEnrollments(user: {
         id: string;
-    }): Promise<Enrollment[]>;
+    }, pagination: PaginationArgs): Promise<{
+        items: ({
+            course: {
+                instructor: {
+                    id: string;
+                    email: string;
+                };
+                sections: ({
+                    lessons: {
+                        order: number;
+                        id: string;
+                        title: string;
+                    }[];
+                } & {
+                    order: number;
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    courseId: string;
+                    title: string;
+                })[];
+            } & {
+                category: string | null;
+                type: import("@prisma/client").$Enums.CourseType;
+                description: string;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                title: string;
+                price: number;
+                enrollCode: string | null;
+                thumbnail: string | null;
+                learningOutcomes: string;
+                averageRating: number;
+                reviewCount: number;
+                totalDuration: number;
+                published: boolean;
+                isActive: boolean;
+                maxStudents: number | null;
+                isApprovalRequired: boolean;
+                instructorId: string;
+            };
+            progresses: {
+                id: string;
+                lessonId: string;
+                completedAt: Date;
+            }[];
+        } & {
+            id: string;
+            courseId: string;
+            userId: string;
+            status: string;
+            completedLessons: string;
+            isFinished: boolean;
+            isLocked: boolean;
+            requestedAt: Date;
+            enrolledAt: Date | null;
+            lastRemindedAt: Date | null;
+        })[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     checkIsEnrolled(courseId: string, user: {
         id: string;
     } | null): Promise<boolean>;

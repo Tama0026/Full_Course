@@ -9,12 +9,16 @@ import { formatPrice } from "@/lib/utils"; // Not pricing, just utility if neede
 const GET_OPEN_ASSESSMENTS = gql`
   query GetOpenAssessments {
     assessments {
-      id
-      title
-      description
-      timeLimit
-      passingScore
-      isActive
+      items {
+        id
+        title
+        description
+        timeLimit
+        passingScore
+        isActive
+      }
+      totalCount
+      hasMore
     }
   }
 `;
@@ -25,7 +29,7 @@ export default function AssessmentsListPage() {
     if (loading) return <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
     if (error) return <div className="py-20 text-center text-red-500">Lỗi tải danh sách kỳ thi: {error.message}</div>;
 
-    const assessments = (data as any)?.assessments || [];
+    const assessments = (data as any)?.assessments?.items || [];
 
     return (
         <div className="bg-slate-50 min-h-screen py-12">

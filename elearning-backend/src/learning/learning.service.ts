@@ -35,7 +35,7 @@ export class LearningService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly gamificationService: GamificationService,
     private readonly emailService: EmailService,
-  ) {}
+  ) { }
 
   /**
    * Mark a lesson as complete for the current user.
@@ -97,7 +97,7 @@ export class LearningService {
             completedLessons = JSON.parse(
               rawEnrollment.completedLessons || '[]',
             );
-          } catch (e) {}
+          } catch (e) { }
 
           if (!completedLessons.includes(prevLesson.id)) {
             throw new ForbiddenException(
@@ -194,9 +194,55 @@ export class LearningService {
 
   /**
    * Get all enrollments for the current user.
+   * Supports pagination and search by course title.
    */
-  async getMyEnrollments(userId: string): Promise<PrismaEnrollment[]> {
-    return this.enrollmentRepository.findByUserId(userId);
+  async getMyEnrollments(
+    userId: string,
+    take: number = 12,
+    skip: number = 0,
+    search?: string,
+  ) {
+    const where: any = { userId, status: 'APPROVED' };
+    if (search) {
+      where.course = {
+        title: { contains: search, mode: 'insensitive' },
+      };
+    }
+
+    const [items, totalCount] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where,
+        include: {
+          course: {
+            include: {
+              instructor: { select: { id: true, email: true } },
+              sections: {
+                include: {
+                  lessons: {
+                    select: { id: true, title: true, order: true },
+                    orderBy: { order: 'asc' },
+                  },
+                },
+                orderBy: { order: 'asc' },
+              },
+            },
+          },
+          progresses: {
+            select: { id: true, lessonId: true, completedAt: true },
+          },
+        },
+        orderBy: { requestedAt: 'desc' },
+        take,
+        skip,
+      }),
+      this.prisma.enrollment.count({ where }),
+    ]);
+
+    return {
+      items,
+      totalCount,
+      hasMore: skip + items.length < totalCount,
+    };
   }
 
   /**

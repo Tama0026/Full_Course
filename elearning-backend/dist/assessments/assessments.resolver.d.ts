@@ -1,4 +1,5 @@
 import { AssessmentsService } from './assessments.service';
+import { PaginationArgs } from '../common/dto/pagination.args';
 export declare class CreateAssessmentInput {
     title: string;
     description: string;
@@ -37,24 +38,28 @@ export declare class AssessmentsResolver {
     getAssessments(user: {
         id: string;
         role: string;
-    }): Promise<{
-        type: import("@prisma/client").$Enums.AssessmentType;
-        description: string;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        title: string;
-        enrollCode: string | null;
-        isActive: boolean;
-        totalPoints: number;
-        creatorId: string;
-        timeLimit: number;
-        passingScore: number;
-        numberOfSets: number;
-        maxAttempts: number;
-        maxViolations: number;
-        isPublished: boolean;
-    }[]>;
+    }, pagination: PaginationArgs): Promise<{
+        items: {
+            type: import("@prisma/client").$Enums.AssessmentType;
+            description: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            enrollCode: string | null;
+            isActive: boolean;
+            totalPoints: number;
+            creatorId: string;
+            timeLimit: number;
+            passingScore: number;
+            numberOfSets: number;
+            maxAttempts: number;
+            maxViolations: number;
+            isPublished: boolean;
+        }[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getAssessment(id: string): Promise<({
         questions: {
             id: string;

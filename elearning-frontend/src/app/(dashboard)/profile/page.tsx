@@ -101,7 +101,7 @@ export default function ProfilePage() {
 
     const user: User | null = profileData?.me || null;
     const certs: Certificate[] = certsData?.myCertificates || [];
-    const enrollments: Enrollment[] = enrollData?.myEnrollments || [];
+    const enrollments: Enrollment[] = enrollData?.myEnrollments?.items || [];
 
     useEffect(() => {
         if (user) {

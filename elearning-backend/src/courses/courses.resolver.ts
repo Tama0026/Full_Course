@@ -29,13 +29,18 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/role.enum';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { PaginationArgs } from '../common/dto/pagination.args';
+import { createPaginatedResultType } from '../common/dto/paginated-result.factory';
+
+const PaginatedCourseResult = createPaginatedResultType(Course);
+const PaginatedAdminCourseResult = createPaginatedResultType(AdminCourse);
 
 @Resolver(() => Lesson)
 export class LessonResolver {
   constructor(
     private readonly cloudinaryService: CloudinaryService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   private async checkLessonAuthorization(
     lesson: Lesson,
@@ -150,7 +155,7 @@ export class LessonResolver {
           // Force any type to bypass cache type issues
           const rawEnrollment = enrollment as any;
           completedLessons = JSON.parse(rawEnrollment.completedLessons || '[]');
-        } catch (e) {}
+        } catch (e) { }
 
         if (!completedLessons.includes(prevLesson.id)) {
           return true; // Locked!
@@ -202,7 +207,7 @@ export class LessonResolver {
 
 @Resolver(() => Course)
 export class CoursesResolver {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(private readonly coursesService: CoursesService) { }
 
   // ==================== RESOLVE FIELDS ====================
 
@@ -387,16 +392,26 @@ export class CoursesResolver {
 
   // ==================== ADMIN QUERIES ====================
 
-  @Query(() => [AdminCourse], { name: 'adminAllCourses' })
+  @Query(() => PaginatedAdminCourseResult, { name: 'adminAllCourses' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  async getAdminAllCourses(): Promise<AdminCourse[]> {
-    const courses = await this.coursesService.getAllCoursesForAdmin();
-    return courses.map((c: any) => ({
-      ...c,
-      enrollmentCount: c._count?.enrollments || 0,
-      sectionCount: c._count?.sections || 0,
-    })) as unknown as AdminCourse[];
+  async getAdminAllCourses(
+    @Args() pagination: PaginationArgs,
+  ) {
+    const result = await this.coursesService.getAllCoursesForAdmin(
+      pagination.take,
+      pagination.skip,
+      pagination.search,
+    );
+    return {
+      items: result.items.map((c: any) => ({
+        ...c,
+        enrollmentCount: c._count?.enrollments || 0,
+        sectionCount: c._count?.sections || 0,
+      })),
+      totalCount: result.totalCount,
+      hasMore: result.hasMore,
+    };
   }
 
   // ==================== INSTRUCTOR STUDENT TRACKING ====================
@@ -465,16 +480,20 @@ export class CoursesResolver {
    * Get courses for the Explore/Discovery page.
    * Supports search and category filtering.
    */
-  @Query(() => [Course], { name: 'discoveryCourses' })
+  @Query(() => PaginatedCourseResult, { name: 'discoveryCourses' })
   @UseGuards(OptionalJwtAuthGuard)
   async getDiscoveryCourses(
     @Args('search', { type: () => String, nullable: true }) search?: string,
     @Args('category', { type: () => String, nullable: true }) category?: string,
-  ): Promise<Course[]> {
+    @Args('take', { type: () => Number, defaultValue: 12, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, defaultValue: 0, nullable: true }) skip?: number,
+  ) {
     return this.coursesService.getDiscoveryCourses(
       search,
       category,
-    ) as unknown as Course[];
+      take,
+      skip,
+    );
   }
 
   /**

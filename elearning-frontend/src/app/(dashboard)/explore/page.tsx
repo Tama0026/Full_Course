@@ -15,6 +15,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import PaginationControls from "@/components/ui/PaginationControls";
+import { CourseCardSkeleton } from "@/components/ui/SkeletonCard";
 import {
     Search,
     BookOpen,
@@ -92,6 +94,15 @@ export default function ExplorePage() {
     ]);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
+    // ── Pagination state ──
+    const PAGE_SIZE = 12;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Reset page on search/category change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, selectedCategory]);
+
     // Scroll chat to bottom
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -129,11 +140,13 @@ export default function ExplorePage() {
     }, [chatInput, suggesting, suggestCourses]);
 
     // Discovery courses query
-    const { data, loading, refetch } = useQuery(DISCOVERY_COURSES, {
+    const { data, loading, previousData, refetch } = useQuery(DISCOVERY_COURSES, {
         variables: {
             search: debouncedSearch || undefined,
             category:
                 selectedCategory === "Tất cả" ? undefined : selectedCategory,
+            take: PAGE_SIZE,
+            skip: (currentPage - 1) * PAGE_SIZE,
         },
         fetchPolicy: "cache-and-network",
     });
@@ -160,7 +173,12 @@ export default function ExplorePage() {
         fetchPolicy: "cache-first",
     });
 
-    const courses = (data as any)?.discoveryCourses || [];
+    // Use previousData to keep old data visible during page transitions
+    const activeData = data || previousData;
+    const courses = (activeData as any)?.discoveryCourses?.items || [];
+    const totalCount = (activeData as any)?.discoveryCourses?.totalCount || 0;
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const isPageTransition = loading && !!previousData;
 
     // Parse AI recommendations
     const aiRecs = useMemo(() => {
@@ -309,9 +327,12 @@ export default function ExplorePage() {
             )}
 
             {/* ═══ Course Grid ═══ */}
-            {loading ? (
-                <div className="flex items-center justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            {loading && !previousData ? (
+                /* Initial load → skeleton grid */
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                        <CourseCardSkeleton key={i} />
+                    ))}
                 </div>
             ) : courses.length === 0 ? (
                 <div className="text-center py-20">
@@ -321,101 +342,118 @@ export default function ExplorePage() {
                     </p>
                 </div>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {courses.map((course: any) => {
-                        const isPrivate = course.type === "PRIVATE";
-                        const lessonCount =
-                            course.sections?.flatMap(
-                                (s: any) => s.lessons || []
-                            ).length || 0;
+                <div className={`relative transition-opacity duration-300 ${isPageTransition ? "opacity-50" : "opacity-100"}`}>
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {courses.map((course: any) => {
+                            const isPrivate = course.type === "PRIVATE";
+                            const lessonCount =
+                                course.sections?.flatMap(
+                                    (s: any) => s.lessons || []
+                                ).length || 0;
 
-                        return (
-                            <Link
-                                key={course.id}
-                                href={`/courses/${course.id}`}
-                                className="group flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-lg transition-all"
-                            >
-                                {/* Thumbnail */}
-                                <div className="aspect-video w-full bg-gradient-to-br from-indigo-100 via-violet-50 to-purple-100 flex items-center justify-center relative overflow-hidden">
-                                    {course.thumbnail ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img
-                                            src={course.thumbnail}
-                                            alt={course.title}
-                                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                    ) : (
-                                        <BookOpen className="h-10 w-10 text-indigo-300" />
-                                    )}
-                                    {isPrivate && (
-                                        <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold backdrop-blur-sm">
-                                            <Lock className="h-3 w-3" />
-                                            Private
-                                        </span>
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 flex flex-col p-4">
-                                    {course.category && (
-                                        <span className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1">
-                                            {course.category}
-                                        </span>
-                                    )}
-                                    <h3 className="text-sm font-semibold text-slate-900 line-clamp-2 group-hover:text-indigo-700 transition-colors">
-                                        {course.title}
-                                    </h3>
-                                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                                        {course.description}
-                                    </p>
-
-                                    <div className="mt-auto pt-3 flex items-center gap-3 text-xs text-slate-400">
-                                        {!isPrivate && (
-                                            <span className="flex items-center gap-1">
-                                                <BookOpen className="h-3 w-3" />
-                                                {lessonCount} bài
-                                            </span>
-                                        )}
-                                        {course.totalDuration > 0 && (
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                {formatDuration(
-                                                    course.totalDuration
-                                                )}
-                                            </span>
-                                        )}
-                                        {course.averageRating > 0 && (
-                                            <span className="flex items-center gap-1">
-                                                <Star className="h-3 w-3 text-amber-400" />
-                                                {course.averageRating.toFixed(1)}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className="mt-3 flex items-center justify-between">
-                                        {isPrivate ? (
-                                            <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
-                                                <KeyRound className="h-3 w-3" />
-                                                Cần mã đăng ký
-                                            </span>
-                                        ) : course.price > 0 ? (
-                                            <span className="text-sm font-bold text-indigo-600">
-                                                {new Intl.NumberFormat("vi-VN").format(course.price)}₫
-                                            </span>
+                            return (
+                                <Link
+                                    key={course.id}
+                                    href={`/courses/${course.id}`}
+                                    className="group flex flex-col rounded-2xl border border-slate-200 bg-white overflow-hidden hover:shadow-lg transition-all"
+                                >
+                                    {/* Thumbnail */}
+                                    <div className="aspect-video w-full bg-gradient-to-br from-indigo-100 via-violet-50 to-purple-100 flex items-center justify-center relative overflow-hidden">
+                                        {course.thumbnail ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={course.thumbnail}
+                                                alt={course.title}
+                                                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                            />
                                         ) : (
-                                            <span className="text-xs font-semibold text-emerald-600">
-                                                Miễn phí
+                                            <BookOpen className="h-10 w-10 text-indigo-300" />
+                                        )}
+                                        {isPrivate && (
+                                            <span className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-amber-500/90 text-white text-[10px] font-semibold backdrop-blur-sm">
+                                                <Lock className="h-3 w-3" />
+                                                Private
                                             </span>
                                         )}
-                                        <span className="text-xs text-slate-400">
-                                            {course.instructor?.name || course.instructor?.email}
-                                        </span>
                                     </div>
-                                </div>
-                            </Link>
-                        );
-                    })}
+
+                                    {/* Content */}
+                                    <div className="flex-1 flex flex-col p-4">
+                                        {course.category && (
+                                            <span className="text-[10px] font-semibold text-indigo-600 uppercase tracking-wider mb-1">
+                                                {course.category}
+                                            </span>
+                                        )}
+                                        <h3 className="text-sm font-semibold text-slate-900 line-clamp-2 group-hover:text-indigo-700 transition-colors">
+                                            {course.title}
+                                        </h3>
+                                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                                            {course.description}
+                                        </p>
+
+                                        <div className="mt-auto pt-3 flex items-center gap-3 text-xs text-slate-400">
+                                            {!isPrivate && (
+                                                <span className="flex items-center gap-1">
+                                                    <BookOpen className="h-3 w-3" />
+                                                    {lessonCount} bài
+                                                </span>
+                                            )}
+                                            {course.totalDuration > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    {formatDuration(
+                                                        course.totalDuration
+                                                    )}
+                                                </span>
+                                            )}
+                                            {course.averageRating > 0 && (
+                                                <span className="flex items-center gap-1">
+                                                    <Star className="h-3 w-3 text-amber-400" />
+                                                    {course.averageRating.toFixed(1)}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-3 flex items-center justify-between">
+                                            {isPrivate ? (
+                                                <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
+                                                    <KeyRound className="h-3 w-3" />
+                                                    Cần mã đăng ký
+                                                </span>
+                                            ) : course.price > 0 ? (
+                                                <span className="text-sm font-bold text-indigo-600">
+                                                    {new Intl.NumberFormat("vi-VN").format(course.price)}₫
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs font-semibold text-emerald-600">
+                                                    Miễn phí
+                                                </span>
+                                            )}
+                                            <span className="text-xs text-slate-400">
+                                                {course.instructor?.name || course.instructor?.email}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
+            )}
+
+            {/* ═══ Pagination ═══ */}
+            {totalCount > 0 && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                        if (page > totalPages) page = totalPages;
+                        if (page < 1) page = 1;
+                        setCurrentPage(page);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    isLoading={loading}
+                />
             )}
 
             {/* ═══ AI Chatbox (Floating) ═══ */}

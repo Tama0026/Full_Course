@@ -70,7 +70,7 @@ export default function InstructorAssessmentsPage() {
         }
     };
 
-    const assessments = (data as any)?.assessments || [];
+    const assessments = (data as any)?.assessments?.items || [];
 
     return (
         <div className="p-6 max-w-6xl mx-auto">

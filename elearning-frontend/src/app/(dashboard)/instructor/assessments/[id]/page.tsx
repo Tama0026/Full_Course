@@ -435,7 +435,7 @@ export default function AssessmentEditorPage() {
                                         >
                                             <option value="">Không dùng ngân hàng (Trắng)</option>
                                             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                            {(banksData as any)?.myQuestionBanks?.map((b: any) => (
+                                            {(banksData as any)?.myQuestionBanks?.items?.map((b: any) => (
                                                 <option key={b.id} value={b.id}>{b.name} ({b.questionCount} câu)</option>
                                             ))}
                                         </select>

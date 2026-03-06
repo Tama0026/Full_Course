@@ -25,6 +25,9 @@ const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
 const optional_jwt_auth_guard_1 = require("../common/guards/optional-jwt-auth.guard");
 const enrollment_guard_1 = require("../common/guards/enrollment.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
+const pagination_args_1 = require("../common/dto/pagination.args");
+const paginated_result_factory_1 = require("../common/dto/paginated-result.factory");
+const PaginatedEnrollmentResult = (0, paginated_result_factory_1.createPaginatedResultType)(enrollment_entity_1.Enrollment);
 let LearningResolver = class LearningResolver {
     learningService;
     constructor(learningService) {
@@ -38,8 +41,8 @@ let LearningResolver = class LearningResolver {
             return { completedItems: [], progressPercentage: 0 };
         return this.learningService.getProgress(user.id, courseId);
     }
-    async getMyEnrollments(user) {
-        return this.learningService.getMyEnrollments(user.id);
+    async getMyEnrollments(user, pagination) {
+        return this.learningService.getMyEnrollments(user.id, pagination.take, pagination.skip, pagination.search);
     }
     async checkIsEnrolled(courseId, user) {
         if (!user)
@@ -79,11 +82,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], LearningResolver.prototype, "getCourseProgress", null);
 __decorate([
-    (0, graphql_1.Query)(() => [enrollment_entity_1.Enrollment], { name: 'myEnrollments' }),
+    (0, graphql_1.Query)(() => PaginatedEnrollmentResult, { name: 'myEnrollments' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, pagination_args_1.PaginationArgs]),
     __metadata("design:returntype", Promise)
 ], LearningResolver.prototype, "getMyEnrollments", null);
 __decorate([

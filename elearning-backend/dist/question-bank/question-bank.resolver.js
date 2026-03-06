@@ -24,6 +24,9 @@ const current_user_decorator_1 = require("../common/decorators/current-user.deco
 const question_bank_service_1 = require("./question-bank.service");
 const question_bank_entity_1 = require("./entities/question-bank.entity");
 const graphql_2 = require("@nestjs/graphql");
+const pagination_args_1 = require("../common/dto/pagination.args");
+const paginated_result_factory_1 = require("../common/dto/paginated-result.factory");
+const PaginatedQuestionBankResult = (0, paginated_result_factory_1.createPaginatedResultType)(question_bank_entity_1.QuestionBank);
 let CreateQuestionBankInput = class CreateQuestionBankInput {
     name;
     description;
@@ -220,8 +223,8 @@ let QuestionBankResolver = class QuestionBankResolver {
     constructor(questionBankService) {
         this.questionBankService = questionBankService;
     }
-    getMyQuestionBanks(user) {
-        return this.questionBankService.getMyQuestionBanks(user.id);
+    getMyQuestionBanks(user, pagination) {
+        return this.questionBankService.getMyQuestionBanks(user.id, pagination.take, pagination.skip, pagination.search);
     }
     getQuestionBank(id, user) {
         return this.questionBankService.getQuestionBank(id, user.id);
@@ -253,12 +256,13 @@ let QuestionBankResolver = class QuestionBankResolver {
 };
 exports.QuestionBankResolver = QuestionBankResolver;
 __decorate([
-    (0, graphql_1.Query)(() => [question_bank_entity_1.QuestionBank], { name: 'myQuestionBanks' }),
+    (0, graphql_1.Query)(() => PaginatedQuestionBankResult, { name: 'myQuestionBanks' }),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, graphql_1.Args)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, pagination_args_1.PaginationArgs]),
     __metadata("design:returntype", void 0)
 ], QuestionBankResolver.prototype, "getMyQuestionBanks", null);
 __decorate([

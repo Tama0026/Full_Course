@@ -1,33 +1,41 @@
 import { gql } from "@apollo/client";
 
 export const GET_INSTRUCTOR_ASSESSMENTS = gql`
-  query GetInstructorAssessments {
-    assessments {
-      id
-      title
-      description
-      timeLimit
-      passingScore
-      numberOfSets
-      isActive
-      type
-      enrollCode
-      createdAt
+  query GetInstructorAssessments($take: Int, $skip: Int, $search: String) {
+    assessments(take: $take, skip: $skip, search: $search) {
+      items {
+        id
+        title
+        description
+        timeLimit
+        passingScore
+        numberOfSets
+        isActive
+        type
+        enrollCode
+        createdAt
+      }
+      totalCount
+      hasMore
     }
   }
 `;
 
 export const GET_STUDENT_ASSESSMENTS_WITH_ATTEMPTS = gql`
-  query GetStudentAssessmentsWithAttempts {
-    assessments {
-      id
-      title
-      isActive
-      attempts {
+  query GetStudentAssessmentsWithAttempts($take: Int, $skip: Int, $search: String) {
+    assessments(take: $take, skip: $skip, search: $search) {
+      items {
         id
-        score
-        status
+        title
+        isActive
+        attempts {
+          id
+          score
+          status
+        }
       }
+      totalCount
+      hasMore
     }
   }
 `;

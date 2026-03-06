@@ -19,6 +19,10 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { QuestionBankService } from './question-bank.service';
 import { QuestionBank, BankQuestion } from './entities/question-bank.entity';
 import { ObjectType } from '@nestjs/graphql';
+import { PaginationArgs } from '../common/dto/pagination.args';
+import { createPaginatedResultType } from '../common/dto/paginated-result.factory';
+
+const PaginatedQuestionBankResult = createPaginatedResultType(QuestionBank);
 
 @InputType()
 export class CreateQuestionBankInput {
@@ -149,13 +153,21 @@ export class BulkImportResult {
 
 @Resolver(() => QuestionBank)
 export class QuestionBankResolver {
-  constructor(private readonly questionBankService: QuestionBankService) {}
+  constructor(private readonly questionBankService: QuestionBankService) { }
 
-  @Query(() => [QuestionBank], { name: 'myQuestionBanks' })
+  @Query(() => PaginatedQuestionBankResult, { name: 'myQuestionBanks' })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.INSTRUCTOR, Role.ADMIN)
-  getMyQuestionBanks(@CurrentUser() user: { id: string }) {
-    return this.questionBankService.getMyQuestionBanks(user.id);
+  getMyQuestionBanks(
+    @CurrentUser() user: { id: string },
+    @Args() pagination: PaginationArgs,
+  ) {
+    return this.questionBankService.getMyQuestionBanks(
+      user.id,
+      pagination.take,
+      pagination.skip,
+      pagination.search,
+    );
   }
 
   @Query(() => QuestionBank, { name: 'questionBank' })

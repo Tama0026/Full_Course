@@ -1,4 +1,5 @@
 import { QuestionBankService } from './question-bank.service';
+import { PaginationArgs } from '../common/dto/pagination.args';
 export declare class CreateQuestionBankInput {
     name: string;
     description?: string;
@@ -39,19 +40,23 @@ export declare class QuestionBankResolver {
     constructor(questionBankService: QuestionBankService);
     getMyQuestionBanks(user: {
         id: string;
-    }): Promise<({
-        _count: {
-            questions: number;
-        };
-    } & {
-        category: string;
-        name: string;
-        description: string | null;
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-    })[]>;
+    }, pagination: PaginationArgs): Promise<{
+        items: ({
+            _count: {
+                questions: number;
+            };
+        } & {
+            category: string;
+            name: string;
+            description: string | null;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+        })[];
+        totalCount: number;
+        hasMore: boolean;
+    }>;
     getQuestionBank(id: string, user: {
         id: string;
     }): Promise<{

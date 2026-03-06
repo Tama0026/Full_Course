@@ -600,6 +600,36 @@ enum OrderStatus {
   PENDING
 }
 
+type PaginatedAdminCourseResult {
+  hasMore: Boolean!
+  items: [AdminCourse!]!
+  totalCount: Int!
+}
+
+type PaginatedAssessmentResult {
+  hasMore: Boolean!
+  items: [Assessment!]!
+  totalCount: Int!
+}
+
+type PaginatedCourseResult {
+  hasMore: Boolean!
+  items: [Course!]!
+  totalCount: Int!
+}
+
+type PaginatedEnrollmentResult {
+  hasMore: Boolean!
+  items: [Enrollment!]!
+  totalCount: Int!
+}
+
+type PaginatedQuestionBankResult {
+  hasMore: Boolean!
+  items: [QuestionBank!]!
+  totalCount: Int!
+}
+
 type Progress {
   completedAt: DateTime!
   enrollmentId: String!
@@ -610,21 +640,21 @@ type Progress {
 
 type Query {
   adminAllBadges: [AdminBadgeType!]!
-  adminAllCourses: [AdminCourse!]!
+  adminAllCourses(search: String, skip: Int! = 0, take: Int! = 12): PaginatedAdminCourseResult!
   adminStats: AdminStats!
   aiRecommendations: String!
   allBadgesWithStatus: [BadgeWithStatus!]!
   allOrders: [Order!]!
   assessment(id: String!): Assessment!
   assessmentReport(assessmentId: String!): AssessmentReport!
-  assessments: [Assessment!]!
+  assessments(search: String, skip: Int! = 0, take: Int! = 12): PaginatedAssessmentResult!
   categories: [Category!]!
   certificateByCode(code: String!): Certificate
   course(id: String!): Course!
   courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
   courses: [Course!]!
-  discoveryCourses(category: String, search: String): [Course!]!
+  discoveryCourses(category: String, search: String, skip: Float = 0, take: Float = 12): PaginatedCourseResult!
   getCourseStudents(courseId: String!): [CourseStudent!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!
@@ -640,11 +670,11 @@ type Query {
   myCertificates: [Certificate!]!
   myCourses: [Course!]!
   myCreatedBadges: [BadgeType!]!
-  myEnrollments: [Enrollment!]!
+  myEnrollments(search: String, skip: Int! = 0, take: Int! = 12): PaginatedEnrollmentResult!
   myLoginStreak: LoginStreakType!
   myOrders: [Order!]!
   myPoints: Int!
-  myQuestionBanks: [QuestionBank!]!
+  myQuestionBanks(search: String, skip: Int! = 0, take: Int! = 12): PaginatedQuestionBankResult!
   myRemediations: [RemediationReport!]!
   order(id: String!): Order!
   questionBank(id: String!): QuestionBank!
