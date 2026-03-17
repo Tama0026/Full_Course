@@ -13,6 +13,8 @@ import { CreateLessonInput } from './dto/create-lesson.input';
 import { Course as PrismaCourse, Section, Lesson } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { AiService } from '../ai/ai.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class CoursesService {
@@ -21,6 +23,8 @@ export class CoursesService {
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly aiService: AiService,
+    private readonly notificationsService: NotificationsService,
   ) { }
 
   // ==================== VALIDATION ====================
@@ -260,6 +264,34 @@ export class CoursesService {
       throw new NotFoundException(`Lesson with ID "${id}" not found`);
     }
     return this.prisma.lesson.delete({ where: { id } });
+  }
+
+  /**
+   * Generate video takeaways using AI and save to the lesson.
+   */
+  async generateLessonTakeaways(lessonId: string): Promise<Lesson> {
+    const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
+
+    if (!lesson) {
+      throw new NotFoundException(`Lesson with ID "${lessonId}" not found`);
+    }
+
+    if (lesson.type !== 'VIDEO') {
+      throw new BadRequestException('Chỉ có thể tạo ghi chú cho bài học dạng Video.');
+    }
+
+    // Call AI to generate simulating transcript and takeaways
+    // @ts-ignore
+    const { transcript, keyTakeaways } = await this.prisma.aiService.generateVideoTakeaways(lesson.title);
+
+    // Save to database
+    return this.prisma.lesson.update({
+      where: { id: lessonId },
+      data: {
+        transcript,
+        keyTakeaways
+      }
+    });
   }
 
   /**
@@ -656,6 +688,16 @@ export class CoursesService {
       course.title,
       courseUrl,
     );
+
+    // In-app notification
+    await this.notificationsService.create({
+      userId: studentId,
+      type: 'ENROLLMENT',
+      title: 'Đăng ký được duyệt',
+      message: `Bạn đã được duyệt vào khóa học "${course.title}". Hãy bắt đầu học ngay!`,
+      link: `/courses/${courseId}`,
+    });
+
     console.log(
       `[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`,
     );
@@ -847,6 +889,10 @@ export class CoursesService {
     category?: string,
     take: number = 12,
     skip: number = 0,
+    minRating?: number,
+    priceMin?: number,
+    priceMax?: number,
+    sortBy?: string,
   ) {
     const where: any = {
       published: true,
@@ -864,6 +910,36 @@ export class CoursesService {
       where.category = category;
     }
 
+    if (minRating !== undefined && minRating > 0) {
+      where.averageRating = { gte: minRating };
+    }
+
+    if (priceMin !== undefined || priceMax !== undefined) {
+      where.price = {};
+      if (priceMin !== undefined) where.price.gte = priceMin;
+      if (priceMax !== undefined) where.price.lte = priceMax;
+    }
+
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' }; // default: newest
+    switch (sortBy) {
+      case 'highest_rated':
+        orderBy = { averageRating: 'desc' };
+        break;
+      case 'price_low':
+        orderBy = { price: 'asc' };
+        break;
+      case 'price_high':
+        orderBy = { price: 'desc' };
+        break;
+      case 'most_popular':
+        orderBy = { reviewCount: 'desc' };
+        break;
+      case 'newest':
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
     const [courses, totalCount] = await Promise.all([
       this.prisma.course.findMany({
         where,
@@ -879,7 +955,7 @@ export class CoursesService {
           },
           _count: { select: { enrollments: true } },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         take,
         skip,
       }),

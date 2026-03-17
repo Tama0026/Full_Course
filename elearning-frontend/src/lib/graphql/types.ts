@@ -114,3 +114,25 @@ export interface CourseProgress {
     progressPercentage: number;
     totalLessons: number;
 }
+
+export interface Review {
+    id: string;
+    userId: string;
+    courseId: string;
+    rating: number;
+    comment?: string;
+    user?: User;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface ReviewSummary {
+    totalCount: number;
+    averageRating: number;
+    star5: number;
+    star4: number;
+    star3: number;
+    star2: number;
+    star1: number;
+    reviews: Review[];
+}

@@ -57,6 +57,8 @@ export default async function LessonPage(props: { params: Promise<{ id: string; 
     const completedItems = progressData?.completedItems || [];
     const progressPercentage = progressData?.progressPercentage || 0;
 
+    const isInstructor = currentUserId ? currentUserId === courseData?.instructorId : false;
+
     return (
         <LessonClientView
             key={lessonData.id}
@@ -65,6 +67,7 @@ export default async function LessonPage(props: { params: Promise<{ id: string; 
             completedItems={completedItems}
             progressPercentage={progressPercentage}
             currentUserId={currentUserId}
+            isInstructor={isInstructor}
         />
     );
 }

@@ -16,6 +16,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const cloudinary_service_1 = require("../cloudinary/cloudinary.service");
 const gamification_service_1 = require("../gamification/gamification.service");
 const email_service_1 = require("../email/email.service");
+const ai_service_1 = require("../ai/ai.service");
 const uuid_1 = require("uuid");
 let LearningService = class LearningService {
     enrollmentRepository;
@@ -23,12 +24,14 @@ let LearningService = class LearningService {
     cloudinaryService;
     gamificationService;
     emailService;
-    constructor(enrollmentRepository, prisma, cloudinaryService, gamificationService, emailService) {
+    aiService;
+    constructor(enrollmentRepository, prisma, cloudinaryService, gamificationService, emailService, aiService) {
         this.enrollmentRepository = enrollmentRepository;
         this.prisma = prisma;
         this.cloudinaryService = cloudinaryService;
         this.gamificationService = gamificationService;
         this.emailService = emailService;
+        this.aiService = aiService;
     }
     async markLessonComplete(userId, lessonId) {
         const lesson = await this.prisma.lesson.findUnique({
@@ -246,6 +249,9 @@ let LearningService = class LearningService {
             where: { userId_lessonId: { userId, lessonId } },
         });
     }
+    async askVideoContextQuestion(lessonId, question, currentTime) {
+        return this.aiService.askVideoContextQuestion(lessonId, question, currentTime);
+    }
 };
 exports.LearningService = LearningService;
 exports.LearningService = LearningService = __decorate([
@@ -254,6 +260,7 @@ exports.LearningService = LearningService = __decorate([
         prisma_service_1.PrismaService,
         cloudinary_service_1.CloudinaryService,
         gamification_service_1.GamificationService,
-        email_service_1.EmailService])
+        email_service_1.EmailService,
+        ai_service_1.AiService])
 ], LearningService);
 //# sourceMappingURL=learning.service.js.map

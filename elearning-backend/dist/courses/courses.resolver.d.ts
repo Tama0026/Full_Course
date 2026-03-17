@@ -40,6 +40,7 @@ export declare class CoursesResolver {
     deleteSection(id: string): Promise<Section>;
     createLesson(input: CreateLessonInput): Promise<Lesson>;
     deleteLesson(id: string): Promise<Lesson>;
+    generateLessonTakeaways(lessonId: string): Promise<Lesson>;
     getLesson(lessonId: string): Promise<Lesson>;
     toggleCourseStatus(id: string): Promise<Course>;
     getInstructorStats(user: {
@@ -70,7 +71,7 @@ export declare class CoursesResolver {
     sendLearningReminder(studentId: string, courseId: string, user: any): Promise<boolean>;
     approveEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
     rejectEnrollment(studentId: string, courseId: string, user: any): Promise<boolean>;
-    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number): Promise<{
+    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number, minRating?: number, priceMin?: number, priceMax?: number, sortBy?: string): Promise<{
         items: ({
             _count: {
                 enrollments: number;
@@ -92,8 +93,8 @@ export declare class CoursesResolver {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                courseId: string;
                 title: string;
+                courseId: string;
             })[];
         } & {
             category: string | null;

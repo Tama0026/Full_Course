@@ -20,6 +20,9 @@ import { InterviewModule } from './interview/interview.module';
 import { CategoriesModule } from './categories/categories.module';
 import { RemediationModule } from './remediation/remediation.module';
 import { QuestionBankModule } from './question-bank/question-bank.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { WishlistModule } from './wishlist/wishlist.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -57,6 +60,9 @@ import { QuestionBankModule } from './question-bank/question-bank.module';
     CategoriesModule,
     RemediationModule,
     QuestionBankModule,
+    ReviewsModule,
+    WishlistModule,
+    NotificationsModule,
   ],
 })
 export class AppModule { }

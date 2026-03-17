@@ -29,6 +29,9 @@ const interview_module_1 = require("./interview/interview.module");
 const categories_module_1 = require("./categories/categories.module");
 const remediation_module_1 = require("./remediation/remediation.module");
 const question_bank_module_1 = require("./question-bank/question-bank.module");
+const reviews_module_1 = require("./reviews/reviews.module");
+const wishlist_module_1 = require("./wishlist/wishlist.module");
+const notifications_module_1 = require("./notifications/notifications.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -62,6 +65,9 @@ exports.AppModule = AppModule = __decorate([
             categories_module_1.CategoriesModule,
             remediation_module_1.RemediationModule,
             question_bank_module_1.QuestionBankModule,
+            reviews_module_1.ReviewsModule,
+            wishlist_module_1.WishlistModule,
+            notifications_module_1.NotificationsModule,
         ],
     })
 ], AppModule);

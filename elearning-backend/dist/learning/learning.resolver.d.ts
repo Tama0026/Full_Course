@@ -33,8 +33,8 @@ export declare class LearningResolver {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    courseId: string;
                     title: string;
+                    courseId: string;
                 })[];
             } & {
                 category: string | null;
@@ -64,8 +64,8 @@ export declare class LearningResolver {
             }[];
         } & {
             id: string;
-            courseId: string;
             userId: string;
+            courseId: string;
             status: string;
             completedLessons: string;
             isFinished: boolean;

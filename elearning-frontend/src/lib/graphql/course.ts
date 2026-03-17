@@ -47,7 +47,7 @@ export const GET_COURSE_DETAIL = gql`
       instructor { id email }
       sections {
         id title order
-        lessons { id title order type videoUrl body duration isPreview isLocked }
+        lessons { id title order type videoUrl body duration isPreview isLocked transcript keyTakeaways }
       }
       createdAt
       updatedAt
@@ -77,7 +77,7 @@ export const GET_MY_COURSES = gql`
       instructorId
       sections {
         id title order
-        lessons { id title order type videoUrl body duration isPreview isLocked }
+        lessons { id title order type videoUrl body duration isPreview isLocked transcript keyTakeaways }
       }
       createdAt
     }
@@ -107,7 +107,7 @@ export const UPDATE_CURRICULUM = gql`
       sections {
         id title order
         lessons {
-          id title order type videoUrl body duration isPreview
+          id title order type videoUrl body duration isPreview transcript keyTakeaways
         }
       }
     }
@@ -125,7 +125,17 @@ export const CREATE_SECTION = gql`
 export const CREATE_LESSON = gql`
   mutation CreateLesson($input: CreateLessonInput!) {
     createLesson(input: $input) {
-      id title order type videoUrl body sectionId
+      id title order type videoUrl body sectionId transcript keyTakeaways
+    }
+  }
+`;
+
+export const GENERATE_LESSON_TAKEAWAYS = gql`
+  mutation GenerateLessonTakeaways($lessonId: String!) {
+    generateLessonTakeaways(lessonId: $lessonId) {
+      id
+      transcript
+      keyTakeaways
     }
   }
 `;
@@ -233,8 +243,8 @@ export const REJECT_ENROLLMENT = gql`
 `;
 
 export const DISCOVERY_COURSES = gql`
-  query DiscoveryCourses($search: String, $category: String, $take: Float, $skip: Float) {
-    discoveryCourses(search: $search, category: $category, take: $take, skip: $skip) {
+  query DiscoveryCourses($search: String, $category: String, $take: Float, $skip: Float, $minRating: Float, $priceMin: Float, $priceMax: Float, $sortBy: String) {
+    discoveryCourses(search: $search, category: $category, take: $take, skip: $skip, minRating: $minRating, priceMin: $priceMin, priceMax: $priceMax, sortBy: $sortBy) {
       items {
         id
         title

@@ -10,11 +10,13 @@ exports.GamificationModule = void 0;
 const common_1 = require("@nestjs/common");
 const gamification_service_1 = require("./gamification.service");
 const gamification_resolver_1 = require("./gamification.resolver");
+const notifications_module_1 = require("../notifications/notifications.module");
 let GamificationModule = class GamificationModule {
 };
 exports.GamificationModule = GamificationModule;
 exports.GamificationModule = GamificationModule = __decorate([
     (0, common_1.Module)({
+        imports: [notifications_module_1.NotificationsModule],
         providers: [gamification_service_1.GamificationService, gamification_resolver_1.GamificationResolver],
         exports: [gamification_service_1.GamificationService],
     })

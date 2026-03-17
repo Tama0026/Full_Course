@@ -246,6 +246,9 @@ let CoursesResolver = class CoursesResolver {
     async deleteLesson(id) {
         return this.coursesService.deleteLesson(id);
     }
+    async generateLessonTakeaways(lessonId) {
+        return this.coursesService.generateLessonTakeaways(lessonId);
+    }
     async getLesson(lessonId) {
         return this.coursesService.getLessonById(lessonId);
     }
@@ -279,8 +282,8 @@ let CoursesResolver = class CoursesResolver {
     async rejectEnrollment(studentId, courseId, user) {
         return this.coursesService.rejectEnrollment(studentId, courseId, user.role === 'ADMIN' ? 'ADMIN' : user.id);
     }
-    async getDiscoveryCourses(search, category, take, skip) {
-        return this.coursesService.getDiscoveryCourses(search, category, take, skip);
+    async getDiscoveryCourses(search, category, take, skip, minRating, priceMin, priceMax, sortBy) {
+        return this.coursesService.getDiscoveryCourses(search, category, take, skip, minRating, priceMin, priceMax, sortBy);
     }
     async enrollByCode(code, user) {
         await this.coursesService.enrollByCode(code, user.id);
@@ -395,6 +398,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "deleteLesson", null);
 __decorate([
+    (0, graphql_1.Mutation)(() => lesson_entity_1.Lesson),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(role_enum_1.Role.INSTRUCTOR, role_enum_1.Role.ADMIN),
+    __param(0, (0, graphql_1.Args)('lessonId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CoursesResolver.prototype, "generateLessonTakeaways", null);
+__decorate([
     (0, graphql_1.Query)(() => lesson_entity_1.Lesson, { name: 'lesson' }),
     (0, common_1.UseGuards)(optional_jwt_auth_guard_1.OptionalJwtAuthGuard, enrollment_guard_1.EnrollmentGuard),
     __param(0, (0, graphql_1.Args)('lessonId')),
@@ -479,8 +491,12 @@ __decorate([
     __param(1, (0, graphql_1.Args)('category', { type: () => String, nullable: true })),
     __param(2, (0, graphql_1.Args)('take', { type: () => Number, defaultValue: 12, nullable: true })),
     __param(3, (0, graphql_1.Args)('skip', { type: () => Number, defaultValue: 0, nullable: true })),
+    __param(4, (0, graphql_1.Args)('minRating', { type: () => Number, nullable: true })),
+    __param(5, (0, graphql_1.Args)('priceMin', { type: () => Number, nullable: true })),
+    __param(6, (0, graphql_1.Args)('priceMax', { type: () => Number, nullable: true })),
+    __param(7, (0, graphql_1.Args)('sortBy', { type: () => String, nullable: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Number, Number]),
+    __metadata("design:paramtypes", [String, String, Number, Number, Number, Number, Number, String]),
     __metadata("design:returntype", Promise)
 ], CoursesResolver.prototype, "getDiscoveryCourses", null);
 __decorate([

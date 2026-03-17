@@ -15,16 +15,22 @@ const course_repository_1 = require("./course.repository");
 const prisma_service_1 = require("../prisma/prisma.service");
 const email_service_1 = require("../email/email.service");
 const config_1 = require("@nestjs/config");
+const ai_service_1 = require("../ai/ai.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 let CoursesService = class CoursesService {
     courseRepository;
     prisma;
     emailService;
     configService;
-    constructor(courseRepository, prisma, emailService, configService) {
+    aiService;
+    notificationsService;
+    constructor(courseRepository, prisma, emailService, configService, aiService, notificationsService) {
         this.courseRepository = courseRepository;
         this.prisma = prisma;
         this.emailService = emailService;
         this.configService = configService;
+        this.aiService = aiService;
+        this.notificationsService = notificationsService;
     }
     async validateCourseContent(courseId) {
         const course = await this.prisma.course.findUnique({
@@ -167,6 +173,23 @@ let CoursesService = class CoursesService {
             throw new common_1.NotFoundException(`Lesson with ID "${id}" not found`);
         }
         return this.prisma.lesson.delete({ where: { id } });
+    }
+    async generateLessonTakeaways(lessonId) {
+        const lesson = await this.prisma.lesson.findUnique({ where: { id: lessonId } });
+        if (!lesson) {
+            throw new common_1.NotFoundException(`Lesson with ID "${lessonId}" not found`);
+        }
+        if (lesson.type !== 'VIDEO') {
+            throw new common_1.BadRequestException('Chỉ có thể tạo ghi chú cho bài học dạng Video.');
+        }
+        const { transcript, keyTakeaways } = await this.prisma.aiService.generateVideoTakeaways(lesson.title);
+        return this.prisma.lesson.update({
+            where: { id: lessonId },
+            data: {
+                transcript,
+                keyTakeaways
+            }
+        });
     }
     async getLessonById(id) {
         const lesson = await this.prisma.lesson.findUnique({
@@ -450,6 +473,13 @@ let CoursesService = class CoursesService {
         const frontendUrl = this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
         const courseUrl = `${frontendUrl}/courses/${courseId}`;
         await this.emailService.sendEnrollmentApprovedEmail(enrollment.user.email, enrollment.user.name || 'Học viên', course.title, courseUrl);
+        await this.notificationsService.create({
+            userId: studentId,
+            type: 'ENROLLMENT',
+            title: 'Đăng ký được duyệt',
+            message: `Bạn đã được duyệt vào khóa học "${course.title}". Hãy bắt đầu học ngay!`,
+            link: `/courses/${courseId}`,
+        });
         console.log(`[NOTIFICATION OUTBOX] Đã gửi thông báo phê duyệt tới: ${enrollment.user.email}`);
         return true;
     }
@@ -568,7 +598,7 @@ let CoursesService = class CoursesService {
         });
         return enrollment;
     }
-    async getDiscoveryCourses(search, category, take = 12, skip = 0) {
+    async getDiscoveryCourses(search, category, take = 12, skip = 0, minRating, priceMin, priceMax, sortBy) {
         const where = {
             published: true,
             isActive: true,
@@ -581,6 +611,34 @@ let CoursesService = class CoursesService {
         }
         if (category) {
             where.category = category;
+        }
+        if (minRating !== undefined && minRating > 0) {
+            where.averageRating = { gte: minRating };
+        }
+        if (priceMin !== undefined || priceMax !== undefined) {
+            where.price = {};
+            if (priceMin !== undefined)
+                where.price.gte = priceMin;
+            if (priceMax !== undefined)
+                where.price.lte = priceMax;
+        }
+        let orderBy = { createdAt: 'desc' };
+        switch (sortBy) {
+            case 'highest_rated':
+                orderBy = { averageRating: 'desc' };
+                break;
+            case 'price_low':
+                orderBy = { price: 'asc' };
+                break;
+            case 'price_high':
+                orderBy = { price: 'desc' };
+                break;
+            case 'most_popular':
+                orderBy = { reviewCount: 'desc' };
+                break;
+            case 'newest':
+            default:
+                orderBy = { createdAt: 'desc' };
         }
         const [courses, totalCount] = await Promise.all([
             this.prisma.course.findMany({
@@ -597,7 +655,7 @@ let CoursesService = class CoursesService {
                     },
                     _count: { select: { enrollments: true } },
                 },
-                orderBy: { createdAt: 'desc' },
+                orderBy,
                 take,
                 skip,
             }),
@@ -625,6 +683,8 @@ exports.CoursesService = CoursesService = __decorate([
     __metadata("design:paramtypes", [course_repository_1.CourseRepository,
         prisma_service_1.PrismaService,
         email_service_1.EmailService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        ai_service_1.AiService,
+        notifications_service_1.NotificationsService])
 ], CoursesService);
 //# sourceMappingURL=courses.service.js.map

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SidebarRouter from "@/components/common/SidebarRouter";
+import DashboardTopBar from "@/components/common/DashboardTopBar";
 
 export const metadata: Metadata = {
     title: "Dashboard",
@@ -21,6 +22,9 @@ export default function DashboardLayout({
 
             {/* Main content */}
             <div className="flex-1 flex flex-col min-w-0">
+                {/* Top bar with notifications */}
+                <DashboardTopBar />
+
                 {/* Page content */}
                 <main className="flex-1 p-6 overflow-auto">
                     {children}

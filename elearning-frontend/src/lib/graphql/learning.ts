@@ -4,6 +4,7 @@ export const GET_LESSON = gql`
   query GetLesson($lessonId: String!) {
     lesson(lessonId: $lessonId) {
       id title order type videoUrl body sectionId isLocked
+      transcript keyTakeaways
       createdAt updatedAt
     }
   }
@@ -122,5 +123,11 @@ export const GET_VIDEO_PROGRESS = gql`
       lessonId
       currentTime
     }
+  }
+`;
+
+export const ASK_VIDEO_CONTEXT_QUESTION = gql`
+  mutation AskVideoContextQuestion($lessonId: String!, $question: String!, $currentTime: Float!) {
+    askVideoContextQuestion(lessonId: $lessonId, question: $question, currentTime: $currentTime)
   }
 `;

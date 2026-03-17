@@ -12,12 +12,14 @@ const courses_service_1 = require("./courses.service");
 const courses_resolver_1 = require("./courses.resolver");
 const course_repository_1 = require("./course.repository");
 const email_module_1 = require("../email/email.module");
+const ai_module_1 = require("../ai/ai.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let CoursesModule = class CoursesModule {
 };
 exports.CoursesModule = CoursesModule;
 exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
-        imports: [email_module_1.EmailModule],
+        imports: [email_module_1.EmailModule, ai_module_1.AiModule, notifications_module_1.NotificationsModule],
         providers: [
             courses_service_1.CoursesService,
             courses_resolver_1.CoursesResolver,

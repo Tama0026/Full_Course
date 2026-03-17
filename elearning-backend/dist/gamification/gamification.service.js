@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GamificationService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 let GamificationService = class GamificationService {
     prisma;
-    constructor(prisma) {
+    notificationsService;
+    constructor(prisma, notificationsService) {
         this.prisma = prisma;
+        this.notificationsService = notificationsService;
     }
     async addPoints(userId, points) {
         await this.prisma.leaderboard.upsert({
@@ -69,6 +72,13 @@ let GamificationService = class GamificationService {
                 continue;
             await this.prisma.userBadge.create({
                 data: { userId, badgeId: badge.id },
+            });
+            await this.notificationsService.create({
+                userId,
+                type: 'BADGE',
+                title: 'Huy hiệu mới! 🏅',
+                message: `Chúc mừng! Bạn đã nhận được huy hiệu "${badge.name}"`,
+                link: '/student/achievements',
             });
             console.log(`[Gamification] 🏅 Badge "${badge.name}" (${badge.courseId ? 'Course' : 'Global'}) awarded to user ${userId}`);
         }
@@ -449,6 +459,7 @@ let GamificationService = class GamificationService {
 exports.GamificationService = GamificationService;
 exports.GamificationService = GamificationService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        notifications_service_1.NotificationsService])
 ], GamificationService);
 //# sourceMappingURL=gamification.service.js.map
