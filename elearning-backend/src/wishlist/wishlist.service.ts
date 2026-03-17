@@ -21,14 +21,14 @@ export class WishlistService {
     }
 
     // Check if already in wishlist
-    const existing = await this.prisma.wishlist.findUnique({
+    const existing = await (this.prisma as any).wishlist.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
     if (existing) {
       return existing; // Idempotent
     }
 
-    return this.prisma.wishlist.create({
+    return (this.prisma as any).wishlist.create({
       data: { userId, courseId },
       include: {
         course: {
@@ -45,14 +45,14 @@ export class WishlistService {
    * Remove a course from the user's wishlist.
    */
   async removeFromWishlist(userId: string, courseId: string) {
-    const existing = await this.prisma.wishlist.findUnique({
+    const existing = await (this.prisma as any).wishlist.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
     if (!existing) {
       return true; // Idempotent
     }
 
-    await this.prisma.wishlist.delete({
+    await (this.prisma as any).wishlist.delete({
       where: { userId_courseId: { userId, courseId } },
     });
     return true;
@@ -62,7 +62,7 @@ export class WishlistService {
    * Get all wishlist items for a user.
    */
   async getMyWishlist(userId: string) {
-    return this.prisma.wishlist.findMany({
+    return (this.prisma as any).wishlist.findMany({
       where: { userId },
       include: {
         course: {
@@ -84,7 +84,7 @@ export class WishlistService {
    * Check if a course is in the user's wishlist.
    */
   async isInWishlist(userId: string, courseId: string): Promise<boolean> {
-    const item = await this.prisma.wishlist.findUnique({
+    const item = await (this.prisma as any).wishlist.findUnique({
       where: { userId_courseId: { userId, courseId } },
     });
     return !!item;
