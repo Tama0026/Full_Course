@@ -7,6 +7,8 @@ export declare class Lesson {
     body?: string;
     duration?: number;
     format?: string;
+    transcript?: string;
+    keyTakeaways?: string;
     isPreview: boolean;
     order: number;
     sectionId: string;

@@ -4,6 +4,8 @@ import { IS_ENROLLED } from "@/lib/graphql/learning";
 import { GET_COURSE_BADGES } from "@/lib/graphql/gamification";
 import { Course } from "@/lib/graphql/types";
 import BadgeGallery from "@/components/gamification/BadgeGallery";
+import CourseReviews from "@/components/learning/CourseReviews";
+import WishlistButton from "@/components/common/WishlistButton";
 import LearningOutcomesSection from "./LearningOutcomesSection";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
@@ -99,9 +101,14 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
                         <ArrowLeft className="h-4 w-4" /> Về danh sách
                     </Link>
 
-                    <h1 className="text-3xl font-bold leading-tight lg:text-4xl">
-                        {course.title}
-                    </h1>
+                    <div className="flex items-start justify-between gap-4">
+                        <h1 className="text-3xl font-bold leading-tight lg:text-4xl">
+                            {course.title}
+                        </h1>
+                        {!isInstructor && (
+                            <WishlistButton courseId={params.id} size={24} className="shrink-0 mt-1" />
+                        )}
+                    </div>
                     <p className="mt-4 max-w-2xl text-lg text-slate-300">
                         {course.description}
                     </p>
@@ -194,6 +201,9 @@ export default async function CourseDetailPage(props: { params: Promise<{ id: st
 
                         {/* Badge Gallery */}
                         <BadgeGallery badges={courseBadges} />
+
+                        {/* Course Reviews */}
+                        <CourseReviews courseId={params.id} isEnrolled={isEnrolled} />
                     </div>
 
                     {/* RIGHT COLUMN: Action card */}

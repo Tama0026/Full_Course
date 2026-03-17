@@ -63,6 +63,9 @@ model User {
   assessmentAttempts   AssessmentAttempt[]
   remediationReports   RemediationReport[]
   questionBanks        QuestionBank[]        @relation("QuestionBankOwner")
+  reviews              Review[]
+  wishlists            Wishlist[]
+  notifications        Notification[]
 }
 
 enum CourseType {
@@ -98,6 +101,8 @@ model Course {
   enrollments  Enrollment[]
   certificates Certificate[]
   badges       Badge[]       @relation("CourseBadges")
+  reviews      Review[]
+  wishlists    Wishlist[]
 }
 
 model Section {
@@ -119,9 +124,11 @@ model Lesson {
   type      String   @default("VIDEO") // VIDEO or DOCUMENT
   videoUrl  String?
   body      String?
-  duration  Int? // In seconds
-  format    String?
-  isPreview Boolean  @default(false)
+  duration       Int? // In seconds
+  format         String?
+  transcript     String?  // Text representation of video content
+  keyTakeaways   String?  // JSON string containing array of note objects
+  isPreview      Boolean  @default(false)
   order     Int
   sectionId String
   createdAt DateTime @default(now())
@@ -460,4 +467,65 @@ model ReviewPathItem {
 
   report RemediationReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
   lesson Lesson            @relation(fields: [lessonId], references: [id])
+}
+
+// ==================== REVIEWS ====================
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  rating    Int      // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+// ==================== WISHLIST ====================
+
+model Wishlist {
+  id        String   @id @default(uuid())
+  userId    String
+  courseId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+enum NotificationType {
+  ENROLLMENT
+  BADGE
+  CERTIFICATE
+  REVIEW
+  COURSE_UPDATE
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  data      String?          // Optional JSON data
+  link      String?          // Optional link to navigate to
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
 }

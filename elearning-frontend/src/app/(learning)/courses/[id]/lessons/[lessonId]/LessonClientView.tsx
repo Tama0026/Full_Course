@@ -19,6 +19,7 @@ import {
     Download,
     PartyPopper,
     Info,
+    Sparkles,
 } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,7 @@ import DiscussionSection from "@/components/learning/DiscussionSection";
 import NotesSection from "@/components/learning/NotesSection";
 import LessonMarkdownRenderer from "@/components/learning/LessonMarkdownRenderer";
 import QuizSection from "@/components/learning/QuizSection";
+import { SmartSidePanel } from "@/features/learning/SmartSidePanel";
 import dynamic from 'next/dynamic';
 
 import ReactPlayerType from 'react-player';
@@ -162,6 +164,7 @@ interface LessonClientViewProps {
     completedItems: Progress[];
     progressPercentage: number;
     currentUserId?: string;
+    isInstructor?: boolean;
 }
 
 export function LessonClientView({
@@ -170,6 +173,7 @@ export function LessonClientView({
     completedItems,
     progressPercentage: initialProgressPercentage,
     currentUserId,
+    isInstructor = false,
 }: LessonClientViewProps) {
     const router = useRouter();
     const playerRef = useRef<any>(null);
@@ -184,6 +188,7 @@ export function LessonClientView({
     const [progress, setProgress] = useState(initialProgressPercentage);
 
     const [activeTab, setActiveTab] = useState<"overview" | "notes" | "discussion">("overview");
+    const [sidebarTab, setSidebarTab] = useState<"content" | "ai">("content");
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [marking, setMarking] = useState(false);
 
@@ -250,6 +255,29 @@ export function LessonClientView({
         { key: "notes" as const, label: "Ghi chú", icon: StickyNote },
         { key: "discussion" as const, label: "Thảo luận", icon: MessageSquare },
     ];
+
+    // Helper functions for seeking video
+    const handleSeek = (timeInSeconds: number) => {
+        if (!playerRef.current) return;
+
+        // Check if ReactPlayer
+        if (typeof playerRef.current.seekTo === 'function') {
+            playerRef.current.seekTo(timeInSeconds, 'seconds');
+        } else {
+            // Native video element
+            playerRef.current.currentTime = timeInSeconds;
+        }
+    };
+
+    const getCurrentTime = (): number => {
+        if (!playerRef.current) return 0;
+
+        if (typeof playerRef.current.getCurrentTime === 'function') {
+            return playerRef.current.getCurrentTime();
+        } else {
+            return playerRef.current.currentTime || 0;
+        }
+    };
 
     async function handleMarkComplete() {
         setMarking(true);
@@ -628,15 +656,48 @@ export function LessonClientView({
                 </div>
             </div>
 
-            {/* ═══ RIGHT: Desktop Sidebar ═══ */}
+            {/* ═══ RIGHT: Desktop Sidebar / Smart Panel ═══ */}
             <aside className="hidden w-80 shrink-0 border-l border-slate-200 bg-white lg:flex lg:flex-col">
-                <div className="border-b border-slate-200 px-4 py-4">
+                <div className="border-b border-slate-200 px-4 py-4 shrink-0 bg-slate-50 flex items-center justify-between">
                     <h2 className="text-sm font-bold text-slate-900 line-clamp-2">{course.title}</h2>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                    {sections.slice().sort((a, b) => a.order - b.order).map((section) => (
-                        <SidebarSectionItem key={section.id} section={section} {...sidebarProps} />
-                    ))}
+
+                {activeLesson?.type === "VIDEO" && (
+                    <div className="flex border-b border-slate-200 shrink-0 bg-white">
+                        <button
+                            onClick={() => setSidebarTab('content')}
+                            className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${sidebarTab === 'content' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-500 hover:bg-slate-50 transition-colors'}`}
+                        >Nội dung</button>
+                        <button
+                            onClick={() => setSidebarTab('ai')}
+                            className={`flex-1 flex justify-center items-center gap-1.5 py-3 text-xs font-bold uppercase tracking-wider ${sidebarTab === 'ai' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-500 hover:bg-slate-50 transition-colors'}`}
+                        ><Sparkles className="w-4 h-4" /> AI Assistant</button>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-hidden relative">
+                    {/* Content Tab */}
+                    {(!activeLesson || activeLesson.type !== "VIDEO" || sidebarTab === 'content') && (
+                        <div className="absolute inset-0 overflow-y-auto">
+                            {sections.slice().sort((a, b) => a.order - b.order).map((section) => (
+                                <SidebarSectionItem key={section.id} section={section} {...sidebarProps} />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* AI Tab */}
+                    {activeLesson?.type === "VIDEO" && sidebarTab === 'ai' && (
+                        <div className="absolute inset-0 bg-slate-50/30">
+                            <SmartSidePanel
+                                lessonId={activeLesson.id}
+                                courseTitle={course.title}
+                                keyTakeaways={(activeLesson as any).keyTakeaways as any}
+                                getCurrentTime={getCurrentTime}
+                                onSeek={handleSeek}
+                                isInstructor={isInstructor}
+                            />
+                        </div>
+                    )}
                 </div>
             </aside>
 
@@ -653,17 +714,47 @@ export function LessonClientView({
                 <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
             )}
             <div className={cn("fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] transform bg-white shadow-2xl transition-transform duration-300 lg:hidden", sidebarOpen ? "translate-x-0" : "translate-x-full")}>
-                <button onClick={() => setSidebarOpen(false)} className="absolute right-3 top-3 z-10 rounded-md p-1 text-slate-400 hover:text-slate-600">
+                <button onClick={() => setSidebarOpen(false)} className="absolute right-3 top-3 z-10 rounded-md p-1 text-slate-400 hover:text-slate-600 bg-white/50 backdrop-blur-sm border border-slate-200">
                     <X className="h-5 w-5" />
                 </button>
                 <div className="flex h-full flex-col">
-                    <div className="border-b border-slate-200 px-4 py-4 pr-10">
+                    <div className="border-b border-slate-200 px-4 py-4 pr-10 shrink-0 bg-slate-50">
                         <h2 className="text-sm font-bold text-slate-900 line-clamp-2">{course.title}</h2>
                     </div>
-                    <div className="flex-1 overflow-y-auto">
-                        {sections.slice().sort((a, b) => a.order - b.order).map((section) => (
-                            <SidebarSectionItem key={section.id} section={section} {...sidebarProps} />
-                        ))}
+
+                    {activeLesson?.type === "VIDEO" && (
+                        <div className="flex border-b border-slate-200 shrink-0 bg-white">
+                            <button
+                                onClick={() => setSidebarTab('content')}
+                                className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider ${sidebarTab === 'content' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-500 hover:bg-slate-50 transition-colors'}`}
+                            >Nội dung</button>
+                            <button
+                                onClick={() => setSidebarTab('ai')}
+                                className={`flex-1 flex justify-center items-center gap-1.5 py-3 text-xs font-bold uppercase tracking-wider ${sidebarTab === 'ai' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/30' : 'text-slate-500 hover:bg-slate-50 transition-colors'}`}
+                            ><Sparkles className="w-4 h-4" /> AI Assistant</button>
+                        </div>
+                    )}
+
+                    <div className="flex-1 overflow-hidden relative">
+                        {(!activeLesson || activeLesson.type !== "VIDEO" || sidebarTab === 'content') && (
+                            <div className="absolute inset-0 overflow-y-auto pt-2">
+                                {sections.slice().sort((a, b) => a.order - b.order).map((section) => (
+                                    <SidebarSectionItem key={section.id} section={section} {...sidebarProps} />
+                                ))}
+                            </div>
+                        )}
+                        {activeLesson?.type === "VIDEO" && sidebarTab === 'ai' && (
+                            <div className="absolute inset-0 bg-slate-50/30">
+                                <SmartSidePanel
+                                    lessonId={activeLesson.id}
+                                    courseTitle={course.title}
+                                    keyTakeaways={(activeLesson as any).keyTakeaways as any}
+                                    getCurrentTime={getCurrentTime}
+                                    onSeek={(time) => { handleSeek(time); setSidebarOpen(false); }}
+                                    isInstructor={isInstructor}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

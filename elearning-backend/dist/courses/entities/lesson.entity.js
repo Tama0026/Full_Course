@@ -20,6 +20,8 @@ let Lesson = class Lesson {
     body;
     duration;
     format;
+    transcript;
+    keyTakeaways;
     isPreview;
     order;
     sectionId;
@@ -57,6 +59,14 @@ __decorate([
     (0, graphql_1.Field)({ nullable: true }),
     __metadata("design:type", String)
 ], Lesson.prototype, "format", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Lesson.prototype, "transcript", void 0);
+__decorate([
+    (0, graphql_1.Field)({ nullable: true }),
+    __metadata("design:type", String)
+], Lesson.prototype, "keyTakeaways", void 0);
 __decorate([
     (0, graphql_1.Field)(() => Boolean, { defaultValue: false }),
     __metadata("design:type", Boolean)

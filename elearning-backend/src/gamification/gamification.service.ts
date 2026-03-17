@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class GamificationService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) { }
 
   // ════════════════════════════════════════════════
   // POINTS
@@ -92,6 +96,16 @@ export class GamificationService {
       await (this.prisma as any).userBadge.create({
         data: { userId, badgeId: badge.id },
       });
+
+      // Send in-app notification
+      await this.notificationsService.create({
+        userId,
+        type: 'BADGE',
+        title: 'Huy hiệu mới! 🏅',
+        message: `Chúc mừng! Bạn đã nhận được huy hiệu "${badge.name}"`,
+        link: '/student/achievements',
+      });
+
       console.log(
         `[Gamification] 🏅 Badge "${badge.name}" (${badge.courseId ? 'Course' : 'Global'}) awarded to user ${userId}`,
       );

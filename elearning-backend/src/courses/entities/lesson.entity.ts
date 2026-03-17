@@ -24,6 +24,12 @@ export class Lesson {
   @Field({ nullable: true })
   format?: string;
 
+  @Field({ nullable: true })
+  transcript?: string;
+
+  @Field({ nullable: true })
+  keyTakeaways?: string;
+
   @Field(() => Boolean, { defaultValue: false })
   isPreview: boolean;
 

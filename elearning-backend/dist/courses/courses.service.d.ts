@@ -7,12 +7,16 @@ import { CreateLessonInput } from './dto/create-lesson.input';
 import { Course as PrismaCourse, Section, Lesson } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { AiService } from '../ai/ai.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class CoursesService {
     private readonly courseRepository;
     private readonly prisma;
     private readonly emailService;
     private readonly configService;
-    constructor(courseRepository: CourseRepository, prisma: PrismaService, emailService: EmailService, configService: ConfigService);
+    private readonly aiService;
+    private readonly notificationsService;
+    constructor(courseRepository: CourseRepository, prisma: PrismaService, emailService: EmailService, configService: ConfigService, aiService: AiService, notificationsService: NotificationsService);
     validateCourseContent(courseId: string): Promise<void>;
     createCourse(input: CreateCourseInput, instructorId: string): Promise<PrismaCourse>;
     updateCourse(id: string, input: UpdateCourseInput): Promise<PrismaCourse>;
@@ -59,6 +63,7 @@ export declare class CoursesService {
     deleteSection(id: string): Promise<Section>;
     createLesson(input: CreateLessonInput): Promise<Lesson>;
     deleteLesson(id: string): Promise<Lesson>;
+    generateLessonTakeaways(lessonId: string): Promise<Lesson>;
     getLessonById(id: string): Promise<Lesson>;
     toggleCourseStatus(id: string): Promise<PrismaCourse>;
     getInstructorStats(instructorId: string): Promise<{
@@ -89,14 +94,16 @@ export declare class CoursesService {
                 duration: number | null;
                 isPreview: boolean;
                 sectionId: string;
+                transcript: string | null;
+                keyTakeaways: string | null;
             }[];
         } & {
             order: number;
             id: string;
             createdAt: Date;
             updatedAt: Date;
-            courseId: string;
             title: string;
+            courseId: string;
         })[];
     } & {
         category: string | null;
@@ -161,14 +168,16 @@ export declare class CoursesService {
                     duration: number | null;
                     isPreview: boolean;
                     sectionId: string;
+                    transcript: string | null;
+                    keyTakeaways: string | null;
                 }[];
             } & {
                 order: number;
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                courseId: string;
                 title: string;
+                courseId: string;
             })[];
         } & {
             category: string | null;
@@ -193,8 +202,8 @@ export declare class CoursesService {
         };
     } & {
         id: string;
-        courseId: string;
         userId: string;
+        courseId: string;
         status: string;
         completedLessons: string;
         isFinished: boolean;
@@ -203,7 +212,7 @@ export declare class CoursesService {
         enrolledAt: Date | null;
         lastRemindedAt: Date | null;
     }>;
-    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number): Promise<{
+    getDiscoveryCourses(search?: string, category?: string, take?: number, skip?: number, minRating?: number, priceMin?: number, priceMax?: number, sortBy?: string): Promise<{
         items: ({
             _count: {
                 enrollments: number;
@@ -225,8 +234,8 @@ export declare class CoursesService {
                 id: string;
                 createdAt: Date;
                 updatedAt: Date;
-                courseId: string;
                 title: string;
+                courseId: string;
             })[];
         } & {
             category: string | null;

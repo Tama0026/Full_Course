@@ -19,6 +19,7 @@ import {
     FileText,
     Loader2,
     Home,
+    Heart,
 } from "lucide-react";
 
 /* ── Navigation items per role ── */
@@ -27,6 +28,7 @@ const STUDENT_NAV = [
     { href: "/dashboard", icon: Home, label: "Dashboard", exact: true },
     { href: "/explore", icon: GraduationCap, label: "Khám phá", exact: false },
     { href: "/student", icon: BookOpen, label: "Khóa học của tôi", exact: true },
+    { href: "/student/wishlist", icon: Heart, label: "Yêu thích", exact: false },
     { href: "/exams", icon: ClipboardList, label: "Kỳ thi", exact: false },
     { href: "/student/achievements", icon: Trophy, label: "Thành tựu", exact: false },
     { href: "/certificates", icon: Award, label: "Chứng chỉ", exact: false },

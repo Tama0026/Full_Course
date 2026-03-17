@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, ArrowUpDown } from "lucide-react";
 import { CourseCard } from "@/features/courses/CourseCard";
 import { cn } from "@/lib/utils";
 import { Course } from "@/lib/graphql/types";
+
 
 interface CategoryItem {
     id: string;
@@ -19,6 +20,20 @@ const PRICE_RANGES = [
     { value: "1m-plus", label: "Trên 1.000.000 ₫" },
 ];
 
+const RATING_FILTERS = [
+    { value: "all", label: "Tất cả" },
+    { value: "4", label: "4 sao trở lên" },
+    { value: "3", label: "3 sao trở lên" },
+];
+
+const SORT_OPTIONS = [
+    { value: "newest", label: "Mới nhất" },
+    { value: "highest_rated", label: "Đánh giá cao" },
+    { value: "price_low", label: "Giá thấp → cao" },
+    { value: "price_high", label: "Giá cao → thấp" },
+    { value: "most_popular", label: "Phổ biến nhất" },
+];
+
 export function CoursesClient({
     initialCourses,
     categories,
@@ -29,6 +44,8 @@ export function CoursesClient({
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState("all");
     const [priceRange, setPriceRange] = useState("all");
+    const [ratingFilter, setRatingFilter] = useState("all");
+    const [sortBy, setSortBy] = useState("newest");
     const [showMobileFilter, setShowMobileFilter] = useState(false);
 
     // Build category filter list from dynamic data
@@ -59,7 +76,19 @@ export function CoursesClient({
         if (priceRange === "free" && c.price !== 0) return false;
         if (priceRange === "under-1m" && (c.price === 0 || c.price >= 1000000)) return false;
         if (priceRange === "1m-plus" && c.price < 1000000) return false;
+        if (ratingFilter !== "all" && c.rating < parseInt(ratingFilter)) return false;
         return true;
+    });
+
+    // Sort logic
+    const sorted = [...filtered].sort((a, b) => {
+        switch (sortBy) {
+            case "highest_rated": return b.rating - a.rating;
+            case "price_low": return a.price - b.price;
+            case "price_high": return b.price - a.price;
+            case "most_popular": return b.reviewCount - a.reviewCount;
+            default: return 0; // newest = original order
+        }
     });
 
     const FilterPanel = ({ className }: { className?: string }) => (
@@ -85,29 +114,52 @@ export function CoursesClient({
             </div>
             <hr className="border-slate-200" />
             <div>
-                <h3 className="mb-3 text-sm font-semibold text-slate-900">Mức giá</h3>
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">Đánh giá</h3>
                 <div className="space-y-1.5">
-                    {PRICE_RANGES.map((pr) => (
+                    {RATING_FILTERS.map((rf) => (
                         <button
-                            key={pr.value}
-                            onClick={() => setPriceRange(pr.value)}
+                            key={rf.value}
+                            onClick={() => setRatingFilter(rf.value)}
                             className={cn(
-                                "flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors",
-                                priceRange === pr.value
+                                "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
+                                ratingFilter === rf.value
                                     ? "bg-primary-50 font-medium text-primary-700"
                                     : "text-slate-600 hover:bg-slate-100"
                             )}
                         >
-                            {pr.label}
+                            {rf.value !== "all" && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
+                            {rf.label}
                         </button>
                     ))}
                 </div>
             </div>
-            {(category !== "all" || priceRange !== "all") && (
+            <hr className="border-slate-200" />
+            <div>
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">Sắp xếp</h3>
+                <div className="space-y-1.5">
+                    {SORT_OPTIONS.map((so) => (
+                        <button
+                            key={so.value}
+                            onClick={() => setSortBy(so.value)}
+                            className={cn(
+                                "flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors",
+                                sortBy === so.value
+                                    ? "bg-primary-50 font-medium text-primary-700"
+                                    : "text-slate-600 hover:bg-slate-100"
+                            )}
+                        >
+                            {so.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            {(category !== "all" || priceRange !== "all" || ratingFilter !== "all" || sortBy !== "newest") && (
                 <button
                     onClick={() => {
                         setCategory("all");
                         setPriceRange("all");
+                        setRatingFilter("all");
+                        setSortBy("newest");
                     }}
                     className="w-full rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                 >
@@ -163,7 +215,7 @@ export function CoursesClient({
                         </div>
                     </aside>
                     <div className="flex-1">
-                        {(category !== "all" || priceRange !== "all" || search) && (
+                        {(category !== "all" || priceRange !== "all" || ratingFilter !== "all" || sortBy !== "newest" || search) && (
                             <div className="mb-4 flex flex-wrap items-center gap-2">
                                 <span className="text-sm text-slate-500">Đang lọc:</span>
                                 {category !== "all" && (
@@ -178,10 +230,22 @@ export function CoursesClient({
                                         <button onClick={() => setPriceRange("all")}><X className="h-3 w-3" /></button>
                                     </span>
                                 )}
+                                {ratingFilter !== "all" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                                        ★ {ratingFilter}+ sao
+                                        <button onClick={() => setRatingFilter("all")}><X className="h-3 w-3" /></button>
+                                    </span>
+                                )}
+                                {sortBy !== "newest" && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                                        {SORT_OPTIONS.find((s) => s.value === sortBy)?.label}
+                                        <button onClick={() => setSortBy("newest")}><X className="h-3 w-3" /></button>
+                                    </span>
+                                )}
                             </div>
                         )}
-                        <p className="mb-4 text-sm text-slate-500">{filtered.length} khóa học</p>
-                        {filtered.length === 0 ? (
+                        <p className="mb-4 text-sm text-slate-500">{sorted.length} khóa học</p>
+                        {sorted.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center">
                                 <Search className="mx-auto h-10 w-10 text-slate-300" />
                                 <p className="mt-3 text-sm font-medium text-slate-500">Không tìm thấy khóa học</p>
@@ -189,7 +253,7 @@ export function CoursesClient({
                             </div>
                         ) : (
                             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                                {filtered.map((course: any) => (
+                                {sorted.map((course: any) => (
                                     <CourseCard key={course.id} {...course} />
                                 ))}
                             </div>

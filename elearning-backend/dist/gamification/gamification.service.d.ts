@@ -1,7 +1,9 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class GamificationService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly notificationsService;
+    constructor(prisma: PrismaService, notificationsService: NotificationsService);
     addPoints(userId: string, points: number): Promise<void>;
     getTopStudents(limit?: number): Promise<any>;
     getUserPoints(userId: string): Promise<number>;

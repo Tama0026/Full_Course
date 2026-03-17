@@ -16,6 +16,7 @@ import {
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { EmailService } from '../email/email.service';
+import { AiService } from '../ai/ai.service';
 import { v4 as uuidv4 } from 'uuid';
 
 /** Shape returned by getProgress including computed fields */
@@ -35,6 +36,7 @@ export class LearningService {
     private readonly cloudinaryService: CloudinaryService,
     private readonly gamificationService: GamificationService,
     private readonly emailService: EmailService,
+    private readonly aiService: AiService,
   ) { }
 
   /**
@@ -375,5 +377,16 @@ export class LearningService {
     return this.prisma.videoProgress.findUnique({
       where: { userId_lessonId: { userId, lessonId } },
     });
+  }
+
+  /**
+   * Ask the AI a question contextually based on the video playback position.
+   */
+  async askVideoContextQuestion(
+    lessonId: string,
+    question: string,
+    currentTime: number,
+  ): Promise<string> {
+    return this.aiService.askVideoContextQuestion(lessonId, question, currentTime);
   }
 }

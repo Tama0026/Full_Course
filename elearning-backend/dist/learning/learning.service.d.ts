@@ -4,6 +4,7 @@ import { Enrollment as PrismaEnrollment, Progress as PrismaProgress, Certificate
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { EmailService } from '../email/email.service';
+import { AiService } from '../ai/ai.service';
 export interface CourseProgressData {
     enrollment: PrismaEnrollment;
     progressPercentage: number;
@@ -17,7 +18,8 @@ export declare class LearningService {
     private readonly cloudinaryService;
     private readonly gamificationService;
     private readonly emailService;
-    constructor(enrollmentRepository: EnrollmentRepository, prisma: PrismaService, cloudinaryService: CloudinaryService, gamificationService: GamificationService, emailService: EmailService);
+    private readonly aiService;
+    constructor(enrollmentRepository: EnrollmentRepository, prisma: PrismaService, cloudinaryService: CloudinaryService, gamificationService: GamificationService, emailService: EmailService, aiService: AiService);
     markLessonComplete(userId: string, lessonId: string): Promise<PrismaProgress>;
     getProgress(userId: string, courseId: string): Promise<CourseProgressData>;
     getMyEnrollments(userId: string, take?: number, skip?: number, search?: string): Promise<{
@@ -38,8 +40,8 @@ export declare class LearningService {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    courseId: string;
                     title: string;
+                    courseId: string;
                 })[];
             } & {
                 category: string | null;
@@ -69,8 +71,8 @@ export declare class LearningService {
             }[];
         } & {
             id: string;
-            courseId: string;
             userId: string;
+            courseId: string;
             status: string;
             completedLessons: string;
             isFinished: boolean;
@@ -87,4 +89,5 @@ export declare class LearningService {
     getMyCertificates(userId: string): Promise<PrismaCertificate[]>;
     updateVideoProgress(userId: string, lessonId: string, currentTime: number): Promise<PrismaVideoProgress>;
     getVideoProgress(userId: string, lessonId: string): Promise<PrismaVideoProgress | null>;
+    askVideoContextQuestion(lessonId: string, question: string, currentTime: number): Promise<string>;
 }

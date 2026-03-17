@@ -417,6 +417,12 @@ input CreateQuestionInput {
   setCode: String!
 }
 
+input CreateReviewInput {
+  comment: String
+  courseId: String!
+  rating: Int!
+}
+
 input CreateSectionInput {
   courseId: String!
   order: Int!
@@ -474,10 +480,12 @@ type Lesson {
   id: ID!
   isLocked: Boolean!
   isPreview: Boolean!
+  keyTakeaways: String
   order: Int!
   quiz: Quiz
   sectionId: String!
   title: String!
+  transcript: String
   type: String!
   updatedAt: DateTime!
   videoUrl: String
@@ -506,6 +514,7 @@ type LoginStreakType {
 }
 
 type Mutation {
+  addToWishlist(courseId: String!): WishlistItem!
   adminCreateBadge(input: AdminCreateBadgeInput!): AdminBadgeType!
   adminDeleteBadge(badgeId: String!): Boolean!
   adminUpdateBadge(badgeId: String!, input: UpdateBadgeInput!): AdminBadgeType!
@@ -528,6 +537,7 @@ type Mutation {
   createNote(input: CreateNoteInput!): Note!
   createOrder(input: CreateOrderInput!): Order!
   createQuestionBank(input: CreateQuestionBankInput!): QuestionBank!
+  createReview(input: CreateReviewInput!): Review!
   createSection(input: CreateSectionInput!): Section!
   deleteAssessment(id: String!): Assessment!
   deleteAssessmentQuestion(id: String!): AssessmentQuestion!
@@ -539,19 +549,24 @@ type Mutation {
   deleteLesson(id: String!): Lesson!
   deleteNote(id: String!): Note!
   deleteQuestionBank(id: String!): QuestionBank!
+  deleteReview(reviewId: String!): Review!
   deleteSection(id: String!): Section!
   enrollByCode(code: String!): Boolean!
   generateAiExamQuestions(assessmentId: String!, bankId: String, questionCount: Int!, setCode: String! = "SET_1"): Assessment!
   generateLessonContent(courseTitle: String!, nonce: Float, title: String!): String!
   generateLessonContentWithQuiz(courseTitle: String!, lessonId: String!, quizCount: Int! = 5, title: String!): String!
+  generateLessonTakeaways(lessonId: String!): Lesson!
   generateQuizWithAI(count: Int! = 5, lessonId: String!): Quiz!
   login(input: LoginInput!): AuthResponse!
+  markAllNotificationsRead: Boolean!
   markLessonComplete(lessonId: String!): Progress!
+  markNotificationRead(notificationId: String!): Boolean!
   parseRawQuestions(rawText: String!): String!
   publishAssessment(assessmentId: String!): Assessment!
   refreshToken(refreshToken: String!): AuthResponse!
   register(input: RegisterInput!): AuthResponse!
   rejectEnrollment(courseId: String!, studentId: String!): Boolean!
+  removeFromWishlist(courseId: String!): Boolean!
   sendLearningReminder(courseId: String!, studentId: String!): Boolean!
   startAssessmentAttempt(assessmentId: String!): AssessmentAttempt!
   submitAssessmentAttempt(answers: [AnswerInput!]!, attemptId: String!): AssessmentAttempt!
@@ -568,6 +583,7 @@ type Mutation {
   updateQuestionBank(id: String!, input: UpdateQuestionBankInput!): QuestionBank!
   updateQuestionInline(input: UpdateQuestionInlineInput!, questionId: String!): AssessmentQuestion!
   updateQuiz(input: UpdateQuizInput!): Quiz!
+  updateReview(input: UpdateReviewInput!, reviewId: String!): Review!
   updateVideoProgress(currentTime: Float!, lessonId: String!): VideoProgress!
 }
 
@@ -580,6 +596,28 @@ type Note {
   user: User
   userId: String!
   videoTimestamp: Float!
+}
+
+type NotificationEntity {
+  createdAt: DateTime!
+  data: String
+  id: ID!
+  isRead: Boolean!
+  link: String
+  message: String!
+  title: String!
+  type: NotificationType!
+  userId: String!
+}
+
+"""Type of notification"""
+enum NotificationType {
+  BADGE
+  CERTIFICATE
+  COURSE_UPDATE
+  ENROLLMENT
+  REVIEW
+  SYSTEM
 }
 
 type Order {
@@ -653,12 +691,14 @@ type Query {
   course(id: String!): Course!
   courseBadges(courseId: String!): [BadgeType!]!
   courseProgress(courseId: String!): CourseProgress!
+  courseReviews(courseId: String!): ReviewSummary!
   courses: [Course!]!
-  discoveryCourses(category: String, search: String, skip: Float = 0, take: Float = 12): PaginatedCourseResult!
+  discoveryCourses(category: String, minRating: Float, priceMax: Float, priceMin: Float, search: String, skip: Float = 0, sortBy: String, take: Float = 12): PaginatedCourseResult!
   getCourseStudents(courseId: String!): [CourseStudent!]!
   getQuiz(lessonId: String!): Quiz
   instructorStats: InstructorStats!
   isEnrolled(courseId: String!): Boolean!
+  isInWishlist(courseId: String!): Boolean!
   isInterviewUnlocked(courseId: String!): Boolean!
   lesson(lessonId: String!): Lesson!
   lessonComments(lessonId: String!): [Comment!]!
@@ -672,14 +712,18 @@ type Query {
   myCreatedBadges: [BadgeType!]!
   myEnrollments(search: String, skip: Int! = 0, take: Int! = 12): PaginatedEnrollmentResult!
   myLoginStreak: LoginStreakType!
+  myNotifications(skip: Int = 0, take: Int = 20): [NotificationEntity!]!
   myOrders: [Order!]!
   myPoints: Int!
   myQuestionBanks(search: String, skip: Int! = 0, take: Int! = 12): PaginatedQuestionBankResult!
   myRemediations: [RemediationReport!]!
+  myReview(courseId: String!): Review
+  myWishlist: [WishlistItem!]!
   order(id: String!): Order!
   questionBank(id: String!): QuestionBank!
   suggestCourses(query: String!): String!
   topStudents(limit: Int! = 10): [LeaderboardEntry!]!
+  unreadNotificationCount: UnreadCount!
   uploadSignature: CloudinarySignature!
   videoProgress(lessonId: String!): VideoProgress
 }
@@ -748,6 +792,17 @@ type RemediationReport {
   wrongCount: Int!
 }
 
+type Review {
+  comment: String
+  courseId: String!
+  createdAt: DateTime!
+  id: ID!
+  rating: Int!
+  updatedAt: DateTime!
+  user: User
+  userId: String!
+}
+
 type ReviewPathItem {
   completedAt: DateTime
   createdAt: DateTime!
@@ -758,6 +813,17 @@ type ReviewPathItem {
   priority: Int!
   reason: String!
   reportId: String!
+}
+
+type ReviewSummary {
+  averageRating: Float!
+  reviews: [Review!]!
+  star1: Int!
+  star2: Int!
+  star3: Int!
+  star4: Int!
+  star5: Int!
+  totalCount: Int!
 }
 
 """User roles for RBAC"""
@@ -795,6 +861,10 @@ type SubmitQuizResponse {
   score: Int!
   success: Boolean!
   totalQuestions: Int!
+}
+
+type UnreadCount {
+  count: Int!
 }
 
 input UpdateBadgeInput {
@@ -859,6 +929,11 @@ input UpdateQuizInput {
   questions: [QuestionInput!]!
 }
 
+input UpdateReviewInput {
+  comment: String
+  rating: Int
+}
+
 type User {
   aiRank: String
   avatar: String
@@ -885,4 +960,12 @@ type ViolationRecord {
   id: ID!
   timestamp: DateTime!
   type: String!
+}
+
+type WishlistItem {
+  course: Course
+  courseId: String!
+  createdAt: DateTime!
+  id: ID!
+  userId: String!
 }

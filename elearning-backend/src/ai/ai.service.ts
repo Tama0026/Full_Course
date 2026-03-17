@@ -976,4 +976,113 @@ Only return the JSON object.
       throw new InternalServerErrorException('AI recommendations failed');
     }
   }
+
+  // ==================== SMART SIDE-PANEL (Video Context) ====================
+
+  /**
+   * Generates a mock transcript and key takeaways based on the video title.
+   * In a production app, this would use a Speech-to-Text API on the video file.
+   */
+  async generateVideoTakeaways(lessonTitle: string): Promise<{ transcript: string; keyTakeaways: string }> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
+    }
+
+    const prompt = `
+You are an expert technical writer and course creator. 
+I have a video lesson titled: "${lessonTitle}".
+Because I cannot process the actual video file right now, please generate a highly realistic, simulated transcript and a set of key takeaways for this lesson.
+
+Assume the video is about 5 to 10 minutes long.
+
+Task 1 - Transcript:
+Write a continuous, realistic transcript of what the instructor might say in this video. Use Vietnamese.
+
+Task 2 - Key Takeaways:
+Extract 4-6 key concepts or important points from your simulated transcript.
+Assign a realistic 'time' (in seconds) to each point, representing when it was discussed in the video. Ensure the times are chronological and spread out between 10 seconds and 300 seconds.
+
+Return ONLY a valid JSON object matching this exact structure:
+{
+  "transcript": "<The full simulated Vietnamese transcript, formatted with paragraphs>",
+  "keyTakeaways": [
+    { "time": 15, "text": "Giới thiệu về khái niệm X" },
+    { "time": 85, "text": "Cách triển khai Y trong thực tế" }
+  ]
+}
+`;
+
+    try {
+      console.log(`[AiService] Generating simulated takeaways for: ${lessonTitle}`);
+      const text = await this.generateWithFallback(prompt);
+      const cleaned = text
+        .replace(/```json\n?/gi, '')
+        .replace(/```\n?/g, '')
+        .trim();
+      const result = JSON.parse(cleaned);
+
+      if (!result.transcript || !Array.isArray(result.keyTakeaways)) {
+        throw new Error('Invalid AI response structure');
+      }
+
+      console.log(`[AiService] Generated takeaways: ${result.keyTakeaways.length} items`);
+      // Return keyTakeaways as stringified JSON
+      return {
+        transcript: result.transcript,
+        keyTakeaways: JSON.stringify(result.keyTakeaways),
+      };
+    } catch (error: any) {
+      console.error(`[AiService] generateVideoTakeaways error:`, error?.message);
+      throw new InternalServerErrorException('Lỗi khi tạo ghi chú thông minh. Vui lòng thử lại.');
+    }
+  }
+
+  /**
+   * Answers a student's question based on the video's transcript and the specific time they are watching.
+   */
+  async askVideoContextQuestion(lessonId: string, question: string, currentTime: number): Promise<string> {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new InternalServerErrorException('GEMINI_API_KEY không tồn tại.');
+    }
+
+    // Bypass TS type checking for dynamically added schema fields before full restart
+    // @ts-ignore
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { title: true, transcript: true, keyTakeaways: true }
+    }) as any;
+
+    if (!lesson) {
+      throw new InternalServerErrorException('Không tìm thấy bài học.');
+    }
+
+    const contextStr = lesson.transcript
+      ? `Transcript: ${lesson.transcript.slice(0, 3000)}\nKey Takeaways: ${lesson.keyTakeaways}`
+      : `Bài học (Không có transcript) - Tên: ${lesson.title}`;
+
+    const prompt = `
+Bạn là AI Tutor chuyên hỗ trợ học tập cho học viên xem video.
+
+Ngữ cảnh bài học: 
+${contextStr}
+
+Tình huống: Học sinh đang xem video đến thời điểm ${Math.floor(currentTime)} giây.
+Câu hỏi của học sinh: "${question}"
+
+Hướng dẫn:
+- Trả lời bằng tiếng Việt, thân thiện và dễ hiểu (tối đa 200 từ).
+- Ưu tiên giải thích, liên kết với các khái niệm đã xuất hiện TRƯỚC mốc thời gian ${Math.floor(currentTime)} giây.
+- Trả lời dựa trên ngữ cảnh bài học. Nếu câu hỏi không liên quan, hãy từ chối nhẹ nhàng.
+- Dùng markdown nếu cần thiết.
+`;
+
+    try {
+      console.log(`[AiService] askVideoContextQuestion at sec ${currentTime} - Msg: ${question.slice(0, 50)}`);
+      const text = await this.generateWithFallback(prompt);
+      return text || 'Xin lỗi, tôi không thể trả lời câu hỏi này lúc này.';
+    } catch (error: any) {
+      console.error(`[AiService] askVideoContextQuestion error:`, error?.message);
+      throw new InternalServerErrorException('Lỗi khi hỏi AI. Vui lòng thử lại.');
+    }
+  }
 }

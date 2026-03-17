@@ -1,6 +1,7 @@
 import { BookOpen, Clock, Star, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/utils";
+import WishlistButton from "@/components/common/WishlistButton";
 
 interface CourseCardProps {
     id: string;
@@ -60,6 +61,11 @@ export function CourseCard({
                 {/* Price badge */}
                 <div className="absolute bottom-3 right-3 rounded-lg bg-white/90 backdrop-blur-sm px-3 py-1 text-sm font-bold text-primary-700 shadow-sm">
                     {price === 0 ? "Miễn phí" : formatPrice(price)}
+                </div>
+
+                {/* Wishlist heart */}
+                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <WishlistButton courseId={id} size={18} />
                 </div>
             </div>
 

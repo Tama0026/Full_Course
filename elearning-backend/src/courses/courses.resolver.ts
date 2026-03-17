@@ -354,6 +354,16 @@ export class CoursesResolver {
   }
 
   /**
+   * Generate video takeaways using AI (Owner Instructor or Admin).
+   */
+  @Mutation(() => Lesson)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.INSTRUCTOR, Role.ADMIN)
+  async generateLessonTakeaways(@Args('lessonId') lessonId: string): Promise<Lesson> {
+    return this.coursesService.generateLessonTakeaways(lessonId) as unknown as Lesson;
+  }
+
+  /**
    * Get a lesson by ID. Protected directly by EnrollmentGuard.
    * Users calling this without access/enrollment receive a Forbidden Exception,
    * UNLESS it is an isPreview lesson.
@@ -487,12 +497,20 @@ export class CoursesResolver {
     @Args('category', { type: () => String, nullable: true }) category?: string,
     @Args('take', { type: () => Number, defaultValue: 12, nullable: true }) take?: number,
     @Args('skip', { type: () => Number, defaultValue: 0, nullable: true }) skip?: number,
+    @Args('minRating', { type: () => Number, nullable: true }) minRating?: number,
+    @Args('priceMin', { type: () => Number, nullable: true }) priceMin?: number,
+    @Args('priceMax', { type: () => Number, nullable: true }) priceMax?: number,
+    @Args('sortBy', { type: () => String, nullable: true }) sortBy?: string,
   ) {
     return this.coursesService.getDiscoveryCourses(
       search,
       category,
       take,
       skip,
+      minRating,
+      priceMin,
+      priceMax,
+      sortBy,
     );
   }
 

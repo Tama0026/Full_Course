@@ -26,4 +26,9 @@ export declare class AiService {
     }[]): Promise<string>;
     suggestLearningOutcomes(title: string, description: string): Promise<string[]>;
     getAiRecommendations(userId: string): Promise<string>;
+    generateVideoTakeaways(lessonTitle: string): Promise<{
+        transcript: string;
+        keyTakeaways: string;
+    }>;
+    askVideoContextQuestion(lessonId: string, question: string, currentTime: number): Promise<string>;
 }
