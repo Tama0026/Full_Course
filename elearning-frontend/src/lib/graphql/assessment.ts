@@ -86,6 +86,8 @@ export const GET_ASSESSMENT_DETAIL = gql`
         options
         correctAnswer
         explanation
+        points
+        difficulty
         order
       }
     }
