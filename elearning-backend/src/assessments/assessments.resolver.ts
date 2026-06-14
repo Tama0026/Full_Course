@@ -34,6 +34,7 @@ import {
   IsBoolean,
   IsArray,
   IsOptional,
+  IsEnum,
   Min,
 } from 'class-validator';
 
@@ -60,6 +61,7 @@ export class CreateAssessmentInput {
   passingScore: number;
 
   @Field(() => AssessmentType, { defaultValue: 'MARKETPLACE' })
+  @IsEnum(AssessmentType)
   type: 'MARKETPLACE' | 'PRIVATE';
 
   @Field()

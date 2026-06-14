@@ -15,12 +15,16 @@ async function bootstrap() {
         forbidNonWhitelisted: true,
         transform: true,
     }));
+    const allowedOrigins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://full-course-eta.vercel.app',
+    ];
+    if (process.env.FRONTEND_URL) {
+        allowedOrigins.push(...process.env.FRONTEND_URL.split(',').map(url => url.trim()));
+    }
     app.enableCors({
-        origin: [
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'https://full-course-eta.vercel.app',
-        ],
+        origin: allowedOrigins,
         credentials: true,
     });
     const port = process.env.PORT || 4000;

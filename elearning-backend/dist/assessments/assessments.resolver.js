@@ -65,6 +65,7 @@ __decorate([
 ], CreateAssessmentInput.prototype, "passingScore", void 0);
 __decorate([
     (0, graphql_1.Field)(() => client_1.AssessmentType, { defaultValue: 'MARKETPLACE' }),
+    (0, class_validator_1.IsEnum)(client_1.AssessmentType),
     __metadata("design:type", String)
 ], CreateAssessmentInput.prototype, "type", void 0);
 __decorate([

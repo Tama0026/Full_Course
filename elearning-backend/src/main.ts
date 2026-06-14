@@ -17,12 +17,17 @@ async function bootstrap() {
   );
 
   // Cập nhật CORS linh hoạt hơn
+  const allowedOrigins = [
+    'http://localhost:3000', // Port mặc định của Next.js local
+    'http://127.0.0.1:3000',
+    'https://full-course-eta.vercel.app', // Domain Vercel của bạn
+  ];
+  if (process.env.FRONTEND_URL) {
+    allowedOrigins.push(...process.env.FRONTEND_URL.split(',').map(url => url.trim()));
+  }
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // Port mặc định của Next.js local
-      'http://127.0.0.1:3000',
-      'https://full-course-eta.vercel.app', // Domain Vercel của bạn
-    ],
+    origin: allowedOrigins,
     credentials: true,
   });
 
