@@ -36,8 +36,5 @@ async function bootstrap() {
 
   // SỬA TẠI ĐÂY: Lắng nghe trên '0.0.0.0' để Railway nhận diện được
   await app.listen(port, '0.0.0.0');
-
-  console.log(`🚀 Application is running on port: ${port}`);
-  console.log(`📊 GraphQL endpoint: /graphql`);
 }
 bootstrap();

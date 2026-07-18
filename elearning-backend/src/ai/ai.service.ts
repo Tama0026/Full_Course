@@ -677,8 +677,9 @@ Ngữ cảnh bài học mà học viên đang học:
 Hướng dẫn:
         - Trả lời bằng tiếng Việt, ngắn gọn, dễ hiểu(tối đa 300 từ).
 - Trả lời DỰA VÀO nội dung bài học ở trên làm nền tảng.
-- Nếu câu hỏi nằm ngoài phạm vi bài học, trả lời nhẹ nhàng và hướng học viên về đúng chủ đề.
-- Nếu cần dùng code ví dụ, dùng markdown code block.
+- TUYỆT ĐỐI KHÔNG trả lời các câu hỏi ngoài lề (như ăn uống, thời tiết, giải trí...). Nếu câu hỏi không liên quan đến lập trình hoặc nội dung bài học, hãy từ chối trả lời một cách lịch sự và yêu cầu học viên hỏi đúng chủ đề.
+- TUYỆT ĐỐI KHÔNG viết code (không generate code), không đưa ra đáp án code trực tiếp hoặc giải bài tập hộ học viên.
+- Thay vì đưa code, hãy đưa ra gợi ý (hints), hướng dẫn tư duy (pseudo-code) hoặc giải thích logic để học viên tự suy nghĩ.
 - KHÔNG được bịa thông tin, chỉ trả lời những gì bạn biết chắc.
         `;
 
@@ -744,6 +745,7 @@ Hướng dẫn phỏng vấn:
 - Nếu ứng viên trả lời sai hoặc thiếu, giải thích ngắn gọn đáp án đúng rồi chuyển sang câu khác.
 - Nếu đây là tin nhắn đầu tiên(chưa có lịch sử), hãy chào hỏi chuyên nghiệp và bắt đầu với câu hỏi đầu tiên.
 - Giữ phong cách chuyên nghiệp nhưng thân thiện.
+- TUYỆT ĐỐI KHÔNG trả lời hay hùa theo các chủ đề ngoài lề. Nếu ứng viên nói chuyện lạc đề, hãy nghiêm túc nhắc nhở họ quay lại cuộc phỏng vấn.
 - Trả lời bằng tiếng Việt, tối đa 200 từ.
 - Tự động đánh giá ứng viên đạt hoặc không đạt sau khi kết thúc phỏng vấn.
 - Hỏi số lượng câu hỏi vừa đủ để đánh giá
